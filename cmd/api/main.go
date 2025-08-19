@@ -40,6 +40,5 @@ func main() {
 	h := handlers.Handlers{UserHandler: userHandler}
 
 	router := handlers.NewMuxRouter()
-	router.RegisterHandlers(h)
-	router.ServeHTTP(port)
+	router.StartServer(h, port)
 }
