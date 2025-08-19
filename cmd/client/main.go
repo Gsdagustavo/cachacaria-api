@@ -13,17 +13,36 @@ import (
 
 // TODO: add CLI tools for debugging
 func main() {
-	add()
-	get()
+	//add()
+	//get()
+	findById()
+}
+
+func findById() {
+	res, err := http.Get("http://localhost:8080/users/id?id=8")
+
+	if err != nil {
+		log.Printf("error while trying to find by id: %v", err)
+		return
+	}
+
+	var user models.User
+	err = json.NewDecoder(res.Body).Decode(&user)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("User found: %v", user)
 }
 
 func add() {
 	userRequest := models.AddUserRequest{
-		Name:     "1212345678",
-		Email:    "1212345678",
-		Password: "12345678",
-		Phone:    "12345678",
-		IsAdm:    false,
+		Name:     "teste",
+		Email:    "testeewaqe",
+		Password: "testesteste",
+		Phone:    "testester",
+		IsAdm:    true,
 	}
 
 	jsonData, err := json.Marshal(userRequest)

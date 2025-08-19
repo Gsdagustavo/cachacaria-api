@@ -14,7 +14,7 @@ import (
 func main() {
 	cfg := mysql.Config{
 		User:   "root",
-		Passwd: "root",
+		Passwd: "Rg547571856g",
 		Net:    "tcp",
 		Addr:   "localhost:3306",
 		DBName: "cachacadb",

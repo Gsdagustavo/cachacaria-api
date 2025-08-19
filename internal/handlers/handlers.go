@@ -4,8 +4,10 @@ import (
 	"cachacariaapi/internal/models"
 	"cachacariaapi/internal/usecases"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 type Handlers struct {
@@ -14,6 +16,7 @@ type Handlers struct {
 
 func (h *Handlers) RegisterHandlers(server *http.ServeMux) {
 	server.HandleFunc("/users", h.UserHandler.GetUsers)
+	server.HandleFunc("/users/id", h.UserHandler.GetUser)
 	server.HandleFunc("/users/add", h.UserHandler.AddUser)
 }
 
@@ -34,6 +37,47 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	users := h.UserUseCases.GetAll()
 
 	json.NewEncoder(w).Encode(users)
+}
+
+func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	query := r.URL.Query()
+
+	if !query.Has("id") {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.ParseInt(query.Get("id"), 10, 64)
+
+	log.Printf("Query ID: %v", id)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.UserUseCases.FindById(id)
+
+	log.Printf("User: %v", user)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(user)
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	fmt.Printf("User: %v", user)
 }
 
 func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {

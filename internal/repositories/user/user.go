@@ -56,3 +56,30 @@ func (r *UserRepository) Add(user models.AddUserRequest) (*models.AddUserRespons
 	id, _ := res.LastInsertId()
 	return &models.AddUserResponse{ID: id}, nil
 }
+
+func (r *UserRepository) Delete(userId int64) error {
+	_, err := r.DB.Exec("DELETE FROM USERS WHERE ID = ?", userId)
+
+	if err != nil {
+		log.Printf("Error on deleting user: %v", err)
+		return err
+	}
+
+	log.Printf("User with ID %v removed successfully", userId)
+
+	return nil
+}
+
+func (r *UserRepository) FindById(userId int64) (*models.User, error) {
+	row := r.DB.QueryRow("SELECT id, name, email, password, phone, is_adm FROM USERS WHERE ID = ?", userId)
+
+	var user models.User
+	if err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user with id %v not found", userId)
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}

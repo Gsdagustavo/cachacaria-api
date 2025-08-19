@@ -4,6 +4,7 @@ import (
 	"cachacariaapi/internal/models"
 	"cachacariaapi/internal/repositories/user"
 	"errors"
+	"log"
 )
 
 type UserUseCases struct {
@@ -20,12 +21,28 @@ func (u *UserUseCases) GetAll() []models.User {
 
 func (u *UserUseCases) Add(user models.AddUserRequest) (*models.AddUserResponse, error) {
 	if user.Name == "" || user.Password == "" || user.Email == "" || user.Phone == "" {
-		return nil, errors.New("Username or Password or Email or Phone is empty")
+		return nil, errors.New("username or Password or Email or Phone is empty")
 	}
 
 	if len(user.Password) < 8 {
-		return nil, errors.New("Password must be at least 8 characters")
+		return nil, errors.New("password must be at least 8 characters")
 	}
 
 	return u.r.Add(user)
+}
+
+func (u *UserUseCases) FindById(userid int64) (*models.User, error) {
+	return u.r.FindById(userid)
+}
+
+func (u *UserUseCases) Delete(userId int64) error {
+	if res, err := u.FindById(userId); err != nil && res != nil {
+		err = u.r.Delete(userId)
+
+		if err != nil {
+			log.Printf("Error deleting user: %v", err)
+		}
+	}
+
+	return errors.New("user not found")
 }
