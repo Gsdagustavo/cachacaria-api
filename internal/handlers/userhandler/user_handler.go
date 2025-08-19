@@ -1,4 +1,4 @@
-package user
+package userhandler
 
 import (
 	"cachacariaapi/internal/models"
@@ -98,7 +98,7 @@ func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		log.Printf("Error adding user: %v", err)
+		log.Printf("Error adding userhandler: %v", err)
 		return
 	}
 
@@ -106,7 +106,7 @@ func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		log.Printf("Error adding user: %v", err)
+		log.Printf("Error adding userhandler: %v", err)
 		return
 	}
 
@@ -154,6 +154,6 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"user deleted"}`))
+	w.Write([]byte(`{"message":"userhandler deleted"}`))
 	log.Printf("User: %v", id)
 }

@@ -2,8 +2,9 @@ package main
 
 import (
 	"cachacariaapi/internal/handlers"
-	"cachacariaapi/internal/repositories/user"
-	user2 "cachacariaapi/internal/usecases/user"
+	"cachacariaapi/internal/handlers/userhandler"
+	"cachacariaapi/internal/repositories/userrepository"
+	"cachacariaapi/internal/usecases/userusecases"
 	"database/sql"
 	"log"
 
@@ -30,13 +31,13 @@ func main() {
 	defer db.Close()
 
 	// REPOSITORIES
-	userRepository := user.NewUserRepository(db)
+	userRepository := userrepository.NewUserRepository(db)
 
 	// USECASES
-	userUseCases := user2.NewUserUseCases(userRepository)
+	userUseCases := userusecases.NewUserUseCases(userRepository)
 
 	// HANDLERS
-	userHandler := handlers.NewUserHandler(userUseCases)
+	userHandler := userhandler.NewUserHandler(userUseCases)
 	h := handlers.Handlers{UserHandler: userHandler}
 
 	router := handlers.NewMuxRouter()

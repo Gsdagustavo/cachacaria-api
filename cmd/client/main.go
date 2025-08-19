@@ -13,14 +13,14 @@ import (
 
 // TODO: add CLI tools for debugging
 func main() {
-	add()
-	get()
+	//add()
 	//findById()
-	//delete()
+	delete()
+	//get()
 }
 
 func findById() {
-	res, err := http.Get("http://localhost:8080/users/id?id=3")
+	res, err := http.Get("http://localhost:8080/users/id?id=45")
 
 	if res.StatusCode != http.StatusOK || res.ContentLength == 0 || err != nil {
 		log.Printf("error while trying to find by id. Status Code: %v", res.StatusCode)
@@ -31,7 +31,7 @@ func findById() {
 	err = json.NewDecoder(res.Body).Decode(&user)
 
 	if err != nil {
-		log.Printf("error while trying to decode user data: %v", err)
+		log.Printf("error while trying to decode userhandler data: %v", err)
 		return
 	}
 
@@ -97,7 +97,7 @@ func get() {
 }
 
 func delete() {
-	req, err := http.NewRequest("DELETE", "http://localhost:8080/users/delete?id=3", nil)
+	req, err := http.NewRequest("DELETE", "http://localhost:8080/users/delete?id=1", nil)
 
 	client := &http.Client{}
 
