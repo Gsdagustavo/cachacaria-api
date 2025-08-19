@@ -13,8 +13,8 @@ import (
 
 // TODO: add CLI tools for debugging
 func main() {
+	add()
 	get()
-	//add()
 	//findById()
 	//delete()
 }

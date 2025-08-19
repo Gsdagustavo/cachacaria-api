@@ -8,17 +8,36 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
+
+type MuxRouter struct {
+	router *mux.Router
+}
 
 type Handlers struct {
 	UserHandler *UserHandler
 }
 
-func (h *Handlers) RegisterHandlers(server *http.ServeMux) {
-	server.HandleFunc("/users", h.UserHandler.GetUsers)
-	server.HandleFunc("/users/id", h.UserHandler.GetUser)
-	server.HandleFunc("/users/add", h.UserHandler.AddUser)
-	server.HandleFunc("/users/delete", h.UserHandler.DeleteUser)
+func NewMuxRouter() *MuxRouter {
+	return &MuxRouter{router: mux.NewRouter()}
+}
+
+func (r *MuxRouter) ServeHTTP(port string) {
+	log.Printf("Server is listening on port %v", port)
+	err := http.ListenAndServe(fmt.Sprintf(":%s", port), r.router)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (r *MuxRouter) RegisterHandlers(h Handlers) {
+	r.router.HandleFunc("/users", h.UserHandler.GetUsers)
+	r.router.HandleFunc("/users/id", h.UserHandler.GetUser)
+	r.router.HandleFunc("/users/add", h.UserHandler.AddUser)
+	r.router.HandleFunc("/users/delete", h.UserHandler.DeleteUser)
 }
 
 type UserHandler struct {
@@ -121,7 +140,7 @@ func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Request: %v", req)
+	//log.Printf("Request: %v", req)
 
 	prettyJSON, err := json.MarshalIndent(req, "", "  ")
 	if err != nil {

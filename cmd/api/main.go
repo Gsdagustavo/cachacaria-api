@@ -6,10 +6,11 @@ import (
 	user2 "cachacariaapi/internal/usecases/user"
 	"database/sql"
 	"log"
-	"net/http"
 
 	"github.com/go-sql-driver/mysql"
 )
+
+const port = "8080"
 
 func main() {
 	cfg := mysql.Config{
@@ -36,12 +37,9 @@ func main() {
 
 	// HANDLERS
 	userHandler := handlers.NewUserHandler(userUseCases)
-	handler := handlers.Handlers{UserHandler: userHandler}
+	h := handlers.Handlers{UserHandler: userHandler}
 
-	mux := http.NewServeMux()
-	handler.RegisterHandlers(mux)
-
-	log.Print("Server is listening on port 8080")
-
-	http.ListenAndServe(":8080", mux)
+	router := handlers.NewMuxRouter()
+	router.RegisterHandlers(h)
+	router.ServeHTTP(port)
 }
