@@ -44,7 +44,6 @@ func (r *UserRepository) GetAll() []models.User {
 func (r *UserRepository) Add(user models.AddUserRequest) (*models.AddUserResponse, error) {
 	const query = "INSERT INTO USERS (name, email, password, phone, is_adm) VALUES (?, ?, ?, ?, ?)"
 
-	//id := uuid.New()
 	res, err := r.DB.Exec(query, user.Name, user.Email, user.Password, user.Phone, user.IsAdm)
 
 	if err != nil {
@@ -61,7 +60,7 @@ func (r *UserRepository) Delete(userId int64) error {
 	_, err := r.DB.Exec("DELETE FROM USERS WHERE ID = ?", userId)
 
 	if err != nil {
-		log.Printf("Error on deleting userhandler: %v", err)
+		log.Printf("Error on deleting user: %v", err)
 		return err
 	}
 
@@ -76,7 +75,7 @@ func (r *UserRepository) FindById(userId int64) (*models.User, error) {
 	var user models.User
 	if err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("userhandler with id %v not found", userId)
+			return nil, fmt.Errorf("user with id %v not found", userId)
 		}
 		return nil, err
 	}

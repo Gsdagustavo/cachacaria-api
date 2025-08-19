@@ -15,8 +15,8 @@ import (
 func main() {
 	//add()
 	//findById()
-	delete()
-	//get()
+	//delete()
+	get()
 }
 
 func findById() {
