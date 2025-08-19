@@ -16,7 +16,7 @@ func main() {
 		User:   "root",
 		Passwd: "root",
 		Net:    "tcp",
-		Addr:   "127.0.0.1:3306",
+		Addr:   "localhost:3306",
 		DBName: "cachacadb",
 	}
 

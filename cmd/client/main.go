@@ -20,7 +20,7 @@ func main() {
 func add() {
 	userRequest := models.AddUserRequest{
 		Name:     "1212345678",
-		Email:    "12313211",
+		Email:    "1212345678",
 		Password: "12345678",
 		Phone:    "12345678",
 		IsAdm:    false,
