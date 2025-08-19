@@ -36,6 +36,11 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 
 	users := h.UserUseCases.GetAll()
 
+	if len(users) <= 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
 	json.NewEncoder(w).Encode(users)
 }
 
@@ -49,6 +54,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	if !query.Has("id") {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message":"id is required"}`))
 		return
 	}
 
@@ -57,25 +63,22 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Query ID: %v", id)
 
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNoContent)
+		log.Printf("User not found for the ID %v", id)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
 	user, err := h.UserUseCases.FindById(id)
 
-	log.Printf("User: %v", user)
-
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNoContent)
+		log.Printf("User not found for the ID %v", id)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(user)
-
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
 
 	fmt.Printf("User: %v", user)
 }

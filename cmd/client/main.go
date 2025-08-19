@@ -19,10 +19,10 @@ func main() {
 }
 
 func findById() {
-	res, err := http.Get("http://localhost:8080/users/id?id=8")
+	res, err := http.Get("http://localhost:8080/users/id?id=1")
 
-	if err != nil {
-		log.Printf("error while trying to find by id: %v", err)
+	if res.StatusCode != http.StatusOK || res.ContentLength == 0 || err != nil {
+		log.Printf("error while trying to find by id. Status Code: %v", res.StatusCode)
 		return
 	}
 
@@ -30,7 +30,8 @@ func findById() {
 	err = json.NewDecoder(res.Body).Decode(&user)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("error while trying to decode user data: %v", err)
+		return
 	}
 
 	log.Printf("User found: %v", user)
@@ -38,10 +39,10 @@ func findById() {
 
 func add() {
 	userRequest := models.AddUserRequest{
-		Name:     "teste",
-		Email:    "testeewaqe",
-		Password: "testesteste",
-		Phone:    "testester",
+		Name:     "awdadwdawd",
+		Email:    "awdwaddwadad",
+		Password: "asdadasdd",
+		Phone:    "qweqweqweq",
 		IsAdm:    true,
 	}
 
