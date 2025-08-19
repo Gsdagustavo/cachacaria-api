@@ -18,6 +18,7 @@ func (h *Handlers) RegisterHandlers(server *http.ServeMux) {
 	server.HandleFunc("/users", h.UserHandler.GetUsers)
 	server.HandleFunc("/users/id", h.UserHandler.GetUser)
 	server.HandleFunc("/users/add", h.UserHandler.AddUser)
+	server.HandleFunc("/users/delete", h.UserHandler.DeleteUser)
 }
 
 type UserHandler struct {
@@ -33,7 +34,6 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-
 	users := h.UserUseCases.GetAll()
 
 	if len(users) <= 0 {
@@ -133,4 +133,38 @@ func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 	w.Write(prettyJSON)
 
 	log.Printf("Response: %v", res)
+}
+
+func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	query := r.URL.Query()
+
+	if !query.Has("id") {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message":"id is required"}`))
+		return
+	}
+
+	id, err := strconv.ParseInt(query.Get("id"), 10, 64)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message":"invalid id"}`))
+		return
+	}
+
+	err = h.UserUseCases.Delete(id)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		log.Printf("User not found for the ID %v", id)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"user deleted"}`))
+	log.Printf("User: %v", id)
 }

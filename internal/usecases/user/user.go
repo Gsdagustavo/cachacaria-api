@@ -4,7 +4,6 @@ import (
 	"cachacariaapi/internal/models"
 	"cachacariaapi/internal/repositories/user"
 	"errors"
-	"log"
 )
 
 type UserUseCases struct {
@@ -36,13 +35,15 @@ func (u *UserUseCases) FindById(userid int64) (*models.User, error) {
 }
 
 func (u *UserUseCases) Delete(userId int64) error {
-	if res, err := u.FindById(userId); err != nil && res != nil {
-		err = u.r.Delete(userId)
-
-		if err != nil {
-			log.Printf("Error deleting user: %v", err)
-		}
+	_, err := u.FindById(userId)
+	if err != nil {
+		return errors.New("user not found. error: " + err.Error())
 	}
 
-	return errors.New("user not found")
+	err = u.r.Delete(userId)
+	if err != nil {
+		return errors.New("user could not be deleted. error: " + err.Error())
+	}
+
+	return nil
 }
