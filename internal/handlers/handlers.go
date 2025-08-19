@@ -41,7 +41,14 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(users)
+	prettyJSON, err := json.MarshalIndent(users, "", "  ")
+	if err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(prettyJSON)
 }
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +85,14 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(user)
+	prettyJSON, err := json.MarshalIndent(user, "", "  ")
+	if err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(prettyJSON)
 
 	fmt.Printf("User: %v", user)
 }
@@ -109,13 +123,14 @@ func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Request: %v", req)
 
-	err = json.NewEncoder(w).Encode(res)
-
+	prettyJSON, err := json.MarshalIndent(req, "", "  ")
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Printf("Error returning response: %v", err)
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(prettyJSON)
 
 	log.Printf("Response: %v", res)
 }

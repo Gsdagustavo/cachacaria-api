@@ -13,13 +13,13 @@ import (
 
 // TODO: add CLI tools for debugging
 func main() {
-	//add()
-	//get()
+	add()
+	get()
 	findById()
 }
 
 func findById() {
-	res, err := http.Get("http://localhost:8080/users/id?id=1")
+	res, err := http.Get("http://localhost:8080/users/id?id=3")
 
 	if res.StatusCode != http.StatusOK || res.ContentLength == 0 || err != nil {
 		log.Printf("error while trying to find by id. Status Code: %v", res.StatusCode)
@@ -34,7 +34,9 @@ func findById() {
 		return
 	}
 
-	log.Printf("User found: %v", user)
+	prettyJSON, err := json.MarshalIndent(user, "", "  ")
+
+	log.Printf("\nUser found: %v", string(prettyJSON))
 }
 
 func add() {
