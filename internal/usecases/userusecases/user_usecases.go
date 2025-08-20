@@ -30,19 +30,33 @@ func (u *UserUseCases) Add(user models.AddUserRequest) (*models.AddUserResponse,
 	return u.r.Add(user)
 }
 
-func (u *UserUseCases) FindById(userid int64) (*models.User, error) {
-	return u.r.FindById(userid)
-}
-
 func (u *UserUseCases) Delete(userId int64) error {
 	_, err := u.FindById(userId)
 	if err != nil {
-		return errors.New("userhandler not found. error: " + err.Error())
+		return errors.New("user not found. error: " + err.Error())
 	}
 
 	err = u.r.Delete(userId)
 	if err != nil {
-		return errors.New("userhandler could not be deleted. error: " + err.Error())
+		return errors.New("user could not be deleted. error: " + err.Error())
+	}
+
+	return nil
+}
+
+func (u *UserUseCases) FindById(userid int64) (*models.User, error) {
+	return u.r.FindById(userid)
+}
+
+func (u *UserUseCases) Update(userId int64) error {
+	_, err := u.FindById(userId)
+	if err != nil {
+		return errors.New("user not found. error: " + err.Error())
+	}
+
+	err = u.r.Delete(userId)
+	if err != nil {
+		return errors.New("user could not be deleted. error: " + err.Error())
 	}
 
 	return nil
