@@ -40,7 +40,7 @@ type Handlers struct {
 func (r *MuxRouter) registerHandlers(h Handlers) {
 
 	// userhandler related handlers
-	r.router.HandleFunc("/users", h.UserHandler.GetUsers)
+	r.router.HandleFunc("/users", h.UserHandler.GetAll)
 	r.router.HandleFunc("/users/id", h.UserHandler.GetUser)
 	r.router.HandleFunc("/users/add", h.UserHandler.AddUser)
 	r.router.HandleFunc("/users/delete", h.UserHandler.DeleteUser)

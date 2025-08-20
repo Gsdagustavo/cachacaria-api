@@ -18,8 +18,8 @@ database variables
 TODO: save into env variables in Docker
 */
 var user = "root"
-var passwd = "admin"
-var host = "127.0.0.1"
+var passwd = "root"
+var host = "localhost"
 var dbPort = "3306"
 var net = "tcp"
 var addr = fmt.Sprintf("%s:%s", host, dbPort)

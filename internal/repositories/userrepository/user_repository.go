@@ -3,7 +3,7 @@ package userrepository
 import (
 	"cachacariaapi/internal/models"
 	"database/sql"
-	"fmt"
+	"errors"
 	"log"
 )
 
@@ -15,33 +15,36 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{DB: db}
 }
 
-func (r *UserRepository) GetAll() []models.User {
+func (r *UserRepository) GetAll() ([]models.User, error) {
 	var users []models.User
 
-	req, err := r.DB.Query("SELECT id, name, email, password, phone, is_adm FROM USERS")
+	rows, err := r.DB.Query("SELECT id, name, email, password, phone, is_adm FROM USERS")
 
 	if err != nil {
-		log.Fatal(err)
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Printf("Error in [Query | query]: %v", err)
+			return nil, err
+		}
+
+		return nil, err
 	}
 
-	defer req.Close()
+	defer rows.Close()
 
-	log.Printf("Request: %v", req)
-
-	for req.Next() {
+	for rows.Next() {
 		var user models.User
 
-		if err := req.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
 			log.Fatal(err)
 		}
 
 		users = append(users, user)
 	}
 
-	return users
+	return users, nil
 }
 
-func (r *UserRepository) Add(user models.AddUserRequest) (*models.AddUserResponse, error) {
+func (r *UserRepository) Add(user models.UserRequest) (*models.UserResponse, error) {
 	const query = "INSERT INTO USERS (name, email, password, phone, is_adm) VALUES (?, ?, ?, ?, ?)"
 
 	res, err := r.DB.Exec(query, user.Name, user.Email, user.Password, user.Phone, user.IsAdm)
@@ -50,10 +53,8 @@ func (r *UserRepository) Add(user models.AddUserRequest) (*models.AddUserRespons
 		return nil, err
 	}
 
-	fmt.Printf("Result: %v", res)
-
 	id, _ := res.LastInsertId()
-	return &models.AddUserResponse{ID: id}, nil
+	return &models.UserResponse{ID: id}, nil
 }
 
 func (r *UserRepository) Delete(userId int64) error {
@@ -73,10 +74,13 @@ func (r *UserRepository) FindById(userId int64) (*models.User, error) {
 	row := r.DB.QueryRow("SELECT id, name, email, password, phone, is_adm FROM USERS WHERE ID = ?", userId)
 
 	var user models.User
+
 	if err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user with id %v not found", userId)
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Printf("Error in [Query | query]: %v", err)
+			return nil, err
 		}
+
 		return nil, err
 	}
 

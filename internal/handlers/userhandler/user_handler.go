@@ -19,10 +19,19 @@ func NewUserHandler(u usecases.UserUseCases) *UserHandler {
 }
 
 type ErrorMessage struct {
+	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
 
-func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
+func (e ErrorMessage) ShowErrorMessage(w http.ResponseWriter) {
+	w.WriteHeader(e.Code)
+
+	bytes, _ := json.Marshal(e)
+
+	http.Error(w, string(bytes), e.Code)
+}
+
+func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodGet {
@@ -30,23 +39,20 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users := h.UserUseCases.GetAll()
+	users, err := h.UserUseCases.GetAll()
 
 	log.Printf("Retrieved %d users", len(users))
 
 	if len(users) == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(ErrorMessage{Message: "No users found"})
+		ErrorMessage{Code: http.StatusNotFound, Message: "No users found"}.ShowErrorMessage(w)
 		return
 	}
 
-	prettyJSON, err := json.MarshalIndent(users, "", "  ")
 	if err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-		return
+		ErrorMessage{Code: http.StatusInternalServerError, Message: err.Error()}.ShowErrorMessage(w)
 	}
 
-	w.Write(prettyJSON)
+	json.NewEncoder(w).Encode(users)
 }
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +84,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusNoContent)
 		log.Printf("User not found for the ID %v", id)
-		json.NewEncoder(w).Encode(ErrorMessage{Message: "No users found"})
+		json.NewEncoder(w).Encode(ErrorMessage{Message: ""})
 		return
 	}
 
@@ -102,21 +108,23 @@ func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req models.AddUserRequest
+	var req models.UserRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		log.Printf("Error adding userhandler: %v", err)
+		log.Printf("Error adding user: %v", err)
 		return
 	}
 
 	res, err := h.UserUseCases.Add(req)
 
+	log.Printf("Added user: %v", req)
+
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		log.Printf("Error adding userhandler: %v", err)
+		json.NewEncoder(w).Encode(ErrorMessage{Message: err.Error()})
 		return
 	}
 
@@ -163,8 +171,7 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"userhandler deleted"}`))
-	log.Printf("User: %v", id)
+	json.NewEncoder(w).Encode("User deleted")
 }
 
 //func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {

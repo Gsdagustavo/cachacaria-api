@@ -9,7 +9,7 @@ type User struct {
 	IsAdm    bool   `json:"is_adm"`
 }
 
-type AddUserRequest struct {
+type UserRequest struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -17,18 +17,6 @@ type AddUserRequest struct {
 	IsAdm    bool   `json:"is_adm"`
 }
 
-type AddUserResponse struct {
-	ID int64 `json:"id"`
-}
-
-type UpdateUserRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Phone    string `json:"phone"`
-	IsAdm    bool   `json:"is_adm"`
-}
-
-type UpdateUserResponse struct {
+type UserResponse struct {
 	ID int64 `json:"id"`
 }

@@ -14,13 +14,25 @@ func NewUserUseCases(r *userrepository.UserRepository) *UserUseCases {
 	return &UserUseCases{r}
 }
 
-func (u *UserUseCases) GetAll() []models.User {
+func (u *UserUseCases) GetAll() ([]models.User, error) {
 	return u.r.GetAll()
 }
 
-func (u *UserUseCases) Add(user models.AddUserRequest) (*models.AddUserResponse, error) {
-	if user.Name == "" || user.Password == "" || user.Email == "" || user.Phone == "" {
-		return nil, errors.New("username or Password or Email or Phone is empty")
+func (u *UserUseCases) Add(user models.UserRequest) (*models.UserResponse, error) {
+	if user.Name == "" {
+		return nil, errors.New("username is empty")
+	}
+
+	if user.Password == "" {
+		return nil, errors.New("password is empty")
+	}
+
+	if user.Email == "" {
+		return nil, errors.New("email is empty")
+	}
+
+	if user.Phone == "" {
+		return nil, errors.New("phone is empty")
 	}
 
 	if len(user.Password) < 8 {

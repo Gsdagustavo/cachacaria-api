@@ -16,11 +16,11 @@ func main() {
 	add()
 	//findById()
 	//delete()
-	//get()
+	get()
 }
 
 func findById() {
-	res, err := http.Get("http://localhost:8080/users/id?id=45")
+	res, err := http.Get("http://localhost:8080/users/id?id=3")
 
 	if res.StatusCode != http.StatusOK || res.ContentLength == 0 || err != nil {
 		log.Printf("error while trying to find by id. Status Code: %v", res.StatusCode)
@@ -41,13 +41,15 @@ func findById() {
 }
 
 func add() {
-	userRequest := models.AddUserRequest{
-		Name:     "awdadwdawd",
-		Email:    "awdwaddwadad",
-		Password: "asdadasdd",
-		Phone:    "qweqweqweq",
+	userRequest := models.UserRequest{
+		Name:     "Test",
+		Email:    "test@gmail.com",
+		Password: "1234567890",
+		Phone:    "479912093192",
 		IsAdm:    true,
 	}
+
+	log.Printf("Adding user: %v", userRequest)
 
 	jsonData, err := json.Marshal(userRequest)
 
@@ -83,9 +85,11 @@ func get() {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Expected status 200 OK, got %v", resp.StatusCode)
-	}
+	//if resp.StatusCode != http.StatusOK {
+	//	log.Fatalf("Expected status 200 OK, got %v", resp.StatusCode)
+	//}
+
+	log.Printf("Response: %v\n", resp)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

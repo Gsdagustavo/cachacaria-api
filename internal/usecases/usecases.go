@@ -3,8 +3,8 @@ package usecases
 import "cachacariaapi/internal/models"
 
 type UserUseCases interface {
-	GetAll() []models.User
-	Add(user models.AddUserRequest) (*models.AddUserResponse, error)
+	GetAll() ([]models.User, error)
+	Add(user models.UserRequest) (*models.UserResponse, error)
 	Delete(userId int64) error
 	FindById(userid int64) (*models.User, error)
 }
