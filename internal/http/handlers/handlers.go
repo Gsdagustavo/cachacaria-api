@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"cachacariaapi/internal/handlers/userhandler"
+	"cachacariaapi/internal/http/handlers/userhandler"
 	"fmt"
 	"log"
 	"net/http"

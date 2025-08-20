@@ -1,6 +1,7 @@
 package userhandler
 
 import (
+	"cachacariaapi/internal/http/core"
 	"cachacariaapi/internal/models"
 	"cachacariaapi/internal/usecases"
 	"encoding/json"
@@ -18,19 +19,6 @@ func NewUserHandler(u usecases.UserUseCases) *UserHandler {
 	return &UserHandler{u}
 }
 
-type ErrorMessage struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
-func (e ErrorMessage) ShowErrorMessage(w http.ResponseWriter) {
-	w.WriteHeader(e.Code)
-
-	bytes, _ := json.Marshal(e)
-
-	http.Error(w, string(bytes), e.Code)
-}
-
 func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -43,13 +31,13 @@ func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Retrieved %d users", len(users))
 
-	if len(users) == 0 {
-		ErrorMessage{Code: http.StatusNotFound, Message: "No users found"}.ShowErrorMessage(w)
-		return
+	if err != nil {
+		core.ErrorMessage{Code: http.StatusInternalServerError, Message: err.Error()}.ShowErrorMessage(w)
 	}
 
-	if err != nil {
-		ErrorMessage{Code: http.StatusInternalServerError, Message: err.Error()}.ShowErrorMessage(w)
+	if len(users) == 0 {
+		core.ErrorMessage{Code: http.StatusNotFound, Message: "No users found"}.ShowErrorMessage(w)
+		return
 	}
 
 	json.NewEncoder(w).Encode(users)
@@ -65,7 +53,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	if !query.Has("id") {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorMessage{Message: "id is required"})
+		json.NewEncoder(w).Encode(core.ErrorMessage{Message: "id is required"})
 		return
 	}
 
@@ -84,7 +72,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusNoContent)
 		log.Printf("User not found for the ID %v", id)
-		json.NewEncoder(w).Encode(ErrorMessage{Message: ""})
+		json.NewEncoder(w).Encode(core.ErrorMessage{Message: ""})
 		return
 	}
 
@@ -124,7 +112,7 @@ func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorMessage{Message: err.Error()})
+		json.NewEncoder(w).Encode(core.ErrorMessage{Message: err.Error()})
 		return
 	}
 

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"cachacariaapi/internal/handlers"
-	"cachacariaapi/internal/handlers/userhandler"
+	"cachacariaapi/internal/http/handlers"
+	"cachacariaapi/internal/http/handlers/userhandler"
 	"cachacariaapi/internal/repositories/userrepository"
 	"cachacariaapi/internal/usecases/userusecases"
 	"database/sql"
