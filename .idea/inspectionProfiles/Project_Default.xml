@@ -20,6 +20,7 @@
         <method importPath="strings" receiver="*Builder" name="WriteByte" />
         <method importPath="encoding/json" receiver="*Encoder" name="Encode" />
         <method importPath="net/http" receiver="ResponseWriter" name="Write" />
+        <method importPath="database/sql" receiver="*Rows" name="Close" />
       </methods>
     </inspection_tool>
   </profile>

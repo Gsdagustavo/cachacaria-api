@@ -13,14 +13,18 @@ import (
 
 // TODO: add CLI tools for debugging
 func main() {
-	add()
+	//add()
 	//findById()
 	//delete()
 	get()
 }
 
 func findById() {
-	res, err := http.Get("http://localhost:8080/users/id?id=3")
+	res, err := http.Get("http://localhost:8080/users/id?id=6")
+
+	//var body string
+	//json.NewDecoder(res.Body).Decode(&body)
+	//log.Printf("Body: %v", body)
 
 	if res.StatusCode != http.StatusOK || res.ContentLength == 0 || err != nil {
 		log.Printf("error while trying to find by id. Status Code: %v", res.StatusCode)
