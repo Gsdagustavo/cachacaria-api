@@ -6,7 +6,7 @@ USE cachacadb;
 CREATE TABLE users (
                        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
                        name VARCHAR(100) NOT NULL,
-                       email VARCHAR(100) NOT NULL UNIQUE,
+                       email VARCHAR(100) NOT NULL,
                        password VARCHAR(255) NOT NULL,
                        phone VARCHAR(20),
                        is_adm BOOLEAN NOT NULL DEFAULT FALSE
