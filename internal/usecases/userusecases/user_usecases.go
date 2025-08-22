@@ -61,10 +61,6 @@ func (u *UserUseCases) FindById(userid int64) (*models.User, error) {
 // Update a user from the database from the given UserRequest and userId
 // Returns a UserResponse oran error if any occurs
 func (u *UserUseCases) Update(user models.UserRequest, userId int64) (*models.UserResponse, error) {
-	if err := validateUserRequest(user); err != nil {
-		return nil, err
-	}
-
 	if userId <= 0 {
 		return nil, core.ErrBadRequest
 	}

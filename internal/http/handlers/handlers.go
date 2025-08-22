@@ -44,8 +44,7 @@ func (r *MuxRouter) registerHandlers(h Handlers) {
 	r.router.HandleFunc("/users/id", Handle(h.UserHandler.GetUser))
 	r.router.HandleFunc("/users/add", Handle(h.UserHandler.AddUser))
 	r.router.HandleFunc("/users/delete", Handle(h.UserHandler.DeleteUser))
-
-	// todo: products related handlers
+	r.router.HandleFunc("/users/update", Handle(h.UserHandler.UpdateUser))
 }
 
 type HandlerFunc func(http.ResponseWriter, *http.Request) *core.ApiError

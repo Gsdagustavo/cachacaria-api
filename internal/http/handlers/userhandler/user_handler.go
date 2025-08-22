@@ -6,6 +6,7 @@ import (
 	"cachacariaapi/internal/usecases"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -194,12 +195,20 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.A
 }
 
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.ApiError {
-	if apiErr := ValidateRequestMethod(r, http.MethodDelete); apiErr != nil {
+	if apiErr := ValidateRequestMethod(r, http.MethodPut); apiErr != nil {
+		log.Printf("returning api err %v", apiErr)
 		return apiErr
 	}
 
 	query := r.URL.Query()
-	if !query.Has("id") {
+
+	log.Printf("Query: %v", query)
+
+	hasId := query.Has("id")
+
+	log.Printf("has id: %v", hasId)
+
+	if !hasId {
 		return &core.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "id is required",
@@ -207,6 +216,10 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.A
 	}
 
 	id, err := strconv.ParseInt(query.Get("id"), 10, 64)
+
+	log.Printf("id: %v", id)
+	log.Printf("err: %v", err)
+
 	if err != nil {
 		return &core.ApiError{
 			Code:    http.StatusBadRequest,
@@ -224,7 +237,6 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.A
 	}
 
 	res, err := h.UserUseCases.Update(req, id)
-
 	if err != nil {
 		var apiErr *core.ApiError
 		if errors.As(err, &apiErr) {

@@ -16,6 +16,7 @@ func main() {
 	//add()
 	//findById()
 	//delete()
+	//update()
 	get()
 }
 
@@ -53,15 +54,7 @@ func add() {
 
 	jsonData, _ := json.Marshal(userRequest)
 
-	//if err != nil {
-	//	log.Fatalf("Failed to marshal json: %v", err)
-	//}
-
 	req, _ := http.NewRequest("POST", "http://localhost:8080/users/add", bytes.NewBuffer(jsonData))
-
-	//if err != nil {
-	//	log.Fatalf("Failed to create request: %v", err)
-	//}
 
 	req.Header.Set("Content-Type", "application/json")
 
@@ -70,10 +63,6 @@ func add() {
 	}
 
 	resp, _ := client.Do(req)
-
-	//if err != nil {
-	//	log.Fatalf("Failed to make request: %v", err)
-	//}
 
 	bd, _ := ioutil.ReadAll(resp.Body)
 
@@ -88,10 +77,6 @@ func get() {
 	}
 	defer resp.Body.Close()
 
-	//if resp.StatusCode != http.StatusOK {
-	//	log.Fatalf("Expected status 200 OK, got %v", resp.StatusCode)
-	//}
-
 	log.Printf("Response: %v\n", resp)
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -104,25 +89,45 @@ func get() {
 }
 
 func delete() {
-	req, err := http.NewRequest("DELETE", "http://localhost:8080/users/delete?id=1", nil)
+	req, _ := http.NewRequest("DELETE", "http://localhost:8080/users/delete?id=2", nil)
 
 	client := &http.Client{}
 
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err != nil {
-		log.Fatalf("Failed to make request: %v", err)
-	}
+	resp, _ := client.Do(req)
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("Failed to read response body: %v", err)
-	}
+	body, _ := ioutil.ReadAll(resp.Body)
 
 	fmt.Println("Response body:")
 	fmt.Println(string(body))
+}
+
+func update() {
+	userRequest := models.UserRequest{
+		Name:  "123",
+		Email: "@gmail.com",
+		//Password: "eqweqewqewqewqeq",
+		//Phone:    "479990dadw9090990",
+		//IsAdm:    true,
+	}
+
+	jsonData, _ := json.Marshal(userRequest)
+
+	req, _ := http.NewRequest("PUT", "http://localhost:8080/users/update?id=7", bytes.NewBuffer(jsonData))
+
+	log.Printf("Updating user: %v", userRequest)
+	log.Printf("Request: %v", req)
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{
+		Timeout: time.Second * 10,
+	}
+
+	resp, _ := client.Do(req)
+
+	bd, _ := ioutil.ReadAll(resp.Body)
+
+	log.Printf("Status code: %v", resp.StatusCode)
+	log.Printf("Response body: %v", string(bd))
 }

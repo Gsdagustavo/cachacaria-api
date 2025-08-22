@@ -5,6 +5,7 @@ import (
 	"cachacariaapi/internal/models"
 	"database/sql"
 	"errors"
+	"log"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -96,17 +97,34 @@ func (r *UserRepository) FindById(userId int64) (*models.User, error) {
 }
 
 func (r *UserRepository) Update(user models.UserRequest, userId int64) (*models.UserResponse, error) {
-	foundUser, err := r.FindById(userId)
+	existing, err := r.FindById(userId)
+
 	if err != nil {
 		return nil, err
 	}
 
-	if foundUser == nil {
+	if existing == nil {
 		return nil, core.ErrNotFound
 	}
 
-	const query = "UPDATE USERS SET (?, ?, ?, ?, ?) WHERE ID = ?)"
-	_, err = r.DB.Exec(query, user.Name, user.Email, user.Password, user.Phone, userId, userId)
+	if user.Name != "" {
+		existing.Name = user.Name
+	}
+
+	if user.Email != "" {
+		existing.Email = user.Email
+	}
+
+	if user.Phone != "" {
+		existing.Phone = user.Phone
+	}
+
+	existing.IsAdm = user.IsAdm
+
+	const query = "UPDATE USERS SET NAME = ?, EMAIL = ?, PASSWORD = ?, PHONE = ?, IS_ADM = ? WHERE ID = ?"
+	_, err = r.DB.Exec(query, existing.Name, existing.Email, existing.Password, existing.Phone, existing.IsAdm, userId)
+
+	log.Printf("Err: %v", err)
 
 	return &models.UserResponse{ID: userId}, nil
 }

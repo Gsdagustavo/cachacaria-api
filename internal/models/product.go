@@ -11,7 +11,7 @@ type Product struct {
 	Award        string  `json:"award"`
 }
 
-type AddProductRequest struct {
+type ProductRequest struct {
 	Name         string  `json:"name"`
 	Description  string  `json:"description"`
 	Price        float32 `json:"price"`
