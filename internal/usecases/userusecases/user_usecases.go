@@ -5,7 +5,6 @@ import (
 	"cachacariaapi/internal/models"
 	"cachacariaapi/internal/repositories/userrepository"
 	"errors"
-	"log"
 )
 
 type UserUseCases struct {
@@ -25,10 +24,6 @@ func (u *UserUseCases) GetAll() ([]models.User, error) {
 func (u *UserUseCases) Add(user models.UserRequest) (*models.UserResponse, error) {
 	if err := validateUserRequest(user); err != nil {
 		return nil, err
-	}
-
-	if len(user.Password) < 8 {
-		return nil, core.ErrBadRequest
 	}
 
 	res, err := u.r.Add(user)
@@ -63,7 +58,8 @@ func (u *UserUseCases) FindById(userid int64) (*models.User, error) {
 	return u.r.FindById(userid)
 }
 
-// Update TODO: add update method in the user repository
+// Update a user from the database from the given UserRequest and userId
+// Returns a UserResponse oran error if any occurs
 func (u *UserUseCases) Update(user models.UserRequest, userId int64) (*models.UserResponse, error) {
 	if err := validateUserRequest(user); err != nil {
 		return nil, err
@@ -83,7 +79,10 @@ func (u *UserUseCases) Update(user models.UserRequest, userId int64) (*models.Us
 
 func validateUserRequest(req models.UserRequest) error {
 	if req.Name == "" || req.Password == "" || req.Email == "" || req.Phone == "" {
-		log.Printf("returning bad request from usecases")
+		return core.ErrBadRequest
+	}
+
+	if len(req.Password) < 8 {
 		return core.ErrBadRequest
 	}
 
