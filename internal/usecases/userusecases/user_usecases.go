@@ -5,6 +5,7 @@ import (
 	"cachacariaapi/internal/models"
 	"cachacariaapi/internal/repositories/userrepository"
 	"errors"
+	"log"
 )
 
 type UserUseCases struct {
@@ -22,26 +23,23 @@ func (u *UserUseCases) GetAll() ([]models.User, error) {
 
 // Add a user and returns a UserRespons, or an error if any occurs
 func (u *UserUseCases) Add(user models.UserRequest) (*models.UserResponse, error) {
-
-	// if any of the fields were not given, return an ApiError with code 400 and a message
-	if user.Name == "" || user.Password == "" || user.Email == "" || user.Phone == "" {
-		return nil, &core.ApiError{Code: 400, Message: "all fields are required"}
+	if err := validateUserRequest(user); err != nil {
+		return nil, err
 	}
 
-	// if the password length is less than the required length, return an ApiError with code 400 and a message
 	if len(user.Password) < 8 {
-		return nil, &core.ApiError{Code: 400, Message: "password must contain at least 8 characters"}
+		return nil, core.ErrBadRequest
 	}
 
-	// try to add the user calling the repository
 	res, err := u.r.Add(user)
-
-	// if any other error occurs while adding the user, return an ApiError with code 500 and a message
 	if err != nil {
-		return nil, &core.ApiError{Code: 500, Message: "could not add user", Err: err}
+		if errors.Is(err, core.ErrConflict) {
+			return nil, core.ErrConflict
+		}
+
+		return nil, core.ErrInternal
 	}
 
-	// return the response
 	return res, nil
 }
 
@@ -49,12 +47,12 @@ func (u *UserUseCases) Add(user models.UserRequest) (*models.UserResponse, error
 func (u *UserUseCases) Delete(userId int64) error {
 	_, err := u.FindById(userId)
 	if err != nil {
-		return errors.New("user not found. error: " + err.Error())
+		return err
 	}
 
 	err = u.r.Delete(userId)
 	if err != nil {
-		return errors.New("user could not be deleted. error: " + err.Error())
+		return err
 	}
 
 	return nil
@@ -66,17 +64,28 @@ func (u *UserUseCases) FindById(userid int64) (*models.User, error) {
 }
 
 // Update TODO: add update method in the user repository
-//func (u *UserUseCases) Update(userId int64) error {
-//
-//	_, err := u.FindById(userId)
-//	if err != nil {
-//		return errors.New("user not found. error: " + err.Error())
-//	}
-//
-//	err = u.r.Delete(userId)
-//	if err != nil {
-//		return errors.New("user could not be deleted. error: " + err.Error())
-//	}
-//
-//	return nil
-//}
+func (u *UserUseCases) Update(user models.UserRequest, userId int64) (*models.UserResponse, error) {
+	if err := validateUserRequest(user); err != nil {
+		return nil, err
+	}
+
+	if userId <= 0 {
+		return nil, core.ErrBadRequest
+	}
+
+	res, err := u.r.Update(user, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func validateUserRequest(req models.UserRequest) error {
+	if req.Name == "" || req.Password == "" || req.Email == "" || req.Phone == "" {
+		log.Printf("returning bad request from usecases")
+		return core.ErrBadRequest
+	}
+
+	return nil
+}

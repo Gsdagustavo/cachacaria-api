@@ -5,13 +5,9 @@ import (
 )
 
 type UserRepository interface {
-	GetAll() []models.User
-	Add(user models.AddUserRequest) (*models.AddUserResponse, error)
+	GetAll() ([]models.User, error)
+	Add(user models.UserRequest) (*models.UserResponse, error)
 	Delete(userId int64) error
 	FindById(userid int64) (*models.User, error)
-}
-
-type ProductRepository interface {
-	GetAll() []models.Product
-	Add(user models.AddProductRequest) (models.AddProductResponse, error)
+	Update(user models.UserRequest, userId int64) (*models.UserResponse, error)
 }

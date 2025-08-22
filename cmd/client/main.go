@@ -20,52 +20,48 @@ func main() {
 }
 
 func findById() {
-	res, err := http.Get("http://localhost:8080/users/id?id=6")
-
-	//var body string
-	//json.NewDecoder(res.Body).Decode(&body)
-	//log.Printf("Body: %v", body)
-
-	if res.StatusCode != http.StatusOK || res.ContentLength == 0 || err != nil {
-		log.Printf("error while trying to find by id. Status Code: %v", res.StatusCode)
-		return
-	}
-
-	var user models.User
-	err = json.NewDecoder(res.Body).Decode(&user)
+	res, err := http.Get("http://localhost:8080/users/id?id=5")
 
 	if err != nil {
-		log.Printf("error while trying to decode userhandler data: %v", err)
-		return
+		log.Fatal(err)
 	}
 
-	prettyJSON, err := json.MarshalIndent(user, "", "  ")
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	log.Printf("\nUser found: %v", string(prettyJSON))
+	user := models.User{}
+	err = json.Unmarshal(body, &user)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("user: %v", user)
 }
 
 func add() {
 	userRequest := models.UserRequest{
-		Name:     "Test",
+		Name:     "test",
 		Email:    "test@gmail.com",
-		Password: "1234567890",
-		Phone:    "479912093192",
+		Password: "01234567890",
+		Phone:    "4799909090990",
 		IsAdm:    true,
 	}
 
 	log.Printf("Adding user: %v", userRequest)
 
-	jsonData, err := json.Marshal(userRequest)
+	jsonData, _ := json.Marshal(userRequest)
 
-	if err != nil {
-		log.Fatalf("Failed to marshal json: %v", err)
-	}
+	//if err != nil {
+	//	log.Fatalf("Failed to marshal json: %v", err)
+	//}
 
-	req, err := http.NewRequest("POST", "http://localhost:8080/users/add", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", "http://localhost:8080/users/add", bytes.NewBuffer(jsonData))
 
-	if err != nil {
-		log.Fatalf("Failed to create request: %v", err)
-	}
+	//if err != nil {
+	//	log.Fatalf("Failed to create request: %v", err)
+	//}
 
 	req.Header.Set("Content-Type", "application/json")
 
@@ -73,13 +69,16 @@ func add() {
 		Timeout: time.Second * 10,
 	}
 
-	resp, err := client.Do(req)
+	resp, _ := client.Do(req)
 
-	if err != nil {
-		log.Fatalf("Failed to make request: %v", err)
-	}
+	//if err != nil {
+	//	log.Fatalf("Failed to make request: %v", err)
+	//}
 
-	fmt.Printf("Response: %v\n", resp)
+	bd, _ := ioutil.ReadAll(resp.Body)
+
+	log.Printf("Status code: %v", resp.StatusCode)
+	log.Printf("Response body: %v", string(bd))
 }
 
 func get() {
@@ -118,10 +117,6 @@ func delete() {
 		log.Fatalf("Failed to make request: %v", err)
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Expected status 200 OK, got %v", resp.StatusCode)
-	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

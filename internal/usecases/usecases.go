@@ -7,4 +7,5 @@ type UserUseCases interface {
 	Add(user models.UserRequest) (*models.UserResponse, error)
 	Delete(userId int64) error
 	FindById(userid int64) (*models.User, error)
+	Update(user models.UserRequest, userId int64) (*models.UserResponse, error)
 }

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"cachacariaapi/internal/http/core"
 	"cachacariaapi/internal/http/handlers/userhandler"
 	"fmt"
 	"log"
@@ -38,12 +39,21 @@ type Handlers struct {
 }
 
 func (r *MuxRouter) registerHandlers(h Handlers) {
-
-	// userhandler related handlers
-	r.router.HandleFunc("/users", h.UserHandler.GetAll)
-	//r.router.HandleFunc("/users/id", h.UserHandler.GetUser)
-	//r.router.HandleFunc("/users/add", h.UserHandler.AddUser)
-	//r.router.HandleFunc("/users/delete", h.UserHandler.DeleteUser)
+	// user related handlers
+	r.router.HandleFunc("/users", Handle(h.UserHandler.GetAll))
+	r.router.HandleFunc("/users/id", Handle(h.UserHandler.GetUser))
+	r.router.HandleFunc("/users/add", Handle(h.UserHandler.AddUser))
+	r.router.HandleFunc("/users/delete", Handle(h.UserHandler.DeleteUser))
 
 	// todo: products related handlers
+}
+
+type HandlerFunc func(http.ResponseWriter, *http.Request) *core.ApiError
+
+func Handle(h HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if apiErr := h(w, r); apiErr != nil {
+			apiErr.WriteHTTP(w)
+		}
+	}
 }
