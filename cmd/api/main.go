@@ -8,25 +8,20 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/go-sql-driver/mysql"
 )
 
-/*
-database variables
-
-TODO: save into env variables in Docker
-*/
-var user = "root"
-var passwd = "root"
-var host = "localhost"
-var dbPort = "3306"
+var user = os.Getenv("DB_USER")
+var passwd = os.Getenv("DB_PASSWORD")
+var host = os.Getenv("DB_HOST")
+var dbPort = os.Getenv("DB_PORT")
+var dbName = os.Getenv("DB_NAME")
 var net = "tcp"
 var addr = fmt.Sprintf("%s:%s", host, dbPort)
-var dbName = "cachacadb"
 
-// http server variables
-var serverPort = "8080"
+var serverPort = os.Getenv("SERVER_PORT")
 
 func main() {
 	cfg := mysql.Config{

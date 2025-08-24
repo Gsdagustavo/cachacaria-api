@@ -17,7 +17,7 @@ func main() {
 	//findById()
 	//delete()
 	//update()
-	get()
+	//get()
 }
 
 func findById() {
