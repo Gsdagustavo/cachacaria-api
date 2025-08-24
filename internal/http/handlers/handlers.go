@@ -45,6 +45,11 @@ func (r *MuxRouter) registerHandlers(h Handlers) {
 	r.router.HandleFunc("/users/add", Handle(h.UserHandler.AddUser))
 	r.router.HandleFunc("/users/delete", Handle(h.UserHandler.DeleteUser))
 	r.router.HandleFunc("/users/update", Handle(h.UserHandler.UpdateUser))
+
+	// docs
+	r.router.HandleFunc("/docs", func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, "index.html")
+	})
 }
 
 type HandlerFunc func(http.ResponseWriter, *http.Request) *core.ApiError

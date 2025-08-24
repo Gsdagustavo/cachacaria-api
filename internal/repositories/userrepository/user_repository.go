@@ -30,6 +30,7 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 	if err != nil {
 		return nil, core.ErrInternal
 	}
+
 	defer rows.Close()
 
 	for rows.Next() {
@@ -37,12 +38,15 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
 			return nil, core.ErrInternal
 		}
-
 		users = append(users, user)
 	}
 
-	if len(users) == 0 {
-		return nil, core.ErrNotFound
+	if err := rows.Err(); err != nil {
+		return nil, core.ErrInternal
+	}
+
+	if users == nil {
+		users = []models.User{}
 	}
 
 	return users, nil
@@ -50,7 +54,7 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 
 // Add a user to the database, or an error if any occurs
 func (r *UserRepository) Add(user models.UserRequest) (*models.UserResponse, error) {
-	const query = "INSERT INTO USERS (name, email, password, phone, is_adm) VALUES (?, ?, ?, ?, ?)"
+	const query = "INSERT INTO users (name, email, password, phone, is_adm) VALUES (?, ?, ?, ?, ?)"
 
 	res, err := r.DB.Exec(query, user.Name, user.Email, user.Password, user.Phone, user.IsAdm)
 	if err != nil {
@@ -68,7 +72,7 @@ func (r *UserRepository) Add(user models.UserRequest) (*models.UserResponse, err
 
 // Delete a user from the database with the given userId. Return an error if any occurs
 func (r *UserRepository) Delete(userId int64) error {
-	const query = "DELETE FROM USERS WHERE ID = ?"
+	const query = "DELETE FROM users WHERE id = ?"
 
 	_, err := r.DB.Exec(query, userId)
 
@@ -81,7 +85,7 @@ func (r *UserRepository) Delete(userId int64) error {
 
 // FindById returns the user with the given userId in the database, or an error if any occurs
 func (r *UserRepository) FindById(userId int64) (*models.User, error) {
-	const query = "SELECT id, name, email, password, phone, is_adm FROM USERS WHERE ID = ?"
+	const query = "SELECT id, name, email, password, phone, is_adm FROM users WHERE id = ?"
 
 	row := r.DB.QueryRow(query, userId)
 
@@ -121,7 +125,7 @@ func (r *UserRepository) Update(user models.UserRequest, userId int64) (*models.
 
 	existing.IsAdm = user.IsAdm
 
-	const query = "UPDATE USERS SET NAME = ?, EMAIL = ?, PASSWORD = ?, PHONE = ?, IS_ADM = ? WHERE ID = ?"
+	const query = "UPDATE users SET name = ?, email = ?, password = ?, phone = ?, id_adm = ? WHERE id = ?"
 	_, err = r.DB.Exec(query, existing.Name, existing.Email, existing.Password, existing.Phone, existing.IsAdm, userId)
 
 	log.Printf("Err: %v", err)
