@@ -26,7 +26,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 func (r *UserRepository) GetAll() ([]models.User, error) {
 	var users []models.User
 
-	rows, err := r.DB.Query("SELECT id, name, email, password, phone, is_adm FROM USERS")
+	rows, err := r.DB.Query("SELECT id, email, password, phone, is_adm FROM USERS")
 	if err != nil {
 		return nil, core.ErrInternal
 	}
@@ -35,7 +35,7 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 
 	for rows.Next() {
 		var user models.User
-		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
+		if err := rows.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
 			return nil, core.ErrInternal
 		}
 		users = append(users, user)
@@ -54,9 +54,9 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 
 // Add a user to the database, or an error if any occurs
 func (r *UserRepository) Add(user models.UserRequest) (*models.UserResponse, error) {
-	const query = "INSERT INTO users (name, email, password, phone, is_adm) VALUES (?, ?, ?, ?, ?)"
+	const query = "INSERT INTO users (email, password, phone, is_adm) VALUES (?, ?, ?, ?, ?)"
 
-	res, err := r.DB.Exec(query, user.Name, user.Email, user.Password, user.Phone, user.IsAdm)
+	res, err := r.DB.Exec(query, user.Email, user.Password, user.Phone, user.IsAdm)
 	if err != nil {
 		var mysqlErr *mysql.MySQLError
 		if errors.As(err, &mysqlErr) && mysqlErr.Number == mysqlErrConflict {
@@ -83,14 +83,32 @@ func (r *UserRepository) Delete(userId int64) error {
 	return nil
 }
 
+// FindById returns the user with the given userId, or an error if any occurs
+func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
+	const query = "SELECT id, email, password, phone, is_adm FROM users WHERE email = ?"
+
+	row := r.DB.QueryRow(query, email)
+
+	var user models.User
+	if err := row.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, core.ErrNotFound
+		}
+
+		return nil, core.ErrInternal
+	}
+
+	return &user, nil
+}
+
 // FindById returns the user with the given userId in the database, or an error if any occurs
 func (r *UserRepository) FindById(userId int64) (*models.User, error) {
-	const query = "SELECT id, name, email, password, phone, is_adm FROM users WHERE id = ?"
+	const query = "SELECT id, email, password, phone, is_adm FROM users WHERE id = ?"
 
 	row := r.DB.QueryRow(query, userId)
 
 	var user models.User
-	if err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
+	if err := row.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, core.ErrNotFound
 		}
@@ -111,10 +129,6 @@ func (r *UserRepository) Update(user models.UserRequest, userId int64) (*models.
 		return nil, core.ErrNotFound
 	}
 
-	if user.Name != "" {
-		existing.Name = user.Name
-	}
-
 	if user.Email != "" {
 		existing.Email = user.Email
 	}
@@ -125,8 +139,8 @@ func (r *UserRepository) Update(user models.UserRequest, userId int64) (*models.
 
 	existing.IsAdm = user.IsAdm
 
-	const query = "UPDATE users SET name = ?, email = ?, password = ?, phone = ?, id_adm = ? WHERE id = ?"
-	_, err = r.DB.Exec(query, existing.Name, existing.Email, existing.Password, existing.Phone, existing.IsAdm, userId)
+	const query = "UPDATE users SET email = ?, password = ?, phone = ?, id_adm = ? WHERE id = ?"
+	_, err = r.DB.Exec(query, existing.Email, existing.Password, existing.Phone, existing.IsAdm, userId)
 
 	log.Printf("Err: %v", err)
 

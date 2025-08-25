@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"cachacariaapi/internal/http/core"
+	"cachacariaapi/internal/http/handlers/authhandler"
 	"cachacariaapi/internal/http/handlers/userhandler"
 	"fmt"
 	"log"
@@ -36,6 +37,7 @@ func (r *MuxRouter) serveHTTP(port string) {
 // === HANDLERS ===
 type Handlers struct {
 	UserHandler *userhandler.UserHandler
+	AuthHandler *authhandler.AuthHandler
 }
 
 func (r *MuxRouter) registerHandlers(h Handlers) {
@@ -45,6 +47,10 @@ func (r *MuxRouter) registerHandlers(h Handlers) {
 	r.router.HandleFunc("/users/add", Handle(h.UserHandler.AddUser))
 	r.router.HandleFunc("/users/delete", Handle(h.UserHandler.DeleteUser))
 	r.router.HandleFunc("/users/update", Handle(h.UserHandler.UpdateUser))
+
+	// auth handlers
+	r.router.HandleFunc("/auth/register", Handle(h.AuthHandler.Register))
+	r.router.HandleFunc("/auth/login", Handle(h.AuthHandler.Login))
 
 	// docs
 	r.router.HandleFunc("/docs", func(w http.ResponseWriter, req *http.Request) {

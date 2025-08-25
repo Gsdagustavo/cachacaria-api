@@ -53,6 +53,10 @@ func (u *UserUseCases) Delete(userId int64) error {
 	return nil
 }
 
+func (u *UserUseCases) FindByEmail(email string) (*models.User, error) {
+	return u.r.FindByEmail(email)
+}
+
 // FindById returns the user with the given userId, or an error if any occurs
 func (u *UserUseCases) FindById(userid int64) (*models.User, error) {
 	return u.r.FindById(userid)
@@ -74,7 +78,7 @@ func (u *UserUseCases) Update(user models.UserRequest, userId int64) (*models.Us
 }
 
 func validateUserRequest(req models.UserRequest) error {
-	if req.Name == "" || req.Password == "" || req.Email == "" || req.Phone == "" {
+	if req.Password == "" || req.Email == "" || req.Phone == "" {
 		return core.ErrBadRequest
 	}
 

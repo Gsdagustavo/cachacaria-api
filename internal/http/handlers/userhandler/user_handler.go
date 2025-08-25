@@ -19,19 +19,8 @@ func NewUserHandler(u usecases.UserUseCases) *UserHandler {
 	return &UserHandler{u}
 }
 
-func ValidateRequestMethod(r *http.Request, allowedMethod string) *core.ApiError {
-	if r.Method != allowedMethod {
-		return &core.ApiError{
-			Code:    http.StatusMethodNotAllowed,
-			Message: core.ErrMethodNotAllowed.Error(),
-			Err:     nil,
-		}
-	}
-	return nil
-}
-
 func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.ApiError {
-	if apiErr := ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
 		return apiErr
 	}
 
@@ -59,7 +48,7 @@ func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.ApiEr
 }
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core.ApiError {
-	if apiErr := ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
 		return apiErr
 	}
 
@@ -103,7 +92,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core.ApiE
 }
 
 func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) *core.ApiError {
-	if apiErr := ValidateRequestMethod(r, http.MethodPost); apiErr != nil {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodPost); apiErr != nil {
 		return apiErr
 	}
 
@@ -153,7 +142,7 @@ func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) *core.ApiE
 }
 
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.ApiError {
-	if apiErr := ValidateRequestMethod(r, http.MethodDelete); apiErr != nil {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodDelete); apiErr != nil {
 		return apiErr
 	}
 
@@ -195,7 +184,7 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.A
 }
 
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.ApiError {
-	if apiErr := ValidateRequestMethod(r, http.MethodPut); apiErr != nil {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodPut); apiErr != nil {
 		log.Printf("returning api err %v", apiErr)
 		return apiErr
 	}

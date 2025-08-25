@@ -13,11 +13,70 @@ import (
 
 // TODO: add CLI tools for debugging
 func main() {
-	add()
+	//add()
 	//findById()
 	//delete()
 	//update()
 	//get()
+
+	register()
+	//login()
+}
+
+func register() {
+	userRequest := models.UserRequest{
+		Email:    "test@gmail.com",
+		Password: "01234567890",
+		Phone:    "4799909090990",
+		IsAdm:    true,
+	}
+
+	log.Printf("Login: %v", userRequest)
+
+	jsonData, _ := json.Marshal(userRequest)
+
+	req, _ := http.NewRequest("POST", "http://localhost:8080/auth/register", bytes.NewBuffer(jsonData))
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{
+		Timeout: time.Second * 10,
+	}
+
+	resp, _ := client.Do(req)
+
+	bd, _ := ioutil.ReadAll(resp.Body)
+
+	log.Printf("Status code: %v", resp.StatusCode)
+	log.Printf("Response body: %v", string(bd))
+}
+
+func login() {
+	userRequest := models.UserRequest{
+		Email:    "test@gmail.com",
+		Password: "01234567890",
+		Phone:    "4799909090990",
+		IsAdm:    true,
+	}
+
+	log.Printf("Login: %v", userRequest)
+
+	jsonData, _ := json.Marshal(userRequest)
+
+	req, _ := http.NewRequest("POST", "http://localhost:8080/auth/login", bytes.NewBuffer(jsonData))
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{
+		Timeout: time.Second * 10,
+	}
+
+	resp, _ := client.Do(req)
+
+	bd, _ := ioutil.ReadAll(resp.Body)
+
+	log.Printf("Status code: %v", resp.StatusCode)
+	log.Printf("Response body: %v", string(bd))
 }
 
 func findById() {
@@ -43,7 +102,6 @@ func findById() {
 
 func add() {
 	userRequest := models.UserRequest{
-		Name:     "test",
 		Email:    "test@gmail.com",
 		Password: "01234567890",
 		Phone:    "4799909090990",
@@ -104,7 +162,6 @@ func delete() {
 
 func update() {
 	userRequest := models.UserRequest{
-		Name:  "123",
 		Email: "@gmail.com",
 		//Password: "eqweqewqewqewqeq",
 		//Phone:    "479990dadw9090990",
