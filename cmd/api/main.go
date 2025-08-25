@@ -20,8 +20,16 @@ var dbPort = os.Getenv("DB_PORT")
 var dbName = os.Getenv("DB_NAME")
 var net = "tcp"
 var addr = fmt.Sprintf("%s:%s", host, dbPort)
-
 var serverPort = os.Getenv("SERVER_PORT")
+
+//var user = "root"
+//var passwd = "admin"
+//var host = "127.0.0.1"
+//var dbPort = "3306"
+//var dbName = "cachacadb"
+//var net = "tcp"
+//var addr = fmt.Sprintf("%s:%s", host, dbPort)
+//var serverPort = "8080"
 
 func main() {
 	cfg := mysql.Config{
