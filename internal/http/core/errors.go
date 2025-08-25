@@ -31,7 +31,7 @@ func (e *ApiError) Error() string {
 	return e.Message
 }
 
-func (e ApiError) WriteHTTP(w http.ResponseWriter) {
+func (e *ApiError) WriteHTTP(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(e.Code)
 

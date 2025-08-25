@@ -32,27 +32,36 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 	log.Println("Registering user")
 
 	var user models.UserRequest
-	err := json.NewDecoder(r.Body).Decode(&user)
-	if err != nil {
-		return &core.ApiError{
-			Err: err,
-		}
-	}
+	json.NewDecoder(r.Body).Decode(&user)
+
+	log.Printf("User: %v", user)
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return &core.ApiError{
-			Err: err,
-		}
-	}
+	//if err != nil {
+	//	log.Printf("err: %v", err)
+	//	return &core.ApiError{
+	//		Code:    http.StatusBadRequest,
+	//		Message: "bad request",
+	//		Err:     err,
+	//	}
+	//}
+
+	log.Printf("HashedPassword: %v", string(hashedPassword))
 
 	user.Password = string(hashedPassword)
 
 	response, err := h.UserUseCases.Add(user)
+
+	log.Printf("Response: %v", response)
+	log.Printf("err: %v", err)
+
 	if err != nil {
-		return &core.ApiError{
-			Err: err,
-		}
+		e := &core.ApiError{
+			Code:    http.StatusBadRequest,
+			Message: "bad request",
+			Err:     err}
+
+		return e
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -73,14 +82,18 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 	err := json.NewDecoder(r.Body).Decode(&creds)
 	if err != nil {
 		return &core.ApiError{
-			Err: err,
+			Code:    http.StatusBadRequest,
+			Message: "bad request",
+			Err:     err,
 		}
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return &core.ApiError{
-			Err: err,
+			Code:    http.StatusBadRequest,
+			Message: "bad request",
+			Err:     err,
 		}
 	}
 
@@ -89,7 +102,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 	user, err := h.UserUseCases.FindByEmail(creds.Email)
 	if err != nil {
 		return &core.ApiError{
-			Err: err,
+			Code:    http.StatusBadRequest,
+			Message: "bad request",
+			Err:     err,
 		}
 	}
 
