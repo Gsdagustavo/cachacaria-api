@@ -6,6 +6,9 @@
         <function importPath="net/http" name="Get" />
         <function importPath="net/http" name="NewRequest" />
       </functions>
+      <methods>
+        <method importPath="cachacariaapi/internal/usecases" receiver="UserUseCases" name="Add" />
+      </methods>
     </inspection_tool>
     <inspection_tool class="GoUnhandledErrorResult" enabled="true" level="WARNING" enabled_by_default="true">
       <methods>
@@ -22,6 +25,7 @@
         <method importPath="encoding/json" receiver="*Encoder" name="Encode" />
         <method importPath="net/http" receiver="ResponseWriter" name="Write" />
         <method importPath="database/sql" receiver="*Rows" name="Close" />
+        <method importPath="encoding/json" receiver="*Decoder" name="Decode" />
       </methods>
     </inspection_tool>
   </profile>

@@ -21,12 +21,12 @@ func (u *UserUseCases) GetAll() ([]models.User, error) {
 }
 
 // Add a user and returns a UserRespons, or an error if any occurs
-func (u *UserUseCases) Add(user models.UserRequest) (*models.UserResponse, error) {
-	if err := validateUserRequest(user); err != nil {
+func (u *UserUseCases) Add(req models.RegisterRequest) (*models.UserResponse, error) {
+	if err := validateRegisterRequest(req); err != nil {
 		return nil, err
 	}
 
-	res, err := u.r.Add(user)
+	res, err := u.r.Add(req)
 	if err != nil {
 		if errors.Is(err, core.ErrConflict) {
 			return nil, core.ErrConflict
@@ -83,6 +83,14 @@ func validateUserRequest(req models.UserRequest) error {
 	}
 
 	if len(req.Password) < 8 {
+		return core.ErrBadRequest
+	}
+
+	return nil
+}
+
+func validateRegisterRequest(req models.RegisterRequest) error {
+	if req.Password == "" || req.Email == "" || req.Phone == "" {
 		return core.ErrBadRequest
 	}
 

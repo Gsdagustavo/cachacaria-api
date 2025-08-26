@@ -53,7 +53,7 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 }
 
 // Add a user to the database, or an error if any occurs
-func (r *UserRepository) Add(user models.UserRequest) (*models.UserResponse, error) {
+func (r *UserRepository) Add(user models.RegisterRequest) (*models.UserResponse, error) {
 	const query = "INSERT INTO users (email, password, phone, is_adm) VALUES (?, ?, ?, ?)"
 
 	res, err := r.DB.Exec(query, user.Email, user.Password, user.Phone, user.IsAdm)

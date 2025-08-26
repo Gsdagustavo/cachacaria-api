@@ -5,6 +5,7 @@ import (
 	"cachacariaapi/internal/models"
 	"cachacariaapi/internal/usecases"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -29,43 +30,47 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 		return apiErr
 	}
 
-	log.Println("Registering user")
+	var request models.RegisterRequest
+	json.NewDecoder(r.Body).Decode(&request)
 
-	var user models.UserRequest
-	json.NewDecoder(r.Body).Decode(&user)
-
-	log.Printf("User: %v", user)
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	//if err != nil {
-	//	log.Printf("err: %v", err)
-	//	return &core.ApiError{
-	//		Code:    http.StatusBadRequest,
-	//		Message: "bad request",
-	//		Err:     err,
-	//	}
-	//}
-
-	log.Printf("HashedPassword: %v", string(hashedPassword))
-
-	user.Password = string(hashedPassword)
-
-	response, err := h.UserUseCases.Add(user)
-
-	log.Printf("Response: %v", response)
-	log.Printf("err: %v", err)
-
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+	request.Password = string(hashedPassword)
+	_, err = h.UserUseCases.Add(request)
 	if err != nil {
 		e := &core.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "bad request",
-			Err:     err}
+			Err:     err,
+		}
 
 		return e
 	}
 
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"exp": time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return &core.ApiError{
+			Code:    http.StatusInternalServerError,
+			Message: "token generation error",
+			Err:     err,
+		}
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    tokenString,
+		Expires:  time.Now().Add(time.Hour * 24),
+		HttpOnly: true,
+		//Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	})
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(tokenString)
 	return nil
 }
 
@@ -74,13 +79,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 		return apiErr
 	}
 
-	var creds struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-
-	err := json.NewDecoder(r.Body).Decode(&creds)
+	var req models.LoginRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		log.Printf("err: %v", err)
+
 		return &core.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "bad request",
@@ -88,27 +91,24 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 		}
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), bcrypt.DefaultCost)
+	user, err := h.UserUseCases.FindByEmail(req.Email)
 	if err != nil {
+		if errors.Is(err, core.ErrNotFound) {
+			return &core.ApiError{
+				Code:    http.StatusNotFound,
+				Message: "user not found",
+				Err:     err,
+			}
+		}
+
 		return &core.ApiError{
-			Code:    http.StatusBadRequest,
-			Message: "bad request",
+			Code:    http.StatusInternalServerError,
+			Message: "internal server error",
 			Err:     err,
 		}
 	}
 
-	creds.Password = string(hashedPassword)
-
-	user, err := h.UserUseCases.FindByEmail(creds.Email)
-	if err != nil {
-		return &core.ApiError{
-			Code:    http.StatusBadRequest,
-			Message: "bad request",
-			Err:     err,
-		}
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		return &core.ApiError{
 			Code:    http.StatusUnauthorized,
 			Message: "invalid password",
@@ -121,7 +121,26 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})
 
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return &core.ApiError{
+			Code:    http.StatusInternalServerError,
+			Message: "token generation error",
+			Err:     err,
+		}
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    tokenString,
+		Expires:  time.Now().Add(time.Hour * 24),
+		HttpOnly: true,
+		//Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	})
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(token)
+	json.NewEncoder(w).Encode(tokenString)
 	return nil
 }

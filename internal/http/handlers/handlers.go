@@ -44,7 +44,7 @@ func (r *MuxRouter) registerHandlers(h Handlers) {
 	// user related handlers
 	r.router.HandleFunc("/users", Handle(h.UserHandler.GetAll))
 	r.router.HandleFunc("/users/id", Handle(h.UserHandler.GetUser))
-	r.router.HandleFunc("/users/add", Handle(h.UserHandler.AddUser))
+	//r.router.HandleFunc("/users/add", Handle(h.UserHandler.AddUser))
 	r.router.HandleFunc("/users/delete", Handle(h.UserHandler.DeleteUser))
 	r.router.HandleFunc("/users/update", Handle(h.UserHandler.UpdateUser))
 
