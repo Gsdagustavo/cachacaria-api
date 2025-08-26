@@ -35,7 +35,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 	request.Password = string(hashedPassword)
-	_, err = h.UserUseCases.Add(request)
+	user, err := h.UserUseCases.Add(request)
 	if err != nil {
 		e := &core.ApiError{
 			Code:    http.StatusBadRequest,
@@ -47,7 +47,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"user_id": user.ID,
+		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})
 
 	tokenString, err := token.SignedString(jwtSecret)
