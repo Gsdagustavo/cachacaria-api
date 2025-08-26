@@ -15,14 +15,19 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
-
 type AuthHandler struct {
 	UserUseCases usecases.UserUseCases
+	jtwSecret    []byte
 }
 
 func NewAuthHandler(userUseCases usecases.UserUseCases) *AuthHandler {
-	return &AuthHandler{UserUseCases: userUseCases}
+	secret := os.Getenv("JWT_SECRET")
+
+	if secret == "" {
+		log.Fatal("JWT_SECRET is not set in environment")
+	}
+
+	return &AuthHandler{UserUseCases: userUseCases, jtwSecret: []byte(secret)}
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.ApiError {
@@ -51,7 +56,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})
 
-	tokenString, err := token.SignedString(jwtSecret)
+	tokenString, err := token.SignedString(h.jtwSecret)
 	if err != nil {
 		return &core.ApiError{
 			Code:    http.StatusInternalServerError,
@@ -110,6 +115,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		log.Printf("err: %v", err)
+
 		return &core.ApiError{
 			Code:    http.StatusUnauthorized,
 			Message: "invalid password",
@@ -122,7 +129,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})
 
-	tokenString, err := token.SignedString(jwtSecret)
+	tokenString, err := token.SignedString(h.jtwSecret)
 	if err != nil {
 		return &core.ApiError{
 			Code:    http.StatusInternalServerError,

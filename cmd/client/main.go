@@ -19,14 +19,14 @@ func main() {
 	//update()
 	//get()
 
-	//register()
+	register()
 	login()
 }
 
 func register() {
 	userRequest := models.UserRequest{
 		Email:    "alex@gmail.com",
-		Password: "ilovetosauckaocck",
+		Password: "alexpassword",
 		Phone:    "4799909090990",
 		IsAdm:    true,
 	}
@@ -54,7 +54,7 @@ func register() {
 func login() {
 	userRequest := models.LoginRequest{
 		Email:    "alex@gmail.com",
-		Password: "ilovetosauckaocck",
+		Password: "alexpassword",
 	}
 
 	log.Printf("Login: %v", userRequest)
