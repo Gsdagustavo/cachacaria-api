@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
@@ -25,6 +26,7 @@ func NewMuxRouter() *MuxRouter {
 
 func (r *MuxRouter) StartServer(h Handlers, port string) {
 	r.registerHandlers(h)
+	r.router.Use(CORSMiddleware)
 	r.serveHTTP(port)
 }
 
@@ -76,22 +78,29 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 	log.Printf("on auth middleware")
 
 	return func(w http.ResponseWriter, r *http.Request) *core.ApiError {
-		cookie, err := r.Cookie("auth_token")
-		if err != nil {
-			return &core.ApiError{
-				Code:    http.StatusUnauthorized,
-				Message: "unauthorized: no token provided",
-				Err:     err,
+		var tokenString string
+
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" && strings.HasPrefix(authHeader, "Bearer ") {
+			tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+		} else {
+			cookie, err := r.Cookie("auth_token")
+			if err != nil {
+				return &core.ApiError{
+					Code:    http.StatusUnauthorized,
+					Message: "unauthorized: no token provided",
+					Err:     err,
+				}
 			}
+
+			tokenString = cookie.Value
 		}
 
-		tokenStr := cookie.Value
-		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
 
-			// TODO: move the secret key to a .env file
 			return []byte(os.Getenv("JWT_SECRET")), nil
 		})
 
@@ -112,7 +121,32 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 			}
 		}
 
-		ctx := context.WithValue(r.Context(), "user_id", claims["user_id"])
+		userID, ok := claims["user_id"].(float64)
+		if !ok {
+			return &core.ApiError{
+				Code:    http.StatusUnauthorized,
+				Message: "unauthorized: invalid user_id",
+			}
+		}
+
+		ctx := context.WithValue(r.Context(), "user_id", int64(userID))
 		return next(w, r.WithContext(ctx))
 	}
+}
+
+func CORSMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:5501")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Expose-Headers", "Authorization")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

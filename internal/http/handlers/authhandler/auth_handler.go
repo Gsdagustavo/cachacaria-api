@@ -31,7 +31,16 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 	}
 
 	var request models.RegisterRequest
-	json.NewDecoder(r.Body).Decode(&request)
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		log.Printf("err: %v", err)
+
+		return &core.ApiError{
+			Code:    http.StatusBadRequest,
+			Message: "bad request",
+			Err:     err,
+		}
+	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 	request.Password = string(hashedPassword)
@@ -66,11 +75,12 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 		Expires:  time.Now().Add(time.Hour * 24),
 		HttpOnly: true,
 		//Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 		Path:     "/",
 	})
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Authorization", "Bearer "+tokenString)
 	json.NewEncoder(w).Encode(tokenString)
 	return nil
 }
@@ -139,11 +149,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 		Expires:  time.Now().Add(time.Hour * 24),
 		HttpOnly: true,
 		//Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 		Path:     "/",
 	})
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Authorization", "Bearer "+tokenString)
 	json.NewEncoder(w).Encode(tokenString)
 	return nil
 }

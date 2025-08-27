@@ -19,8 +19,8 @@ func main() {
 	//update()
 	//get()
 
-	//register()
-	login()
+	register()
+	//login()
 }
 
 func register() {
@@ -53,8 +53,8 @@ func register() {
 
 func login() {
 	userRequest := models.LoginRequest{
-		Email:    "alex@gmail.com",
-		Password: "alexpassword",
+		Email:    "test",
+		Password: "testestest",
 	}
 
 	log.Printf("Login: %v", userRequest)
