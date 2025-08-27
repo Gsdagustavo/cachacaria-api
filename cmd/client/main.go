@@ -19,7 +19,7 @@ func main() {
 	//update()
 	//get()
 
-	register()
+	//register()
 	login()
 }
 

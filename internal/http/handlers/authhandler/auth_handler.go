@@ -22,11 +22,6 @@ type AuthHandler struct {
 
 func NewAuthHandler(userUseCases usecases.UserUseCases) *AuthHandler {
 	secret := os.Getenv("JWT_SECRET")
-
-	if secret == "" {
-		log.Fatal("JWT_SECRET is not set in environment")
-	}
-
 	return &AuthHandler{UserUseCases: userUseCases, jtwSecret: []byte(secret)}
 }
 
