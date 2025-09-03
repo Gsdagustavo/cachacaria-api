@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 )
 
@@ -29,6 +30,16 @@ func (e *ApiError) Error() string {
 	}
 
 	return e.Message
+}
+
+func (e *ApiError) WithError(location string) *ApiError {
+	if e.Err != nil {
+		log.Printf("[ERROR] on %s: %s | cause: %v", location, e.Message, e.Err)
+	} else {
+		log.Printf("[ERROR] on %s - %s", location, e.Message)
+	}
+
+	return e
 }
 
 func (e *ApiError) WriteHTTP(w http.ResponseWriter) {
