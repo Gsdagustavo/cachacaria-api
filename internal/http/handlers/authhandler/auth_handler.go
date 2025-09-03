@@ -46,13 +46,19 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 	request.Password = string(hashedPassword)
 	user, err := h.UserUseCases.Add(request)
 	if err != nil {
-		e := &core.ApiError{
+		if errors.Is(err, core.ErrConflict) {
+			return &core.ApiError{
+				Code:    http.StatusConflict,
+				Message: "user already exists",
+				Err:     err,
+			}
+		}
+
+		return &core.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "bad request",
 			Err:     err,
 		}
-
-		return e
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{

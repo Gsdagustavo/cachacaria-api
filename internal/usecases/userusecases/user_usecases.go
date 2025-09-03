@@ -26,6 +26,15 @@ func (u *UserUseCases) Add(req models.RegisterRequest) (*models.UserResponse, er
 		return nil, err
 	}
 
+	user, err := u.r.FindByEmail(req.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	if user != nil {
+		return nil, core.ErrConflict
+	}
+
 	res, err := u.r.Add(req)
 	if err != nil {
 		if errors.Is(err, core.ErrConflict) {
