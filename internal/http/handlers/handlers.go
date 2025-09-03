@@ -49,7 +49,6 @@ func (r *MuxRouter) registerHandlers(h Handlers) {
 	// user related handlers
 	r.router.HandleFunc("/users", Handle(h.UserHandler.GetAll))
 	r.router.HandleFunc("/users/id", Handle(h.UserHandler.GetUser))
-	//r.router.HandleFunc("/users/add", Handle(h.UserHandler.AddUser))
 	r.router.HandleFunc("/users/delete", Handle(h.UserHandler.DeleteUser))
 	r.router.HandleFunc("/users/update", Handle(h.UserHandler.UpdateUser))
 
@@ -75,8 +74,6 @@ func Handle(h HandlerFunc) http.HandlerFunc {
 }
 
 func AuthMiddleware(next HandlerFunc) HandlerFunc {
-	log.Printf("on auth middleware")
-
 	return func(w http.ResponseWriter, r *http.Request) *core.ApiError {
 		var tokenString string
 
@@ -136,13 +133,26 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:5500")
+		origin := r.Header.Get("Origin")
+
+		origins := map[string]bool{
+			"http://127.0.0.1:5000": true,
+			"http://127.0.0.1:5001": true,
+			"http://127.0.0.1:5500": true,
+			"http://127.0.0.1:5501": true,
+		}
+
+		if origins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
+
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Expose-Headers", "Authorization")
 
 		if r.Method == http.MethodOptions {
+			log.Printf("[CORS Middleware] allow options | no content")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
