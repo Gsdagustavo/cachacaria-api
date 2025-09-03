@@ -91,56 +91,6 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core.ApiE
 	return nil
 }
 
-//func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) *core.ApiError {
-//	if apiErr := core.ValidateRequestMethod(r, http.MethodPost); apiErr != nil {
-//		return apiErr
-//	}
-//
-//	var req models.UserRequest
-//
-//	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-//		return &core.ApiError{
-//			Code:    http.StatusBadRequest,
-//			Message: core.ErrBadRequest.Error(),
-//			Err:     err,
-//		}
-//	}
-//
-//	res, err := h.UserUseCases.Add(req)
-//	if err != nil {
-//		var apiErr *core.ApiError
-//		if errors.As(err, &apiErr) {
-//			return apiErr
-//		}
-//
-//		if errors.Is(err, core.ErrBadRequest) {
-//			return &core.ApiError{
-//				Code:    http.StatusBadRequest,
-//				Message: core.ErrBadRequest.Error(),
-//				Err:     err,
-//			}
-//		}
-//
-//		if errors.Is(err, core.ErrConflict) {
-//			return &core.ApiError{
-//				Code:    http.StatusConflict,
-//				Message: core.ErrConflict.Error(),
-//				Err:     err,
-//			}
-//		}
-//
-//		return &core.ApiError{
-//			Code:    http.StatusInternalServerError,
-//			Message: core.ErrInternal.Error(),
-//			Err:     err,
-//		}
-//	}
-//
-//	w.Header().Set("Content-Type", "application/json")
-//	json.NewEncoder(w).Encode(res)
-//	return nil
-//}
-
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.ApiError {
 	if apiErr := core.ValidateRequestMethod(r, http.MethodDelete); apiErr != nil {
 		return apiErr
