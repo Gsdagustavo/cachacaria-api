@@ -15,26 +15,29 @@ import (
 	"github.com/lpernett/godotenv"
 )
 
-//var user = os.Getenv("DB_USER")
-//var passwd = os.Getenv("DB_PASSWORD")
-//var host = os.Getenv("DB_HOST")
-//var dbPort = os.Getenv("DB_PORT")
-//var dbName = os.Getenv("DB_NAME")
-//var net = "tcp"
-//var addr = fmt.Sprintf("%s:%s", host, dbPort)
-//var serverPort = os.Getenv("PORT")
+var (
+	user       = os.Getenv("DB_USER")
+	passwd     = os.Getenv("DB_PASSWORD")
+	host       = os.Getenv("DB_HOST")
+	dbPort     = os.Getenv("DB_PORT")
+	dbName     = os.Getenv("DB_NAME")
+	serverPort = os.Getenv("SERVER_PORT")
+)
 
-var user = "root"
-var passwd = "admin"
-var host = "127.0.0.1"
-var dbPort = "3306"
-var dbName = "cachacadb"
 var net = "tcp"
 var addr = fmt.Sprintf("%s:%s", host, dbPort)
-var serverPort = "8080"
+
+//var user = "root"
+//var passwd = "admin"
+//var host = "127.0.0.1"
+//var dbPort = "3307"
+//var dbName = "cachacadb"
+//var net = "tcp"
+//var addr = fmt.Sprintf("%s:%s", host, dbPort)
+//var serverPort = "8080"
 
 func main() {
-	loadJwtEnv()
+	//loadJwtEnv()
 
 	cfg := mysql.Config{
 		User:   user,
@@ -43,6 +46,10 @@ func main() {
 		Addr:   addr,
 		DBName: dbName,
 	}
+
+	dsn := cfg.FormatDSN()
+
+	log.Printf("dsn: %s", dsn)
 
 	db, err := sql.Open("mysql", cfg.FormatDSN())
 
