@@ -12,7 +12,6 @@ import (
 	"os"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/lpernett/godotenv"
 )
 
 var (
@@ -73,14 +72,4 @@ func main() {
 
 	router := handlers.NewMuxRouter()
 	router.StartServer(h, serverPort)
-}
-
-func loadJwtEnv() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf(".env file could not be loaded. err: %v", err)
-	}
-
-	if os.Getenv("JWT_SECRET") == "" {
-		log.Fatal("jwt secret key was not set")
-	}
 }
