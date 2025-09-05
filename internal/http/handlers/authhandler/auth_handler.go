@@ -87,9 +87,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 		}).WithError("auth handler / register")
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Authorization", "Bearer "+tokenString)
-	_ = json.NewEncoder(w).Encode(tokenString)
+	setToken(w, tokenString)
 	return nil
 }
 
@@ -146,8 +144,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 		}).WithError("auth handler / login")
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Authorization", "Bearer "+tokenString)
-	_ = json.NewEncoder(w).Encode(tokenString)
+	setToken(w, tokenString)
 	return nil
+}
+
+func setToken(w http.ResponseWriter,token string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Authorization", "Bearer "+token)
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
