@@ -1,8 +1,8 @@
-package userrepository
+package persistence
 
 import (
-	"cachacariaapi/internal/http/core"
-	"cachacariaapi/internal/models"
+	"cachacariaapi/internal/domain/entities"
+	"cachacariaapi/internal/interfaces/http/core"
 	"database/sql"
 	"errors"
 	"log"
@@ -14,27 +14,33 @@ const (
 	mysqlErrConflict uint16 = 1062
 )
 
-type UserRepository struct {
+type MySQLUserRepository struct {
 	DB *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{DB: db}
+func NewUserRepository(db *sql.DB) *MySQLUserRepository {
+	return &MySQLUserRepository{DB: db}
 }
 
 // GetAll users from the database, or an error if any occurs
-func (r *UserRepository) GetAll() ([]models.User, error) {
-	var users []models.User
+func (r *MySQLUserRepository) GetAll() ([]entities.User, error) {
+	var users []entities.User
 
-	rows, err := r.DB.Query("SELECT id, email, password, phone, is_adm FROM USERS")
+	rows, err := r.DB.Query("SELECT id, email, password, phone, is_adm FROM users")
 	if err != nil {
+		log.Printf("MySQLUserRepository.GetAll Error: %v", err)
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return users, nil
+		}
+
 		return nil, core.ErrInternal
 	}
 
 	defer rows.Close()
 
 	for rows.Next() {
-		var user models.User
+		var user entities.User
 		if err := rows.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
 			return nil, core.ErrInternal
 		}
@@ -46,14 +52,14 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 	}
 
 	if users == nil {
-		users = []models.User{}
+		users = []entities.User{}
 	}
 
 	return users, nil
 }
 
 // Add a user to the database, or an error if any occurs
-func (r *UserRepository) Add(user models.RegisterRequest) (*models.UserResponse, error) {
+func (r *MySQLUserRepository) Add(user entities.RegisterRequest) (*entities.UserResponse, error) {
 	const query = "INSERT INTO users (email, password, phone, is_adm) VALUES (?, ?, ?, ?)"
 
 	res, err := r.DB.Exec(query, user.Email, user.Password, user.Phone, user.IsAdm)
@@ -69,11 +75,11 @@ func (r *UserRepository) Add(user models.RegisterRequest) (*models.UserResponse,
 	}
 
 	id, _ := res.LastInsertId()
-	return &models.UserResponse{ID: id}, nil
+	return &entities.UserResponse{ID: id}, nil
 }
 
 // Delete a user from the database with the given userId. Return an error if any occurs
-func (r *UserRepository) Delete(userId int64) error {
+func (r *MySQLUserRepository) Delete(userId int64) error {
 	const query = "DELETE FROM users WHERE id = ?"
 
 	_, err := r.DB.Exec(query, userId)
@@ -85,13 +91,13 @@ func (r *UserRepository) Delete(userId int64) error {
 	return nil
 }
 
-// FindById returns the user with the given userId, or an error if any occurs
-func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
+// FindByEmail returns the user with the given email, or an error if any occurs
+func (r *MySQLUserRepository) FindByEmail(email string) (*entities.User, error) {
 	const query = "SELECT id, email, password, phone, is_adm FROM users WHERE email = ?"
 
 	row := r.DB.QueryRow(query, email)
 
-	var user models.User
+	var user entities.User
 	if err := row.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, core.ErrNotFound
@@ -104,12 +110,12 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 }
 
 // FindById returns the user with the given userId in the database, or an error if any occurs
-func (r *UserRepository) FindById(userId int64) (*models.User, error) {
+func (r *MySQLUserRepository) FindById(userId int64) (*entities.User, error) {
 	const query = "SELECT id, email, password, phone, is_adm FROM users WHERE id = ?"
 
 	row := r.DB.QueryRow(query, userId)
 
-	var user models.User
+	var user entities.User
 	if err := row.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, core.ErrNotFound
@@ -120,7 +126,7 @@ func (r *UserRepository) FindById(userId int64) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *UserRepository) Update(user models.UserRequest, userId int64) (*models.UserResponse, error) {
+func (r *MySQLUserRepository) Update(user entities.UserRequest, userId int64) (*entities.UserResponse, error) {
 	existing, err := r.FindById(userId)
 
 	if err != nil {
@@ -146,5 +152,5 @@ func (r *UserRepository) Update(user models.UserRequest, userId int64) (*models.
 
 	log.Printf("Err: %v", err)
 
-	return &models.UserResponse{ID: userId}, nil
+	return &entities.UserResponse{ID: userId}, nil
 }

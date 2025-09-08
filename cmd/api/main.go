@@ -1,11 +1,11 @@
 package main
 
 import (
-	"cachacariaapi/internal/http/handlers"
-	"cachacariaapi/internal/http/handlers/authhandler"
-	"cachacariaapi/internal/http/handlers/userhandler"
-	"cachacariaapi/internal/repositories/userrepository"
-	"cachacariaapi/internal/usecases/userusecases"
+	"cachacariaapi/internal/domain/usecases"
+	"cachacariaapi/internal/infrastructure/persistence"
+	"cachacariaapi/internal/interfaces/http/handlers"
+	"cachacariaapi/internal/interfaces/http/handlers/authhandler"
+	"cachacariaapi/internal/interfaces/http/handlers/userhandler"
 	"database/sql"
 	"fmt"
 	"log"
@@ -25,15 +25,6 @@ var (
 
 var net = "tcp"
 var addr = fmt.Sprintf("%s:%s", host, dbPort)
-
-//var user = "root"
-//var passwd = "admin"
-//var host = "127.0.0.1"
-//var dbPort = "3307"
-//var dbName = "cachacadb"
-//var net = "tcp"
-//var addr = fmt.Sprintf("%s:%s", host, dbPort)
-//var serverPort = "8080"
 
 func main() {
 	//loadJwtEnv()
@@ -59,7 +50,7 @@ func main() {
 	defer db.Close()
 
 	// REPOSITORIES
-	userRepository := userrepository.NewUserRepository(db)
+	userRepository := persistence.NewUserRepository(db)
 
 	// USECASES
 	userUseCases := userusecases.NewUserUseCases(userRepository)

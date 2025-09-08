@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"cachacariaapi/internal/http/core"
-	"cachacariaapi/internal/http/handlers/authhandler"
-	"cachacariaapi/internal/http/handlers/userhandler"
+	"cachacariaapi/internal/interfaces/http/core"
+	"cachacariaapi/internal/interfaces/http/handlers/authhandler"
+	"cachacariaapi/internal/interfaces/http/handlers/userhandler"
 	"context"
 	"fmt"
 	"log"

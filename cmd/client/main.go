@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"cachacariaapi/internal/models"
+	"cachacariaapi/internal/domain/entities"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -24,7 +24,7 @@ func main() {
 }
 
 func register() {
-	userRequest := models.UserRequest{
+	userRequest := entities.UserRequest{
 		Email:    "alex@gmail.com",
 		Password: "alexpassword",
 		Phone:    "4799909090990",
@@ -52,7 +52,7 @@ func register() {
 }
 
 func login() {
-	userRequest := models.LoginRequest{
+	userRequest := entities.LoginRequest{
 		Email:    "test",
 		Password: "testestest",
 	}
@@ -89,7 +89,7 @@ func findById() {
 		log.Fatal(err)
 	}
 
-	user := models.User{}
+	user := entities.User{}
 	err = json.Unmarshal(body, &user)
 	if err != nil {
 		log.Fatal(err)
@@ -99,7 +99,7 @@ func findById() {
 }
 
 func add() {
-	userRequest := models.UserRequest{
+	userRequest := entities.UserRequest{
 		Email:    "test@gmail.com",
 		Password: "01234567890",
 		Phone:    "4799909090990",
@@ -159,7 +159,7 @@ func delete() {
 }
 
 func update() {
-	userRequest := models.UserRequest{
+	userRequest := entities.UserRequest{
 		Email: "@gmail.com",
 		//Password: "eqweqewqewqewqeq",
 		//Phone:    "479990dadw9090990",

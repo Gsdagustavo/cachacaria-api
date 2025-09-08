@@ -1,9 +1,9 @@
 package userhandler
 
 import (
-	"cachacariaapi/internal/http/core"
-	"cachacariaapi/internal/models"
-	"cachacariaapi/internal/usecases"
+	"cachacariaapi/internal/domain/entities"
+	"cachacariaapi/internal/domain/usecases"
+	core2 "cachacariaapi/internal/interfaces/http/core"
 	"encoding/json"
 	"errors"
 	"log"
@@ -12,30 +12,30 @@ import (
 )
 
 type UserHandler struct {
-	UserUseCases usecases.UserUseCases
+	UserUseCases *userusecases.UserUseCases
 }
 
-func NewUserHandler(u usecases.UserUseCases) *UserHandler {
+func NewUserHandler(u *userusecases.UserUseCases) *UserHandler {
 	return &UserHandler{u}
 }
 
-func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.ApiError {
-	if apiErr := core.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
+func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) *core2.ApiError {
+	if apiErr := core2.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
 		return apiErr
 	}
 
 	users, err := h.UserUseCases.GetAll()
 
 	if err != nil {
-		if errors.Is(err, core.ErrNotFound) {
-			return &core.ApiError{
+		if errors.Is(err, core2.ErrNotFound) {
+			return &core2.ApiError{
 				Code:    http.StatusNotFound,
 				Message: "no users found",
 				Err:     nil,
 			}
 		}
 
-		return &core.ApiError{
+		return &core2.ApiError{
 			Code:    http.StatusInternalServerError,
 			Message: "could not get users",
 			Err:     err,
@@ -47,14 +47,14 @@ func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.ApiEr
 	return nil
 }
 
-func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core.ApiError {
-	if apiErr := core.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
+func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core2.ApiError {
+	if apiErr := core2.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
 		return apiErr
 	}
 
 	idStr := r.URL.Query().Get("id")
 	if idStr == "" {
-		return &core.ApiError{
+		return &core2.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "id is required",
 		}
@@ -62,7 +62,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core.ApiE
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		return &core.ApiError{
+		return &core2.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "invalid id",
 			Err:     err,
@@ -71,17 +71,17 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core.ApiE
 
 	user, err := h.UserUseCases.FindById(id)
 	if err != nil {
-		if errors.Is(err, core.ErrNotFound) {
-			return &core.ApiError{
+		if errors.Is(err, core2.ErrNotFound) {
+			return &core2.ApiError{
 				Code:    http.StatusNotFound,
 				Message: "user not found",
 				Err:     err,
 			}
 		}
 
-		return &core.ApiError{
+		return &core2.ApiError{
 			Code:    http.StatusInternalServerError,
-			Message: core.ErrInternal.Error(),
+			Message: core2.ErrInternal.Error(),
 			Err:     err,
 		}
 	}
@@ -91,14 +91,14 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core.ApiE
 	return nil
 }
 
-func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.ApiError {
-	if apiErr := core.ValidateRequestMethod(r, http.MethodDelete); apiErr != nil {
+func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core2.ApiError {
+	if apiErr := core2.ValidateRequestMethod(r, http.MethodDelete); apiErr != nil {
 		return apiErr
 	}
 
 	query := r.URL.Query()
 	if !query.Has("id") {
-		return &core.ApiError{
+		return &core2.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "id is required",
 		}
@@ -106,7 +106,7 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.A
 
 	id, err := strconv.ParseInt(query.Get("id"), 10, 64)
 	if err != nil {
-		return &core.ApiError{
+		return &core2.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "invalid id",
 		}
@@ -114,27 +114,27 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.A
 
 	err = h.UserUseCases.Delete(id)
 	if err != nil {
-		if errors.Is(err, core.ErrNotFound) {
-			return &core.ApiError{
+		if errors.Is(err, core2.ErrNotFound) {
+			return &core2.ApiError{
 				Code:    http.StatusNotFound,
 				Message: "user not found",
 			}
 		}
 
-		return &core.ApiError{
+		return &core2.ApiError{
 			Code:    http.StatusInternalServerError,
-			Message: core.ErrInternal.Error(),
+			Message: core2.ErrInternal.Error(),
 			Err:     err,
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(models.UserResponse{ID: id})
+	json.NewEncoder(w).Encode(entities.UserResponse{ID: id})
 	return nil
 }
 
-func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.ApiError {
-	if apiErr := core.ValidateRequestMethod(r, http.MethodPut); apiErr != nil {
+func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core2.ApiError {
+	if apiErr := core2.ValidateRequestMethod(r, http.MethodPut); apiErr != nil {
 		log.Printf("returning api err %v", apiErr)
 		return apiErr
 	}
@@ -148,7 +148,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.A
 	log.Printf("has id: %v", hasId)
 
 	if !hasId {
-		return &core.ApiError{
+		return &core2.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "id is required",
 		}
@@ -160,39 +160,39 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.A
 	log.Printf("err: %v", err)
 
 	if err != nil {
-		return &core.ApiError{
+		return &core2.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "invalid id",
 		}
 	}
 
-	var req models.UserRequest
+	var req entities.UserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return &core.ApiError{
+		return &core2.ApiError{
 			Code:    http.StatusBadRequest,
-			Message: core.ErrBadRequest.Error(),
+			Message: core2.ErrBadRequest.Error(),
 			Err:     err,
 		}
 	}
 
 	res, err := h.UserUseCases.Update(req, id)
 	if err != nil {
-		var apiErr *core.ApiError
+		var apiErr *core2.ApiError
 		if errors.As(err, &apiErr) {
 			return apiErr
 		}
 
-		if errors.Is(err, core.ErrNotFound) {
-			return &core.ApiError{
+		if errors.Is(err, core2.ErrNotFound) {
+			return &core2.ApiError{
 				Code:    http.StatusNotFound,
 				Message: "user not found",
 				Err:     err,
 			}
 		}
 
-		return &core.ApiError{
+		return &core2.ApiError{
 			Code:    http.StatusInternalServerError,
-			Message: core.ErrInternal.Error(),
+			Message: core2.ErrInternal.Error(),
 			Err:     err,
 		}
 	}

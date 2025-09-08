@@ -1,27 +1,27 @@
 package userusecases
 
 import (
-	"cachacariaapi/internal/http/core"
-	"cachacariaapi/internal/models"
-	"cachacariaapi/internal/repositories/userrepository"
+	"cachacariaapi/internal/domain/entities"
+	"cachacariaapi/internal/infrastructure/persistence"
+	"cachacariaapi/internal/interfaces/http/core"
 	"errors"
 )
 
 type UserUseCases struct {
-	r *userrepository.UserRepository
+	r *persistence.MySQLUserRepository
 }
 
-func NewUserUseCases(r *userrepository.UserRepository) *UserUseCases {
+func NewUserUseCases(r *persistence.MySQLUserRepository) *UserUseCases {
 	return &UserUseCases{r}
 }
 
 // GetAll users, or an error if any occurs
-func (u *UserUseCases) GetAll() ([]models.User, error) {
+func (u *UserUseCases) GetAll() ([]entities.User, error) {
 	return u.r.GetAll()
 }
 
-// Add a user and returns a UserRespons, or an error if any occurs
-func (u *UserUseCases) Add(req models.RegisterRequest) (*models.UserResponse, error) {
+// Add a user and returns a UserResponse, or an error if any occurs
+func (u *UserUseCases) Add(req entities.RegisterRequest) (*entities.UserResponse, error) {
 	if err := validateRegisterRequest(req); err != nil {
 		return nil, err
 	}
@@ -62,18 +62,18 @@ func (u *UserUseCases) Delete(userId int64) error {
 	return nil
 }
 
-func (u *UserUseCases) FindByEmail(email string) (*models.User, error) {
+func (u *UserUseCases) FindByEmail(email string) (*entities.User, error) {
 	return u.r.FindByEmail(email)
 }
 
 // FindById returns the user with the given userId, or an error if any occurs
-func (u *UserUseCases) FindById(userid int64) (*models.User, error) {
+func (u *UserUseCases) FindById(userid int64) (*entities.User, error) {
 	return u.r.FindById(userid)
 }
 
 // Update a user from the database from the given UserRequest and userId
 // Returns a UserResponse oran error if any occurs
-func (u *UserUseCases) Update(user models.UserRequest, userId int64) (*models.UserResponse, error) {
+func (u *UserUseCases) Update(user entities.UserRequest, userId int64) (*entities.UserResponse, error) {
 	if userId <= 0 {
 		return nil, core.ErrBadRequest
 	}
@@ -86,19 +86,7 @@ func (u *UserUseCases) Update(user models.UserRequest, userId int64) (*models.Us
 	return res, nil
 }
 
-func validateUserRequest(req models.UserRequest) error {
-	if req.Password == "" || req.Email == "" || req.Phone == "" {
-		return core.ErrBadRequest
-	}
-
-	if len(req.Password) < 8 {
-		return core.ErrBadRequest
-	}
-
-	return nil
-}
-
-func validateRegisterRequest(req models.RegisterRequest) error {
+func validateRegisterRequest(req entities.RegisterRequest) error {
 	if req.Password == "" || req.Email == "" || req.Phone == "" {
 		return core.ErrBadRequest
 	}
