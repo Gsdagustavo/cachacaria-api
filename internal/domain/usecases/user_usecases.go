@@ -62,6 +62,7 @@ func (u *UserUseCases) Delete(userId int64) error {
 	return nil
 }
 
+// FindByEmail returns the user with the given email, or an error if any occurs
 func (u *UserUseCases) FindByEmail(email string) (*entities.User, error) {
 	return u.r.FindByEmail(email)
 }

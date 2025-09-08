@@ -15,14 +15,32 @@ CREATE TABLE users
 -- Tabela Products
 CREATE TABLE products
 (
-    id           INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    name         VARCHAR(100) NOT NULL,
-    description  TEXT,
-    price        FLOAT        NOT NULL,
-    type         VARCHAR(50),
-    origin       VARCHAR(100),
-    manufacturer VARCHAR(100),
-    award        VARCHAR(100)
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(255)   NOT NULL,
+    description TEXT,
+    price       DECIMAL(10, 2) NOT NULL,
+    stock       INT            NOT NULL
+);
+
+CREATE TABLE reviews
+(
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    product_id  INT NOT NULL,
+    user_id     INT NOT NULL,
+    description VARCHAR(255),
+    stars       INT      DEFAULT 0,
+    review_date DATETIME DEFAULT NOW(),
+
+    CONSTRAINT fk_review_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_review_product FOREIGN KEY (product_id) REFERENCES products (id)
+);
+
+CREATE TABLE products_photos
+(
+    id         INT PRIMARY KEY AUTO_INCREMENT,
+    product_id INT  NOT NULL,
+    image_data BLOB NOT NULL,
+    CONSTRAINT fk_product_photo FOREIGN KEY (product_id) REFERENCES products (id)
 );
 
 -- Tabela Orders

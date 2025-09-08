@@ -10,10 +10,6 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
-const (
-	mysqlErrConflict uint16 = 1062
-)
-
 type MySQLUserRepository struct {
 	DB *sql.DB
 }
@@ -58,7 +54,7 @@ func (r *MySQLUserRepository) GetAll() ([]entities.User, error) {
 	return users, nil
 }
 
-// Add a user to the database, or an error if any occurs
+// Add a user to the database. Returns a UserResponse or an error if any occurs
 func (r *MySQLUserRepository) Add(user entities.RegisterRequest) (*entities.UserResponse, error) {
 	const query = "INSERT INTO users (email, password, phone, is_adm) VALUES (?, ?, ?, ?)"
 
