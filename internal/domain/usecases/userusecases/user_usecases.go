@@ -5,6 +5,13 @@ import (
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/core"
 	"errors"
+	"regexp"
+)
+
+var (
+	emailRegex    = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	phoneRegex    = regexp.MustCompile(`^\+?[0-9]{10,15}$`)
+	passwordRegex = regexp.MustCompile(`^.{8,}$`)
 )
 
 type UserUseCases struct {
@@ -88,8 +95,14 @@ func (u *UserUseCases) Update(user entities.UserRequest, userId int64) (*entitie
 }
 
 func validateRegisterRequest(req entities.RegisterRequest) error {
-	if req.Password == "" || req.Email == "" || req.Phone == "" {
-		return core.ErrBadRequest
+	if !emailRegex.MatchString(req.Email) {
+		return core.ErrInvalidEmail
+	}
+	if !passwordRegex.MatchString(req.Password) {
+		return core.ErrInvalidPassword
+	}
+	if !phoneRegex.MatchString(req.Phone) {
+		return core.ErrInvalidPhoneNumber
 	}
 
 	return nil
