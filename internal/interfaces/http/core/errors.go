@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	// HTTP
 	ErrMethodNotAllowed = errors.New("method not allowed")
 	ErrNotFound         = errors.New("resource not found")
 	ErrInvalidInput     = errors.New("invalid input")
@@ -16,6 +17,19 @@ var (
 	ErrUnauthorized     = errors.New("unauthorized")
 	ErrForbidden        = errors.New("forbidden")
 	ErrBadRequest       = errors.New("bad request")
+
+	// Product
+	ErrInvalidProductName  = errors.New("invalid product name")
+	ErrInvalidProductPrice = errors.New("invalid product price")
+	ErrInvalidProductStock = errors.New("invalid product stock")
+	ErrNoProductPhoto      = errors.New("no product photo")
+
+	// User
+	ErrInvalidEmail       = errors.New("invalid email")
+	ErrInvalidPassword    = errors.New("invalid password")
+	ErrInvalidPhoneNumber = errors.New("invalid phone number")
+	ErrInvalidToken       = errors.New("invalid token")
+	ErrTokenExpired       = errors.New("token expired")
 )
 
 type ApiError struct {
