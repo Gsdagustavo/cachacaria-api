@@ -26,7 +26,6 @@ func NewMuxRouter() *MuxRouter {
 
 func (r *MuxRouter) StartServer(h Handlers, port string) {
 	r.registerHandlers(h)
-	r.router.Use(CORSMiddleware)
 	r.serveHTTP(port)
 }
 
@@ -129,34 +128,4 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 		ctx := context.WithValue(r.Context(), "user_id", int64(userID))
 		return next(w, r.WithContext(ctx))
 	}
-}
-
-func CORSMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-
-		origins := map[string]bool{
-			"http://127.0.0.1:5000": true,
-			"http://127.0.0.1:5001": true,
-			"http://127.0.0.1:5500": true,
-			"http://127.0.0.1:5501": true,
-		}
-
-		if origins[origin] {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-		}
-
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		w.Header().Set("Access-Control-Expose-Headers", "Authorization")
-
-		if r.Method == http.MethodOptions {
-			log.Printf("[CORS Middleware] allow options | no content")
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
 }
