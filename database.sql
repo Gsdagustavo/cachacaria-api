@@ -22,6 +22,14 @@ CREATE TABLE products
     stock       INT            NOT NULL
 );
 
+CREATE TABLE products_photos
+(
+    id         INT PRIMARY KEY AUTO_INCREMENT,
+    product_id INT          NOT NULL,
+    filename   VARCHAR(255) NOT NULl,
+    CONSTRAINT fk_product_photo FOREIGN KEY (product_id) REFERENCES products (id)
+);
+
 CREATE TABLE reviews
 (
     id          INT AUTO_INCREMENT PRIMARY KEY,
@@ -33,14 +41,6 @@ CREATE TABLE reviews
 
     CONSTRAINT fk_review_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_review_product FOREIGN KEY (product_id) REFERENCES products (id)
-);
-
-CREATE TABLE products_photos
-(
-    id         INT PRIMARY KEY AUTO_INCREMENT,
-    product_id INT  NOT NULL,
-    image_data BLOB NOT NULL,
-    CONSTRAINT fk_product_photo FOREIGN KEY (product_id) REFERENCES products (id)
 );
 
 -- Tabela Orders

@@ -2,7 +2,7 @@ package userhandler
 
 import (
 	"cachacariaapi/internal/domain/entities"
-	"cachacariaapi/internal/domain/usecases/userusecases"
+	"cachacariaapi/internal/domain/usecases/user"
 	"cachacariaapi/internal/interfaces/http/core"
 	"encoding/json"
 	"errors"

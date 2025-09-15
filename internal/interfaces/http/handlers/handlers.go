@@ -3,6 +3,7 @@ package handlers
 import (
 	"cachacariaapi/internal/interfaces/http/core"
 	"cachacariaapi/internal/interfaces/http/handlers/authhandler"
+	"cachacariaapi/internal/interfaces/http/handlers/producthandler"
 	"cachacariaapi/internal/interfaces/http/handlers/userhandler"
 	"context"
 	"fmt"
@@ -41,8 +42,9 @@ func (r *MuxRouter) serveHTTP(port string) {
 
 // === HANDLERS ===
 type Handlers struct {
-	UserHandler *userhandler.UserHandler
-	AuthHandler *authhandler.AuthHandler
+	UserHandler    *userhandler.UserHandler
+	AuthHandler    *authhandler.AuthHandler
+	ProductHandler *producthandler.ProductHandler
 }
 
 func (r *MuxRouter) registerHandlers(h Handlers) {
@@ -55,6 +57,10 @@ func (r *MuxRouter) registerHandlers(h Handlers) {
 	// auth handlers
 	r.router.HandleFunc("/auth/register", Handle(h.AuthHandler.Register))
 	r.router.HandleFunc("/auth/login", Handle(h.AuthHandler.Login))
+
+	// product handlers
+	r.router.HandleFunc("/products/add", Handle(h.ProductHandler.Add))
+	r.router.HandleFunc("/products", Handle(h.ProductHandler.GetAll))
 
 	r.router.HandleFunc("/docs", Handle(AuthMiddleware(func(w http.ResponseWriter, req *http.Request) *core.ApiError {
 		http.ServeFile(w, req, "index.html")

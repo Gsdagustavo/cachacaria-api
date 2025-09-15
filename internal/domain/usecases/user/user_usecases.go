@@ -5,6 +5,7 @@ import (
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/core"
 	"errors"
+	"log"
 	"regexp"
 )
 
@@ -29,7 +30,14 @@ func (u *UserUseCases) GetAll() ([]entities.User, error) {
 
 // Add a user and returns a UserResponse, or an error if any occurs
 func (u *UserUseCases) Add(req entities.RegisterRequest) (*entities.UserResponse, error) {
-	if err := validateRegisterRequest(req); err != nil {
+	log.Printf("add user called on user usecases. request: %v", req)
+	log.Printf("password: %v", req.Password)
+
+	if err := validateEmail(req.Email); err != nil {
+		return nil, err
+	}
+
+	if err := validatePassword(req.Password); err != nil {
 		return nil, err
 	}
 
@@ -41,6 +49,12 @@ func (u *UserUseCases) Add(req entities.RegisterRequest) (*entities.UserResponse
 	if user != nil {
 		return nil, core.ErrConflict
 	}
+
+	if err := validatePhone(req.Phone); err != nil {
+		return nil, err
+	}
+
+	// hash password
 
 	res, err := u.r.Add(req)
 	if err != nil {
@@ -94,14 +108,27 @@ func (u *UserUseCases) Update(user entities.UserRequest, userId int64) (*entitie
 	return res, nil
 }
 
-func validateRegisterRequest(req entities.RegisterRequest) error {
-	if !emailRegex.MatchString(req.Email) {
+func validateEmail(email string) error {
+	if !emailRegex.MatchString(email) {
+		log.Printf("invalid email: %s", email)
 		return core.ErrInvalidEmail
 	}
-	if !passwordRegex.MatchString(req.Password) {
+
+	return nil
+}
+
+func validatePassword(password string) error {
+	if !passwordRegex.MatchString(password) {
+		log.Printf("invalid password: %s", password)
 		return core.ErrInvalidPassword
 	}
-	if !phoneRegex.MatchString(req.Phone) {
+
+	return nil
+}
+
+func validatePhone(phone string) error {
+	if !phoneRegex.MatchString(phone) {
+		log.Printf("invalid phone: %s", phone)
 		return core.ErrInvalidPhoneNumber
 	}
 

@@ -25,11 +25,14 @@ var (
 	ErrNoProductPhoto      = errors.New("no product photo")
 
 	// User
-	ErrInvalidEmail       = errors.New("invalid email")
-	ErrInvalidPassword    = errors.New("invalid password")
-	ErrInvalidPhoneNumber = errors.New("invalid phone number")
-	ErrInvalidToken       = errors.New("invalid token")
-	ErrTokenExpired       = errors.New("token expired")
+	ErrTokenGenerationError = errors.New("token generation error")
+	ErrUserAlreadyExists    = errors.New("user already exists")
+	ErrUserNotfound         = errors.New("user not found")
+	ErrInvalidEmail         = errors.New("invalid email")
+	ErrInvalidPassword      = errors.New("invalid password")
+	ErrInvalidPhoneNumber   = errors.New("invalid phone number")
+	ErrInvalidToken         = errors.New("invalid token")
+	ErrTokenExpired         = errors.New("token expired")
 )
 
 type ApiError struct {

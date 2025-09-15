@@ -1,10 +1,12 @@
 package main
 
 import (
-	"cachacariaapi/internal/domain/usecases"
+	"cachacariaapi/internal/domain/usecases/product"
+	"cachacariaapi/internal/domain/usecases/user"
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/handlers"
 	"cachacariaapi/internal/interfaces/http/handlers/authhandler"
+	"cachacariaapi/internal/interfaces/http/handlers/producthandler"
 	"cachacariaapi/internal/interfaces/http/handlers/userhandler"
 	"database/sql"
 	"fmt"
@@ -51,15 +53,18 @@ func main() {
 
 	// REPOSITORIES
 	userRepository := persistence.NewUserRepository(db)
+	productRepository := persistence.NewMySQLProductRepository(db)
 
 	// USECASES
 	userUseCases := userusecases.NewUserUseCases(userRepository)
+	productUseCases := product.NewProductUseCases(productRepository)
 
 	// HANDLERS
 	userHandler := userhandler.NewUserHandler(userUseCases)
 	authHandler := authhandler.NewAuthHandler(userUseCases)
+	productHandler := producthandler.NewProductHandler(productUseCases)
 
-	h := handlers.Handlers{UserHandler: userHandler, AuthHandler: authHandler}
+	h := handlers.Handlers{UserHandler: userHandler, AuthHandler: authHandler, ProductHandler: productHandler}
 
 	router := handlers.NewMuxRouter()
 	router.StartServer(h, serverPort)
