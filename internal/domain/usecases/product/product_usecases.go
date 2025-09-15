@@ -69,3 +69,7 @@ func (u *ProductUseCases) AddProduct(req entities.AddProductRequest, uploadedFil
 func (u *ProductUseCases) GetAll() ([]entities.Product, error) {
 	return u.r.GetAll()
 }
+
+func (u *ProductUseCases) GetProduct(id int64) (*entities.Product, error) {
+	return u.r.GetProduct(id)
+}

@@ -99,3 +99,42 @@ func (r *MySQLProductRepository) GetAll() ([]entities.Product, error) {
 
 	return products, nil
 }
+
+func (r *MySQLProductRepository) GetProduct(id int64) (*entities.Product, error) {
+	const query = "SELECT id, name, description, price, stock FROM products WHERE id = ?"
+	row := r.DB.QueryRow(query, id)
+
+	var product entities.Product
+
+	if err := row.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Stock); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, core.ErrNotFound
+		}
+
+		return nil, core.ErrInternal
+	}
+
+	const photoQuery = "SELECT id, filename FROM products_photos WHERE product_id = ?"
+	photoRows, err := r.DB.Query(photoQuery, product.ID)
+	if err != nil {
+		log.Printf("GetProduct photos error: %v", err)
+	} else {
+		defer photoRows.Close()
+		photos := make([]string, 0)
+		for photoRows.Next() {
+			var photoID int64
+			var filename string
+			if err := photoRows.Scan(&photoID, &filename); err != nil {
+				return nil, core.ErrInternal
+			}
+			photos = append(photos, filename)
+		}
+		product.Photos = photos
+	}
+
+	if product.Photos == nil {
+		product.Photos = make([]string, 0)
+	}
+
+	return &product, nil
+}

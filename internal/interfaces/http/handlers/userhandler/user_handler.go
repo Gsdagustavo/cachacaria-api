@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type UserHandler struct {
@@ -52,7 +54,8 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core.ApiE
 		return apiErr
 	}
 
-	idStr := r.URL.Query().Get("id")
+	vars := mux.Vars(r)
+	idStr := vars["id"]
 	if idStr == "" {
 		return &core.ApiError{
 			Code:    http.StatusBadRequest,

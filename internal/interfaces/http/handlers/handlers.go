@@ -50,9 +50,9 @@ type Handlers struct {
 func (r *MuxRouter) registerHandlers(h Handlers) {
 	// user related handlers
 	r.router.HandleFunc("/users", Handle(h.UserHandler.GetAll))
-	r.router.HandleFunc("/users/id", Handle(h.UserHandler.GetUser))
-	r.router.HandleFunc("/users/delete", Handle(h.UserHandler.DeleteUser))
-	r.router.HandleFunc("/users/update", Handle(h.UserHandler.UpdateUser))
+	r.router.HandleFunc("/users/{id}", Handle(h.UserHandler.GetUser))
+	r.router.HandleFunc("/users/delete/{id}", Handle(h.UserHandler.DeleteUser))
+	r.router.HandleFunc("/users/update/{id}", Handle(h.UserHandler.UpdateUser))
 
 	// auth handlers
 	r.router.HandleFunc("/auth/register", Handle(h.AuthHandler.Register))
@@ -61,6 +61,7 @@ func (r *MuxRouter) registerHandlers(h Handlers) {
 	// product handlers
 	r.router.HandleFunc("/products/add", Handle(h.ProductHandler.Add))
 	r.router.HandleFunc("/products", Handle(h.ProductHandler.GetAll))
+	r.router.HandleFunc("/products/{id}", Handle(h.ProductHandler.GetProduct))
 
 	r.router.HandleFunc("/docs", Handle(AuthMiddleware(func(w http.ResponseWriter, req *http.Request) *core.ApiError {
 		http.ServeFile(w, req, "index.html")

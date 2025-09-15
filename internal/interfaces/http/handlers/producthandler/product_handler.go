@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type ProductHandler struct {
@@ -21,7 +23,7 @@ func NewProductHandler(productUseCases *product.ProductUseCases) *ProductHandler
 
 func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ApiError {
 	if apiErr := core.ValidateRequestMethod(r, http.MethodPost); apiErr != nil {
-		return apiErr.WithError("response handler / add response")
+		return apiErr.WithError("products handler / add product")
 	}
 
 	if err := r.ParseMultipartForm(10 >> 20); err != nil {
@@ -48,14 +50,14 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ApiEr
 
 	response, err := h.ProductUseCases.AddProduct(request, photos)
 	if err != nil {
-		log.Printf("error adding response: %v", err)
+		log.Printf("error adding products: %v", err)
 
 		if errors.Is(err, core.ErrConflict) {
 			return (&core.ApiError{
 				Code:    http.StatusConflict,
 				Err:     err,
-				Message: "response already exists",
-			}).WithError("response handler / add response")
+				Message: "product already exists",
+			}).WithError("products handler / add products")
 		}
 
 		if errors.Is(err, core.ErrBadRequest) {
@@ -63,14 +65,14 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ApiEr
 				Code:    http.StatusBadRequest,
 				Err:     err,
 				Message: "invalid response data",
-			}).WithError("response handler / add response")
+			}).WithError("products handler / add products")
 		}
 
 		return (&core.ApiError{
 			Code:    http.StatusInternalServerError,
 			Message: "internal server error",
 			Err:     err,
-		}).WithError("product handler / add response")
+		}).WithError("product handler / add products")
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -83,25 +85,70 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.Ap
 		return apiErr.WithError("product handler / get all")
 	}
 
-	users, err := h.ProductUseCases.GetAll()
+	products, err := h.ProductUseCases.GetAll()
 
 	if err != nil {
 		if errors.Is(err, core.ErrNotFound) {
-			return &core.ApiError{
+			return (&core.ApiError{
 				Code:    http.StatusNotFound,
-				Message: "no users found",
+				Message: "no products found",
 				Err:     nil,
-			}
+			}).WithError("product handler / get all")
 		}
 
-		return &core.ApiError{
+		return (&core.ApiError{
 			Code:    http.StatusInternalServerError,
-			Message: "could not get users",
+			Message: "internal server error",
 			Err:     err,
-		}
+		}).WithError("product handler / get products")
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	json.NewEncoder(w).Encode(products)
+	return nil
+}
+
+func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *core.ApiError {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
+		return apiErr.WithError("product handler / get all")
+	}
+
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	if idStr == "" {
+		return (&core.ApiError{
+			Code:    http.StatusBadRequest,
+			Message: "id is required",
+		}).WithError("product handler / get product")
+	}
+
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return (&core.ApiError{
+			Code:    http.StatusBadRequest,
+			Message: "invalid id",
+			Err:     err,
+		}).WithError("product handler / get product")
+	}
+
+	product, err := h.ProductUseCases.GetProduct(id)
+	if err != nil {
+		if errors.Is(err, core.ErrNotFound) {
+			return (&core.ApiError{
+				Code:    http.StatusNotFound,
+				Message: "product not found",
+				Err:     nil,
+			}).WithError("product handler / get product")
+		}
+
+		return (&core.ApiError{
+			Code:    http.StatusInternalServerError,
+			Message: "could not get product",
+			Err:     err,
+		}).WithError("product handler / get product")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(product)
 	return nil
 }
