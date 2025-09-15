@@ -6,6 +6,7 @@ import (
 )
 
 type ProductRepository interface {
-	Add(product entities.AddProductRequest, photos []*multipart.FileHeader) (*entities.AddProductResponse, error)
+	AddProduct(product entities.AddProductRequest) (*entities.AddProductResponse, error)
+	AddProductPhotos(photos []*multipart.FileHeader) error
 	GetAll() ([]entities.Product, error)
 }

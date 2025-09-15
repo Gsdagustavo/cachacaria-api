@@ -4,9 +4,13 @@ import (
 	"cachacariaapi/internal/domain/entities"
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/core"
-	"errors"
+	"fmt"
+	"io"
 	"mime/multipart"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 )
 
 type ProductUseCases struct {
@@ -17,25 +21,49 @@ func NewProductUseCases(r *persistence.MySQLProductRepository) *ProductUseCases 
 	return &ProductUseCases{r}
 }
 
-func (u *ProductUseCases) Add(req entities.AddProductRequest, photos []*multipart.FileHeader) (*entities.AddProductResponse, error) {
-	if req.Price <= 0 || len(strings.Trim(req.Name, " ")) == 0 || req.Stock < 0 {
+func (u *ProductUseCases) AddProduct(req entities.AddProductRequest, uploadedFiles []*multipart.FileHeader) (*entities.AddProductResponse, error) {
+	if req.Price <= 0 || len(strings.TrimSpace(req.Name)) == 0 || req.Stock < 0 {
 		return nil, core.ErrBadRequest
 	}
 
-	res, err := u.r.Add(req, photos)
+	res, err := u.r.AddProduct(req)
 	if err != nil {
-		if errors.Is(err, core.ErrBadRequest) {
-			return nil, core.ErrBadRequest
+		return nil, err
+	}
+	productID := res.ID
+
+	var filenames []string
+	for _, fileHeader := range uploadedFiles {
+		src, err := fileHeader.Open()
+		if err != nil {
+			return nil, err
+		}
+		filename := fmt.Sprintf("product_%d_%d%s", productID, time.Now().UnixNano(), filepath.Ext(fileHeader.Filename))
+		filePath := filepath.Join("/app/images", filename)
+
+		dst, err := os.Create(filePath)
+		if err != nil {
+			src.Close()
+			return nil, err
 		}
 
-		if errors.Is(err, core.ErrConflict) {
-			return nil, core.ErrConflict
+		_, err = io.Copy(dst, src)
+		src.Close()
+		dst.Close()
+		if err != nil {
+			return nil, err
 		}
 
-		return nil, core.ErrInternal
+		filenames = append(filenames, filename)
 	}
 
-	return res, nil
+	if len(filenames) > 0 {
+		if err = u.r.AddProductPhotos(productID, filenames); err != nil {
+			return nil, err
+		}
+	}
+
+	return &entities.AddProductResponse{ID: productID}, nil
 }
 
 func (u *ProductUseCases) GetAll() ([]entities.Product, error) {

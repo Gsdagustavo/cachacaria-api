@@ -46,7 +46,7 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ApiEr
 
 	photos := r.MultipartForm.File["photos"]
 
-	response, err := h.ProductUseCases.Add(request, photos)
+	response, err := h.ProductUseCases.AddProduct(request, photos)
 	if err != nil {
 		log.Printf("error adding response: %v", err)
 
