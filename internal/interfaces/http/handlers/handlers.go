@@ -48,6 +48,11 @@ type Handlers struct {
 }
 
 func (r *MuxRouter) registerHandlers(h Handlers) {
+	// This serves all files from /app/images as /images/*
+	r.router.PathPrefix("/images/").Handler(http.StripPrefix("/images/",
+		http.FileServer(http.Dir("/app/images")),
+	))
+
 	// user related handlers
 	r.router.HandleFunc("/users", Handle(h.UserHandler.GetAll))
 	r.router.HandleFunc("/users/{id}", Handle(h.UserHandler.GetUser))

@@ -6,12 +6,16 @@ import (
 	"cachacariaapi/internal/interfaces/http/core"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
 )
+
+const maxMemoryImages = 20 << 20
 
 type ProductHandler struct {
 	ProductUseCases *product.ProductUseCases
@@ -26,10 +30,10 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ApiEr
 		return apiErr.WithError("products handler / add product")
 	}
 
-	if err := r.ParseMultipartForm(10 >> 20); err != nil {
+	if err := r.ParseMultipartForm(maxMemoryImages); err != nil {
 		return (&core.ApiError{
 			Code:    http.StatusBadRequest,
-			Message: err.Error(),
+			Message: "product images form exceeds maximum memory limit",
 			Err:     err,
 		}).WithError("product handler / parse multipart form failed: " + err.Error())
 	}
@@ -103,6 +107,15 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.Ap
 		}).WithError("product handler / get products")
 	}
 
+	baseURL := os.Getenv("BASE_URL")
+	for i := range products {
+		var fullURLs []string
+		for _, filename := range products[i].Photos {
+			fullURLs = append(fullURLs, fmt.Sprintf("%s/images/%s", baseURL, filename))
+		}
+		products[i].Photos = fullURLs
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(products)
 	return nil
@@ -110,7 +123,7 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.Ap
 
 func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *core.ApiError {
 	if apiErr := core.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
-		return apiErr.WithError("product handler / get all")
+		return apiErr.WithError("prod handler / get all")
 	}
 
 	vars := mux.Vars(r)
@@ -119,7 +132,7 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *cor
 		return (&core.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "id is required",
-		}).WithError("product handler / get product")
+		}).WithError("prod handler / get prod")
 	}
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -128,27 +141,27 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *cor
 			Code:    http.StatusBadRequest,
 			Message: "invalid id",
 			Err:     err,
-		}).WithError("product handler / get product")
+		}).WithError("prod handler / get prod")
 	}
 
-	product, err := h.ProductUseCases.GetProduct(id)
+	prod, err := h.ProductUseCases.GetProduct(id)
 	if err != nil {
 		if errors.Is(err, core.ErrNotFound) {
 			return (&core.ApiError{
 				Code:    http.StatusNotFound,
-				Message: "product not found",
+				Message: "prod not found",
 				Err:     nil,
-			}).WithError("product handler / get product")
+			}).WithError("prod handler / get prod")
 		}
 
 		return (&core.ApiError{
 			Code:    http.StatusInternalServerError,
-			Message: "could not get product",
+			Message: "could not get prod",
 			Err:     err,
-		}).WithError("product handler / get product")
+		}).WithError("prod handler / get prod")
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(product)
+	json.NewEncoder(w).Encode(prod)
 	return nil
 }
