@@ -15,7 +15,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const maxMemoryImages = 20 << 20
+const maxImagesMemory = 20 << 20
 
 type ProductHandler struct {
 	ProductUseCases *product.ProductUseCases
@@ -30,7 +30,7 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ApiEr
 		return apiErr.WithError("products handler / add product")
 	}
 
-	if err := r.ParseMultipartForm(maxMemoryImages); err != nil {
+	if err := r.ParseMultipartForm(maxImagesMemory); err != nil {
 		return (&core.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "product images form exceeds maximum memory limit",
