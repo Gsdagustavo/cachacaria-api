@@ -152,6 +152,7 @@ func CORSMiddleware(next http.Handler) http.Handler {
 			"http://127.0.0.1:5001": true,
 			"http://127.0.0.1:5500": true,
 			"http://127.0.0.1:5501": true,
+			"http://localhost:5173": true,
 		}
 
 		if origins[origin] {
