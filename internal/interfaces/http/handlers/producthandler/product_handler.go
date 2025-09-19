@@ -54,29 +54,29 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ApiEr
 
 	response, err := h.ProductUseCases.AddProduct(request, photos)
 	if err != nil {
-		log.Printf("error adding products: %v", err)
+		log.Printf("error adding product: %v", err)
 
 		if errors.Is(err, core.ErrConflict) {
 			return (&core.ApiError{
 				Code:    http.StatusConflict,
 				Err:     err,
 				Message: "product already exists",
-			}).WithError("products handler / add products")
+			}).WithError("products handler / add product")
 		}
 
 		if errors.Is(err, core.ErrBadRequest) {
 			return (&core.ApiError{
 				Code:    http.StatusBadRequest,
 				Err:     err,
-				Message: "invalid response data",
-			}).WithError("products handler / add products")
+				Message: "bad request",
+			}).WithError("products handler / add product")
 		}
 
 		return (&core.ApiError{
 			Code:    http.StatusInternalServerError,
 			Message: "internal server error",
 			Err:     err,
-		}).WithError("product handler / add products")
+		}).WithError("product handler / add product")
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,6 +27,12 @@ func (u *ProductUseCases) AddProduct(req entities.AddProductRequest, uploadedFil
 		return nil, core.ErrBadRequest
 	}
 
+	for _, fileHeader := range uploadedFiles {
+		if err := validateImageType(fileHeader); err != nil {
+			return nil, err
+		}
+	}
+
 	res, err := u.r.AddProduct(req)
 	if err != nil {
 		return nil, err
@@ -34,22 +41,25 @@ func (u *ProductUseCases) AddProduct(req entities.AddProductRequest, uploadedFil
 
 	var filenames []string
 	for _, fileHeader := range uploadedFiles {
+		if err := validateImageType(fileHeader); err != nil {
+			return nil, err
+		}
+
 		src, err := fileHeader.Open()
 		if err != nil {
 			return nil, err
 		}
+
 		filename := fmt.Sprintf("product_%d_%d%s", productID, time.Now().UnixNano(), filepath.Ext(fileHeader.Filename))
 		filePath := filepath.Join("/app/images", filename)
 
 		dst, err := os.Create(filePath)
 		if err != nil {
-			src.Close()
 			return nil, err
 		}
 
 		_, err = io.Copy(dst, src)
 		src.Close()
-		dst.Close()
 		if err != nil {
 			return nil, err
 		}
@@ -72,4 +82,26 @@ func (u *ProductUseCases) GetAll() ([]entities.Product, error) {
 
 func (u *ProductUseCases) GetProduct(id int64) (*entities.Product, error) {
 	return u.r.GetProduct(id)
+}
+
+func validateImageType(header *multipart.FileHeader) error {
+	src, err := header.Open()
+	if err != nil {
+		return err
+	}
+
+	defer src.Close()
+
+	buf := make([]byte, 512)
+	if _, err := src.Read(buf); err != nil {
+		return err
+	}
+
+	contentType := http.DetectContentType(buf)
+
+	if contentType != "image/jpeg" && contentType != "image/png" {
+		return core.ErrBadRequest
+	}
+
+	return nil
 }

@@ -25,7 +25,7 @@ func NewMuxRouter() *MuxRouter {
 	return &MuxRouter{router: mux.NewRouter()}
 }
 
-func (r *MuxRouter) StartServer(h Handlers, port string) {
+func (r *MuxRouter) StartServer(h *Handlers, port string) {
 	r.registerHandlers(h)
 	r.router.Use(CORSMiddleware)
 	r.serveHTTP(port)
@@ -47,7 +47,11 @@ type Handlers struct {
 	ProductHandler *producthandler.ProductHandler
 }
 
-func (r *MuxRouter) registerHandlers(h Handlers) {
+func NewHandlers(userHandler *userhandler.UserHandler, authHandler *authhandler.AuthHandler, productHandler *producthandler.ProductHandler) *Handlers {
+	return &Handlers{UserHandler: userHandler, AuthHandler: authHandler, ProductHandler: productHandler}
+}
+
+func (r *MuxRouter) registerHandlers(h *Handlers) {
 	// This serves all files from /app/images as /images/*
 	r.router.PathPrefix("/images/").Handler(http.StripPrefix("/images/",
 		http.FileServer(http.Dir("/app/images")),
