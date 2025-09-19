@@ -64,7 +64,7 @@ func main() {
 	authHandler := authhandler.NewAuthHandler(userUseCases)
 	productHandler := producthandler.NewProductHandler(productUseCases)
 
-	h := handlers.Handlers{UserHandler: userHandler, AuthHandler: authHandler, ProductHandler: productHandler}
+	h := handlers.NewHandlers(userHandler, authHandler, productHandler)
 
 	router := handlers.NewMuxRouter()
 	router.StartServer(h, serverPort)
