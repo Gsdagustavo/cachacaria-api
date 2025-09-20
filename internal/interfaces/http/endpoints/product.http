@@ -1,0 +1,37 @@
+###
+GET http://localhost:8080/products
+
+###
+@get_id = 1
+GET http://localhost:8080/products/{{get_id}}
+
+###
+POST http://localhost:8080/products/add
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="name"
+
+Cachaça Ouro
+--WebAppBoundary
+Content-Disposition: form-data; name="description"
+
+Cachaça armazenada em tonel de jequitibá
+--WebAppBoundary
+Content-Disposition: form-data; name="price"
+
+23
+--WebAppBoundary
+Content-Disposition: form-data; name="stock"
+
+49.90
+--WebAppBoundary
+Content-Disposition: form-data; name="photos"; filename="garrafa.jpg"
+Content-Type: image/jpeg
+
+< ./assets/cachaca.jpg
+--WebAppBoundary--
+
+###
+@delete_id = 1
+DELETE http://localhost:8080/products/delete/{{delete_id}}

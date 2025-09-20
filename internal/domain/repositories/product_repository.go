@@ -10,4 +10,5 @@ type ProductRepository interface {
 	AddProductPhotos(photos []*multipart.FileHeader) error
 	GetAll() ([]entities.Product, error)
 	GetProduct(id int64) (*entities.Product, error)
+	DeleteProduct(id int64) (*entities.DeleteProductResponse, error)
 }

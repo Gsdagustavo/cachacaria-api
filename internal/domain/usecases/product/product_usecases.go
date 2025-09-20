@@ -84,6 +84,24 @@ func (u *ProductUseCases) GetProduct(id int64) (*entities.Product, error) {
 	return u.r.GetProduct(id)
 }
 
+func (u *ProductUseCases) DeleteProduct(id int64) (*entities.DeleteProductResponse, error) {
+	prod, err := u.GetProduct(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if prod == nil {
+		return nil, core.ErrNotFound
+	}
+
+	res, err := u.r.DeleteProduct(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func validateImageType(header *multipart.FileHeader) error {
 	src, err := header.Open()
 	if err != nil {

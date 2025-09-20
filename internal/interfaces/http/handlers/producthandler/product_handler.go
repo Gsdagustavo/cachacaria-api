@@ -165,3 +165,48 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *cor
 	json.NewEncoder(w).Encode(prod)
 	return nil
 }
+
+func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) *core.ApiError {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodDelete); apiErr != nil {
+		return apiErr.WithError("prod handler / delete")
+	}
+
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	if idStr == "" {
+		return (&core.ApiError{
+			Code:    http.StatusBadRequest,
+			Message: "id is required",
+		}).WithError("prod handler / delete")
+	}
+
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return (&core.ApiError{
+			Code:    http.StatusBadRequest,
+			Message: "invalid id",
+			Err:     err,
+		}).WithError("prod handler / delete")
+	}
+
+	res, err := h.ProductUseCases.DeleteProduct(id)
+	if err != nil {
+		if errors.Is(err, core.ErrNotFound) {
+			return (&core.ApiError{
+				Code:    http.StatusNotFound,
+				Err:     nil,
+				Message: "product not found",
+			}).WithError("prod handler / delete")
+		}
+
+		return (&core.ApiError{
+			Code:    http.StatusInternalServerError,
+			Message: "could not delete product",
+			Err:     err,
+		}).WithError("prod handler / delete")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+	return nil
+}

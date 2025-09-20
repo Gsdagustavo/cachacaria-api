@@ -138,3 +138,34 @@ func (r *MySQLProductRepository) GetProduct(id int64) (*entities.Product, error)
 
 	return &product, nil
 }
+
+func (r *MySQLProductRepository) DeleteProduct(id int64) (*entities.DeleteProductResponse, error) {
+	const query = "DELETE FROM products WHERE id = ?"
+
+	txn, err := r.DB.Begin()
+	if err != nil {
+		log.Printf("MySQLProductRepository.DeleteProduct Error: %v", err)
+		return nil, err
+	}
+
+	res, err := txn.Exec(query, id)
+	if err != nil {
+		log.Printf("MySQLProductRepository.DeleteProduct Error: %v", err)
+		txn.Rollback()
+		return nil, err
+	}
+
+	if rows, err := res.RowsAffected(); err != nil || rows != 1 {
+		log.Printf("MySQLProductRepository.DeleteProduct Error: %v", err)
+		txn.Rollback()
+		return nil, err
+	}
+
+	if err := txn.Commit(); err != nil {
+		log.Printf("MySQLProductRepository.DeleteProduct Error: %v", err)
+		txn.Rollback()
+		return nil, err
+	}
+
+	return &entities.DeleteProductResponse{ID: id}, nil
+}

@@ -71,6 +71,7 @@ func (r *MuxRouter) registerHandlers(h *Handlers) {
 	r.router.HandleFunc("/products/add", Handle(h.ProductHandler.Add))
 	r.router.HandleFunc("/products", Handle(h.ProductHandler.GetAll))
 	r.router.HandleFunc("/products/{id}", Handle(h.ProductHandler.GetProduct))
+	r.router.HandleFunc("/products/delete/{id}", Handle(h.ProductHandler.DeleteProduct))
 
 	r.router.HandleFunc("/docs", Handle(AuthMiddleware(func(w http.ResponseWriter, req *http.Request) *core.ApiError {
 		http.ServeFile(w, req, "index.html")
