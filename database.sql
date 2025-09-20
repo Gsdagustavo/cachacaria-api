@@ -27,7 +27,7 @@ CREATE TABLE products_photos
     id         INT PRIMARY KEY AUTO_INCREMENT,
     product_id INT          NOT NULL,
     filename   VARCHAR(255) NOT NULl,
-    CONSTRAINT fk_product_photo FOREIGN KEY (product_id) REFERENCES products (id)
+    CONSTRAINT fk_product_photo FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
 );
 
 CREATE TABLE reviews
