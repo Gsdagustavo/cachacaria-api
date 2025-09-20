@@ -1,0 +1,6 @@
+###
+GET http://localhost:8080/users
+
+###
+@id = 1
+DELETE http://localhost:8080/users/delete/{{id}}

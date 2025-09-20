@@ -1,0 +1,18 @@
+###
+POST http://localhost:8080/auth/register
+
+{
+    "email": "test@gmail.com",
+    "password": "12345678",
+    "phone": "123123123123",
+    "is_adm": true
+}
+
+###
+POST http://localhost:8080/auth/login
+
+{
+    "email": "test@gmail.com",
+    "password": "12345678"
+}
+

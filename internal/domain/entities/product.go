@@ -20,3 +20,11 @@ type AddProductRequest struct {
 type AddProductResponse struct {
 	ID int64 `json:"id"`
 }
+
+type DeleteProductRequest struct {
+	ID int64 `json:"id"`
+}
+
+type DeleteProductResponse struct {
+	ID int64 `json:"id"`
+}

@@ -99,19 +99,21 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.A
 		return apiErr
 	}
 
-	query := r.URL.Query()
-	if !query.Has("id") {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	if idStr == "" {
 		return &core.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "id is required",
 		}
 	}
 
-	id, err := strconv.ParseInt(query.Get("id"), 10, 64)
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		return &core.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "invalid id",
+			Err:     err,
 		}
 	}
 
@@ -142,30 +144,21 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.A
 		return apiErr
 	}
 
-	query := r.URL.Query()
-
-	log.Printf("Query: %v", query)
-
-	hasId := query.Has("id")
-
-	log.Printf("has id: %v", hasId)
-
-	if !hasId {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	if idStr == "" {
 		return &core.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "id is required",
 		}
 	}
 
-	id, err := strconv.ParseInt(query.Get("id"), 10, 64)
-
-	log.Printf("id: %v", id)
-	log.Printf("err: %v", err)
-
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		return &core.ApiError{
 			Code:    http.StatusBadRequest,
 			Message: "invalid id",
+			Err:     err,
 		}
 	}
 
