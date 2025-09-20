@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"cachacariaapi/internal/infrastructure/config"
 	"cachacariaapi/internal/interfaces/http/core"
 	"cachacariaapi/internal/interfaces/http/handlers/authhandler"
 	"cachacariaapi/internal/interfaces/http/handlers/producthandler"
@@ -19,22 +20,22 @@ import (
 // === ROUTER ===
 type MuxRouter struct {
 	router *mux.Router
+	cfg    *config.ServerConfig
 }
 
-func NewMuxRouter() *MuxRouter {
-	return &MuxRouter{router: mux.NewRouter()}
+func NewMuxRouter(cfg *config.ServerConfig) *MuxRouter {
+	return &MuxRouter{router: mux.NewRouter(), cfg: cfg}
 }
 
-func (r *MuxRouter) StartServer(h *Handlers, port string) {
+func (r *MuxRouter) StartServer(h *Handlers, serverAddress string) {
 	r.registerHandlers(h)
 	r.router.Use(CORSMiddleware)
-	r.serveHTTP(port)
+	r.serveHTTP(serverAddress)
 }
 
-func (r *MuxRouter) serveHTTP(port string) {
-	log.Printf("Server is listening on port %v", port)
-	err := http.ListenAndServe(fmt.Sprintf(":%s", port), r.router)
-
+func (r *MuxRouter) serveHTTP(serverAddress string) {
+	log.Printf("Server is listening on %s", serverAddress)
+	err := http.ListenAndServe(serverAddress, r.router)
 	if err != nil {
 		log.Fatal(err)
 	}
