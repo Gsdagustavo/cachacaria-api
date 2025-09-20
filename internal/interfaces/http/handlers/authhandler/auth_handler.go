@@ -17,12 +17,12 @@ import (
 
 type AuthHandler struct {
 	UserUseCases *userusecases.UserUseCases
-	jtwSecret    []byte
+	jwtSecret    []byte
 }
 
 func NewAuthHandler(userUseCases *userusecases.UserUseCases) *AuthHandler {
 	secret := os.Getenv("JWT_SECRET")
-	return &AuthHandler{UserUseCases: userUseCases, jtwSecret: []byte(secret)}
+	return &AuthHandler{UserUseCases: userUseCases, jwtSecret: []byte(secret)}
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.ApiError {
@@ -59,7 +59,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})
 
-	tokenString, err := token.SignedString(h.jtwSecret)
+	tokenString, err := token.SignedString(h.jwtSecret)
 	if err != nil {
 		return (&core.ApiError{
 			Code:    http.StatusInternalServerError,
@@ -104,7 +104,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})
 
-	tokenString, err := token.SignedString(h.jtwSecret)
+	tokenString, err := token.SignedString(h.jwtSecret)
 	if err != nil {
 		return (&core.ApiError{
 			Code:    http.StatusInternalServerError,
