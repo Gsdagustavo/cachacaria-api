@@ -25,13 +25,13 @@ func NewProductHandler(productUseCases *product.ProductUseCases) *ProductHandler
 	return &ProductHandler{productUseCases}
 }
 
-func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ApiError {
+func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ServerError {
 	if apiErr := core.ValidateRequestMethod(r, http.MethodPost); apiErr != nil {
 		return apiErr.WithError("products handler / add product")
 	}
 
 	if err := r.ParseMultipartForm(maxImagesMemory); err != nil {
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "product images form exceeds maximum memory limit",
 			Err:     err,
@@ -57,7 +57,7 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ApiEr
 		log.Printf("error adding product: %v", err)
 
 		if errors.Is(err, core.ErrConflict) {
-			return (&core.ApiError{
+			return (&core.ServerError{
 				Code:    http.StatusConflict,
 				Err:     err,
 				Message: "product already exists",
@@ -65,14 +65,14 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ApiEr
 		}
 
 		if errors.Is(err, core.ErrBadRequest) {
-			return (&core.ApiError{
+			return (&core.ServerError{
 				Code:    http.StatusBadRequest,
 				Err:     err,
 				Message: "bad request",
 			}).WithError("products handler / add product")
 		}
 
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: "internal server error",
 			Err:     err,
@@ -84,7 +84,7 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.ApiEr
 	return nil
 }
 
-func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.ApiError {
+func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.ServerError {
 	if apiErr := core.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
 		return apiErr.WithError("product handler / get all")
 	}
@@ -93,14 +93,14 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.Ap
 
 	if err != nil {
 		if errors.Is(err, core.ErrNotFound) {
-			return (&core.ApiError{
+			return (&core.ServerError{
 				Code:    http.StatusNotFound,
 				Message: "no products found",
 				Err:     nil,
 			}).WithError("product handler / get all")
 		}
 
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: "internal server error",
 			Err:     err,
@@ -121,7 +121,7 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.Ap
 	return nil
 }
 
-func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *core.ApiError {
+func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *core.ServerError {
 	if apiErr := core.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
 		return apiErr.WithError("prod handler / get all")
 	}
@@ -129,7 +129,7 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *cor
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 	if idStr == "" {
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "id is required",
 		}).WithError("prod handler / get prod")
@@ -137,7 +137,7 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *cor
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "invalid id",
 			Err:     err,
@@ -147,14 +147,14 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *cor
 	prod, err := h.ProductUseCases.GetProduct(id)
 	if err != nil {
 		if errors.Is(err, core.ErrNotFound) {
-			return (&core.ApiError{
+			return (&core.ServerError{
 				Code:    http.StatusNotFound,
 				Message: "prod not found",
 				Err:     nil,
 			}).WithError("prod handler / get prod")
 		}
 
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: "could not get prod",
 			Err:     err,
@@ -166,7 +166,7 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *cor
 	return nil
 }
 
-func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) *core.ApiError {
+func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) *core.ServerError {
 	if apiErr := core.ValidateRequestMethod(r, http.MethodDelete); apiErr != nil {
 		return apiErr.WithError("prod handler / delete")
 	}
@@ -174,7 +174,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) *
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 	if idStr == "" {
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "id is required",
 		}).WithError("prod handler / delete")
@@ -182,7 +182,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) *
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "invalid id",
 			Err:     err,
@@ -192,14 +192,14 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) *
 	res, err := h.ProductUseCases.DeleteProduct(id)
 	if err != nil {
 		if errors.Is(err, core.ErrNotFound) {
-			return (&core.ApiError{
+			return (&core.ServerError{
 				Code:    http.StatusNotFound,
 				Err:     nil,
 				Message: "product not found",
 			}).WithError("prod handler / delete")
 		}
 
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: "could not delete product",
 			Err:     err,

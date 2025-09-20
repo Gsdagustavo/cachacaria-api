@@ -5,7 +5,6 @@ import (
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/core"
 	"errors"
-	"log"
 	"regexp"
 )
 
@@ -30,9 +29,6 @@ func (u *UserUseCases) GetAll() ([]entities.User, error) {
 
 // Add a user and returns a UserResponse, or an error if any occurs
 func (u *UserUseCases) Add(req entities.RegisterRequest) (*entities.UserResponse, error) {
-	log.Printf("add user called on user usecases. request: %v", req)
-	log.Printf("password: %v", req.Password)
-
 	if err := validateEmail(req.Email); err != nil {
 		return nil, err
 	}
@@ -110,7 +106,6 @@ func (u *UserUseCases) Update(user entities.UserRequest, userId int64) (*entitie
 
 func validateEmail(email string) error {
 	if !emailRegex.MatchString(email) {
-		log.Printf("invalid email: %s", email)
 		return core.ErrInvalidEmail
 	}
 
@@ -119,7 +114,6 @@ func validateEmail(email string) error {
 
 func validatePassword(password string) error {
 	if !passwordRegex.MatchString(password) {
-		log.Printf("invalid password: %s", password)
 		return core.ErrInvalidPassword
 	}
 
@@ -128,7 +122,6 @@ func validatePassword(password string) error {
 
 func validatePhone(phone string) error {
 	if !phoneRegex.MatchString(phone) {
-		log.Printf("invalid phone: %s", phone)
 		return core.ErrInvalidPhoneNumber
 	}
 

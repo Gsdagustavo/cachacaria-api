@@ -25,14 +25,14 @@ func NewAuthHandler(userUseCases *userusecases.UserUseCases) *AuthHandler {
 	return &AuthHandler{UserUseCases: userUseCases, jwtSecret: []byte(secret)}
 }
 
-func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.ApiError {
+func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.ServerError {
 	if apiErr := core.ValidateRequestMethod(r, http.MethodPost); apiErr != nil {
 		return apiErr.WithError("auth handler / register")
 	}
 
 	var request entities.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: core.ErrBadRequest.Error(),
 			Err:     err,
@@ -41,7 +41,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: core.ErrInternal.Error(),
 			Err:     err,
@@ -61,7 +61,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 
 	tokenString, err := token.SignedString(h.jwtSecret)
 	if err != nil {
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: core.ErrTokenGenerationError.Error(),
 			Err:     err,
@@ -72,14 +72,14 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) *core.Api
 	return nil
 }
 
-func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiError {
+func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ServerError {
 	if apiErr := core.ValidateRequestMethod(r, http.MethodPost); apiErr != nil {
 		return apiErr.WithError("auth handler / login")
 	}
 
 	var req entities.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: core.ErrBadRequest.Error(),
 			Err:     err,
@@ -92,7 +92,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusUnauthorized,
 			Message: core.ErrInvalidPassword.Error(),
 			Err:     core.ErrUnauthorized,
@@ -106,7 +106,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) *core.ApiErr
 
 	tokenString, err := token.SignedString(h.jwtSecret)
 	if err != nil {
-		return (&core.ApiError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: "token generation error",
 			Err:     err,
@@ -123,28 +123,28 @@ func setToken(w http.ResponseWriter, token string) {
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
-func MapRegisterError(err error) *core.ApiError {
+func MapRegisterError(err error) *core.ServerError {
 	switch {
 	case errors.Is(err, core.ErrConflict):
-		return &core.ApiError{Code: http.StatusConflict, Message: core.ErrUserAlreadyExists.Error(), Err: err}
+		return &core.ServerError{Code: http.StatusConflict, Message: core.ErrUserAlreadyExists.Error(), Err: err}
 	case errors.Is(err, core.ErrInvalidEmail):
-		return &core.ApiError{Code: http.StatusBadRequest, Message: core.ErrInvalidEmail.Error(), Err: err}
+		return &core.ServerError{Code: http.StatusBadRequest, Message: core.ErrInvalidEmail.Error(), Err: err}
 	case errors.Is(err, core.ErrInvalidPassword):
-		return &core.ApiError{Code: http.StatusBadRequest, Message: core.ErrInvalidPassword.Error(), Err: err}
+		return &core.ServerError{Code: http.StatusBadRequest, Message: core.ErrInvalidPassword.Error(), Err: err}
 	case errors.Is(err, core.ErrInvalidPhoneNumber):
-		return &core.ApiError{Code: http.StatusBadRequest, Message: core.ErrInvalidPhoneNumber.Error(), Err: err}
+		return &core.ServerError{Code: http.StatusBadRequest, Message: core.ErrInvalidPhoneNumber.Error(), Err: err}
 	default:
-		return &core.ApiError{Code: http.StatusInternalServerError, Message: core.ErrInternal.Error(), Err: err}
+		return &core.ServerError{Code: http.StatusInternalServerError, Message: core.ErrInternal.Error(), Err: err}
 	}
 }
 
-func MapLoginError(err error) *core.ApiError {
+func MapLoginError(err error) *core.ServerError {
 	switch {
 	case errors.Is(err, core.ErrNotFound):
-		return &core.ApiError{Code: http.StatusNotFound, Message: core.ErrUserNotfound.Error(), Err: err}
+		return &core.ServerError{Code: http.StatusNotFound, Message: core.ErrUserNotFound.Error(), Err: err}
 	case errors.Is(err, core.ErrInvalidPassword):
-		return &core.ApiError{Code: http.StatusBadRequest, Message: core.ErrInvalidPassword.Error(), Err: err}
+		return &core.ServerError{Code: http.StatusBadRequest, Message: core.ErrInvalidPassword.Error(), Err: err}
 	default:
-		return &core.ApiError{Code: http.StatusInternalServerError, Message: core.ErrInternal.Error(), Err: err}
+		return &core.ServerError{Code: http.StatusInternalServerError, Message: core.ErrInternal.Error(), Err: err}
 	}
 }

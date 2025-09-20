@@ -73,14 +73,14 @@ func (r *MuxRouter) registerHandlers(h *Handlers) {
 	r.router.HandleFunc("/products/{id}", Handle(h.ProductHandler.GetProduct))
 	r.router.HandleFunc("/products/delete/{id}", Handle(h.ProductHandler.DeleteProduct))
 
-	r.router.HandleFunc("/docs", Handle(AuthMiddleware(func(w http.ResponseWriter, req *http.Request) *core.ApiError {
+	r.router.HandleFunc("/docs", Handle(AuthMiddleware(func(w http.ResponseWriter, req *http.Request) *core.ServerError {
 		http.ServeFile(w, req, "index.html")
 		log.Printf("user enterd in docs middleware")
 		return nil
 	})))
 }
 
-type HandlerFunc func(http.ResponseWriter, *http.Request) *core.ApiError
+type HandlerFunc func(http.ResponseWriter, *http.Request) *core.ServerError
 
 func Handle(h HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +91,7 @@ func Handle(h HandlerFunc) http.HandlerFunc {
 }
 
 func AuthMiddleware(next HandlerFunc) HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) *core.ApiError {
+	return func(w http.ResponseWriter, r *http.Request) *core.ServerError {
 		var tokenString string
 
 		authHeader := r.Header.Get("Authorization")
@@ -100,7 +100,7 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 		} else {
 			cookie, err := r.Cookie("auth_token")
 			if err != nil {
-				return &core.ApiError{
+				return &core.ServerError{
 					Code:    http.StatusUnauthorized,
 					Message: "unauthorized: no token provided",
 					Err:     err,
@@ -119,7 +119,7 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			return &core.ApiError{
+			return &core.ServerError{
 				Code:    http.StatusUnauthorized,
 				Message: "unauthorized: invalid token",
 				Err:     err,
@@ -128,7 +128,7 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok || !token.Valid {
-			return &core.ApiError{
+			return &core.ServerError{
 				Code:    http.StatusUnauthorized,
 				Message: "unauthorized: invalid token",
 				Err:     err,
@@ -137,7 +137,7 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 
 		userID, ok := claims["user_id"].(float64)
 		if !ok {
-			return &core.ApiError{
+			return &core.ServerError{
 				Code:    http.StatusUnauthorized,
 				Message: "unauthorized: invalid user_id",
 			}
