@@ -2,5 +2,9 @@
 GET http://localhost:8080/users
 
 ###
-@id = 1
-DELETE http://localhost:8080/users/delete/{{id}}
+@get_id = 1
+GET http://localhost:8080/users/{{get_id}}
+
+###
+@delete_id = 1
+DELETE http://localhost:8080/users/delete/{{delete_id}}
