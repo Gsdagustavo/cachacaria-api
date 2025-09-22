@@ -20,11 +20,11 @@ Cachaça armazenada em tonel de jequitibá
 --WebAppBoundary
 Content-Disposition: form-data; name="price"
 
-23
+19.99
 --WebAppBoundary
 Content-Disposition: form-data; name="stock"
 
-49.90
+30
 --WebAppBoundary
 Content-Disposition: form-data; name="photos"; filename="garrafa.jpg"
 Content-Type: image/jpeg

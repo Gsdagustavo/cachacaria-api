@@ -2,9 +2,9 @@ package core
 
 import "net/http"
 
-func ValidateRequestMethod(r *http.Request, allowedMethod string) *ApiError {
+func ValidateRequestMethod(r *http.Request, allowedMethod string) *ServerError {
 	if r.Method != allowedMethod {
-		return &ApiError{
+		return &ServerError{
 			Code:    http.StatusMethodNotAllowed,
 			Message: ErrMethodNotAllowed.Error(),
 			Err:     nil,

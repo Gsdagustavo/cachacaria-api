@@ -18,6 +18,7 @@ services:
     depends_on:
       - mysql
     environment:
+      DB_DRIVER: mysql
       DB_USER: appuser
       DB_PASSWORD: apppass
       DB_HOST: mysql

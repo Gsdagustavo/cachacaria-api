@@ -3,47 +3,25 @@ package main
 import (
 	"cachacariaapi/internal/domain/usecases/product"
 	"cachacariaapi/internal/domain/usecases/user"
+	"cachacariaapi/internal/infrastructure/config"
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/handlers"
 	"cachacariaapi/internal/interfaces/http/handlers/authhandler"
 	"cachacariaapi/internal/interfaces/http/handlers/producthandler"
 	"cachacariaapi/internal/interfaces/http/handlers/userhandler"
 	"database/sql"
-	"fmt"
 	"log"
-	"os"
-
-	"github.com/go-sql-driver/mysql"
+	"net"
 )
-
-var (
-	user       = os.Getenv("DB_USER")
-	passwd     = os.Getenv("DB_PASSWORD")
-	host       = os.Getenv("DB_HOST")
-	dbPort     = os.Getenv("DB_PORT")
-	dbName     = os.Getenv("DB_NAME")
-	serverPort = os.Getenv("SERVER_PORT")
-)
-
-var net = "tcp"
-var addr = fmt.Sprintf("%s:%s", host, dbPort)
 
 func main() {
-	//loadJwtEnv()
+	dbConfig := config.NewDBConfig()
 
-	cfg := mysql.Config{
-		User:   user,
-		Passwd: passwd,
-		Net:    net,
-		Addr:   addr,
-		DBName: dbName,
-	}
+	serverConfig := config.NewServerConfig(dbConfig)
 
-	dsn := cfg.FormatDSN()
+	dsn := dbConfig.FormatDSN()
 
-	log.Printf("dsn: %s", dsn)
-
-	db, err := sql.Open("mysql", cfg.FormatDSN())
+	db, err := sql.Open("mysql", dsn)
 
 	if err != nil {
 		log.Fatal(err)
@@ -66,6 +44,7 @@ func main() {
 
 	h := handlers.NewHandlers(userHandler, authHandler, productHandler)
 
-	router := handlers.NewMuxRouter()
-	router.StartServer(h, serverPort)
+	serverAddress := net.JoinHostPort(serverConfig.Address, serverConfig.Port)
+	router := handlers.NewMuxRouter(serverConfig)
+	router.StartServer(h, serverAddress)
 }
