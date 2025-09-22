@@ -45,6 +45,6 @@ func main() {
 	h := handlers.NewHandlers(userHandler, authHandler, productHandler)
 
 	serverAddress := net.JoinHostPort(serverConfig.Address, serverConfig.Port)
-	router := handlers.NewMuxRouter()
+	router := handlers.NewMuxRouter(serverConfig)
 	router.StartServer(h, serverAddress)
 }
