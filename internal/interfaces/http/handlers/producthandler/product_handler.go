@@ -42,17 +42,17 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core.Serve
 	description := r.FormValue("description")
 	price, _ := strconv.ParseFloat(r.FormValue("price"), 64)
 	stock, _ := strconv.Atoi(r.FormValue("stock"))
+	photos := r.MultipartForm.File["photos"]
 
 	request := entities.AddProductRequest{
 		Name:        name,
 		Description: description,
 		Price:       float32(price),
 		Stock:       stock,
+		Photos:      photos,
 	}
 
-	photos := r.MultipartForm.File["photos"]
-
-	response, err := h.ProductUseCases.AddProduct(request, photos)
+	response, err := h.ProductUseCases.AddProduct(request)
 	if err != nil {
 		log.Printf("error adding product: %v", err)
 
@@ -204,6 +204,83 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) *
 			Message: "could not delete product",
 			Err:     err,
 		}).WithError("prod handler / delete")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+	return nil
+}
+
+func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) *core.ServerError {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodPatch); apiErr != nil {
+		return apiErr.WithError("product handler / update product")
+	}
+
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	if idStr == "" {
+		return (&core.ServerError{
+			Code:    http.StatusBadRequest,
+			Message: "id is required",
+		}).WithError("prod handler / update")
+	}
+
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return (&core.ServerError{
+			Code:    http.StatusBadRequest,
+			Message: "invalid id",
+			Err:     err,
+		}).WithError("prod handler / update")
+	}
+
+	if err := r.ParseMultipartForm(maxImagesMemory); err != nil {
+		return (&core.ServerError{
+			Code:    http.StatusBadRequest,
+			Message: "product images form exceeds maximum memory limit",
+			Err:     err,
+		}).WithError("product handler / parse multipart form failed: " + err.Error())
+	}
+
+	name := r.FormValue("name")
+	description := r.FormValue("description")
+	price, _ := strconv.ParseFloat(r.FormValue("price"), 64)
+	stock, _ := strconv.Atoi(r.FormValue("stock"))
+
+	finalPrice := float32(price)
+
+	// photos := r.MultipartForm.File["photos"]
+
+	request := entities.UpdateProductRequest{
+		Name:        &name,
+		Description: &description,
+		Price:       &finalPrice,
+		Stock:       &stock,
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return (&core.ServerError{
+			Code:    http.StatusBadRequest,
+			Message: "invalid request body",
+			Err:     err,
+		}).WithError("prod handler / update")
+	}
+
+	res, err := h.ProductUseCases.UpdateProduct(id, request)
+	if err != nil {
+		if errors.Is(err, core.ErrNotFound) {
+			return (&core.ServerError{
+				Code:    http.StatusNotFound,
+				Err:     nil,
+				Message: "product not found",
+			}).WithError("prod handler / update")
+		}
+
+		return (&core.ServerError{
+			Code:    http.StatusInternalServerError,
+			Message: "could not update product",
+			Err:     err,
+		}).WithError("prod handler / update")
 	}
 
 	w.Header().Set("Content-Type", "application/json")

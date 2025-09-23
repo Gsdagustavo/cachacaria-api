@@ -1,5 +1,7 @@
 package entities
 
+import "mime/multipart"
+
 type Product struct {
 	ID          int64    `json:"id"`
 	Name        string   `json:"name"`
@@ -14,6 +16,7 @@ type AddProductRequest struct {
 	Description string  `json:"description"`
 	Price       float32 `json:"price"`
 	Stock       int     `json:"stock"`
+	Photos      []*multipart.FileHeader
 }
 
 type AddProductResponse struct {

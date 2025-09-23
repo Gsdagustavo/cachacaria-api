@@ -2,7 +2,7 @@ package main
 
 import (
 	"cachacariaapi/internal/domain/usecases/product"
-	"cachacariaapi/internal/domain/usecases/user"
+	userusecases "cachacariaapi/internal/domain/usecases/user"
 	"cachacariaapi/internal/infrastructure/config"
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/handlers"
@@ -11,7 +11,6 @@ import (
 	"cachacariaapi/internal/interfaces/http/handlers/userhandler"
 	"database/sql"
 	"log"
-	"net"
 )
 
 func main() {
@@ -43,8 +42,6 @@ func main() {
 	productHandler := producthandler.NewProductHandler(productUseCases)
 
 	h := handlers.NewHandlers(userHandler, authHandler, productHandler)
-
-	serverAddress := net.JoinHostPort(serverConfig.Address, serverConfig.Port)
 	router := handlers.NewMuxRouter(serverConfig)
-	router.StartServer(h, serverAddress)
+	router.StartServer(h, serverConfig)
 }

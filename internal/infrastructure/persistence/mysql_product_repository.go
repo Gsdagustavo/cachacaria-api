@@ -169,3 +169,19 @@ func (r *MySQLProductRepository) DeleteProduct(id int64) (*entities.DeleteProduc
 
 	return &entities.DeleteProductResponse{ID: id}, nil
 }
+
+func (r *MySQLProductRepository) UpdateProduct(id int64, product entities.UpdateProductRequest) (*entities.UpdateProductResponse, error) {
+	const query = "UPDATE products SET name = ?, description = ?, price = ?, stock = ? WHERE id = ?"
+	res, err := r.DB.Exec(query, product.Name, product.Description, product.Price, product.Stock, id)
+	if err != nil {
+		log.Printf("MySQLProductRepository.UpdateProduct Error: %v", err)
+		return nil, err
+	}
+
+	if rows, err := res.RowsAffected(); err != nil || rows != 1 {
+		log.Printf("MySQLProductRepository.UpdateProduct Error: %v", err)
+		return nil, err
+	}
+
+	return &entities.UpdateProductResponse{ID: id}, nil
+}

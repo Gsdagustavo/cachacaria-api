@@ -22,12 +22,12 @@ func NewProductUseCases(r *persistence.MySQLProductRepository) *ProductUseCases 
 	return &ProductUseCases{r}
 }
 
-func (u *ProductUseCases) AddProduct(req entities.AddProductRequest, uploadedFiles []*multipart.FileHeader) (*entities.AddProductResponse, error) {
+func (u *ProductUseCases) AddProduct(req entities.AddProductRequest) (*entities.AddProductResponse, error) {
 	if req.Price <= 0 || len(strings.TrimSpace(req.Name)) == 0 || req.Stock < 0 {
 		return nil, core.ErrBadRequest
 	}
 
-	for _, fileHeader := range uploadedFiles {
+	for _, fileHeader := range req.Photos {
 		if err := validateImageType(fileHeader); err != nil {
 			return nil, err
 		}
@@ -40,7 +40,7 @@ func (u *ProductUseCases) AddProduct(req entities.AddProductRequest, uploadedFil
 	productID := res.ID
 
 	var filenames []string
-	for _, fileHeader := range uploadedFiles {
+	for _, fileHeader := range req.Photos {
 		if err := validateImageType(fileHeader); err != nil {
 			return nil, err
 		}
@@ -95,6 +95,24 @@ func (u *ProductUseCases) DeleteProduct(id int64) (*entities.DeleteProductRespon
 	}
 
 	res, err := u.r.DeleteProduct(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (u *ProductUseCases) UpdateProduct(id int64, product entities.UpdateProductRequest) (*entities.UpdateProductResponse, error) {
+	prod, err := u.GetProduct(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if prod == nil {
+		return nil, core.ErrNotFound
+	}
+
+	res, err := u.r.UpdateProduct(id, product)
 	if err != nil {
 		return nil, err
 	}
