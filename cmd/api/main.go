@@ -2,7 +2,7 @@ package main
 
 import (
 	"cachacariaapi/internal/domain/usecases/product"
-	"cachacariaapi/internal/domain/usecases/user"
+	userusecases "cachacariaapi/internal/domain/usecases/user"
 	"cachacariaapi/internal/infrastructure/config"
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/handlers"
@@ -11,10 +11,23 @@ import (
 	"cachacariaapi/internal/interfaces/http/handlers/userhandler"
 	"database/sql"
 	"log"
-	"net"
+	"log/slog"
+	"os"
 )
 
 func main() {
+	filePath := "logs/app.log"
+	file, err := os.Create(filePath)
+	if err != nil {
+		log.Fatalf("Failed to create log file: %v", err)
+	}
+
+	log.Printf("Logging to file: %s", filePath)
+	logger := slog.New(slog.NewJSONHandler(file, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+
+	slog.Info("Hello World!")
+
 	dbConfig := config.NewDBConfig()
 
 	serverConfig := config.NewServerConfig(dbConfig)
@@ -43,8 +56,6 @@ func main() {
 	productHandler := producthandler.NewProductHandler(productUseCases)
 
 	h := handlers.NewHandlers(userHandler, authHandler, productHandler)
-
-	serverAddress := net.JoinHostPort(serverConfig.Address, serverConfig.Port)
 	router := handlers.NewMuxRouter(serverConfig)
-	router.StartServer(h, serverAddress)
+	router.StartServer(h, serverConfig)
 }

@@ -5,6 +5,7 @@ import (
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/core"
 	"errors"
+	"log/slog"
 	"regexp"
 )
 
@@ -55,9 +56,11 @@ func (u *UserUseCases) Add(req entities.RegisterRequest) (*entities.UserResponse
 	res, err := u.r.Add(req)
 	if err != nil {
 		if errors.Is(err, core.ErrConflict) {
+			slog.Error("conflict while adding user", "error", err.Error())
 			return nil, core.ErrConflict
 		}
 
+		slog.Error("error adding user", "error", err.Error())
 		return nil, core.ErrInternal
 	}
 
@@ -68,11 +71,13 @@ func (u *UserUseCases) Add(req entities.RegisterRequest) (*entities.UserResponse
 func (u *UserUseCases) Delete(userId int64) error {
 	_, err := u.FindById(userId)
 	if err != nil {
+		slog.Error("error finding user by id", "error", err.Error())
 		return err
 	}
 
 	err = u.r.Delete(userId)
 	if err != nil {
+		slog.Error("error deleting user", "error", err.Error())
 		return err
 	}
 
@@ -98,6 +103,7 @@ func (u *UserUseCases) Update(user entities.UserRequest, userId int64) (*entitie
 
 	res, err := u.r.Update(user, userId)
 	if err != nil {
+		slog.Error("error updating user", "error", err.Error())
 		return nil, err
 	}
 

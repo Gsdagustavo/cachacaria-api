@@ -25,13 +25,16 @@ services:
       DB_PORT: 3306
       DB_NAME: cachacadb
       SERVER_PORT: 8080
+      SERVER_ADDRESS: 0.0.0.0
       JWT_SECRET: secret
       BASE_URL: http://localhost:8080
     ports:
       - "8080:8080"
     volumes:
       - products_images:/app/images
+      - ./logs:/app/logs
 
 volumes:
   mysql_data:
   products_images:
+  logs:

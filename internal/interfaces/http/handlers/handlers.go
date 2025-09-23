@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -27,15 +28,17 @@ func NewMuxRouter(cfg *config.ServerConfig) *MuxRouter {
 	return &MuxRouter{router: mux.NewRouter(), cfg: cfg}
 }
 
-func (r *MuxRouter) StartServer(h *Handlers, serverAddress string) {
+func (r *MuxRouter) StartServer(h *Handlers, serverConfig *config.ServerConfig) {
+	slog.Info("Server configuration", "port", serverConfig.Port, "address", serverConfig.Address, "baseURL", serverConfig.BaseURL)
+
 	r.registerHandlers(h)
 	r.router.Use(CORSMiddleware)
-	r.serveHTTP(serverAddress)
+	r.serveHTTP(serverConfig.Address + ":" + serverConfig.Port)
 }
 
 func (r *MuxRouter) serveHTTP(serverAddress string) {
-	log.Printf("Server is listening on %s", serverAddress)
 	err := http.ListenAndServe(serverAddress, r.router)
+	log.Printf("Server is listening on %s", serverAddress)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,6 +61,9 @@ func (r *MuxRouter) registerHandlers(h *Handlers) {
 		http.FileServer(http.Dir("/app/images")),
 	))
 
+	r.router.Use(CORSMiddleware)
+	r.router.Use(LoggingMiddleware)
+
 	// user related handlers
 	r.router.HandleFunc("/users", Handle(h.UserHandler.GetAll))
 	r.router.HandleFunc("/users/{id}", Handle(h.UserHandler.GetUser))
@@ -73,6 +79,7 @@ func (r *MuxRouter) registerHandlers(h *Handlers) {
 	r.router.HandleFunc("/products", Handle(h.ProductHandler.GetAll))
 	r.router.HandleFunc("/products/{id}", Handle(h.ProductHandler.GetProduct))
 	r.router.HandleFunc("/products/delete/{id}", Handle(h.ProductHandler.DeleteProduct))
+	r.router.HandleFunc("/products/update/{id}", Handle(h.ProductHandler.UpdateProduct))
 
 	r.router.HandleFunc("/docs", Handle(AuthMiddleware(func(w http.ResponseWriter, req *http.Request) *core.ServerError {
 		http.ServeFile(w, req, "index.html")
@@ -89,6 +96,24 @@ func Handle(h HandlerFunc) http.HandlerFunc {
 			apiErr.WriteHTTP(w)
 		}
 	}
+}
+
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Incoming request",
+			"method", r.Method,
+			"url", r.URL.Path,
+			"remote_addr", r.RemoteAddr,
+			"user_agent", r.UserAgent(),
+			"host", r.Host,
+			"cookies", r.Cookies(),
+			"body", r.Body,
+			"form", r.Form,
+			"post_form", r.PostForm,
+			"multipart_form", r.MultipartForm,
+		)
+		next.ServeHTTP(w, r)
+	})
 }
 
 func AuthMiddleware(next HandlerFunc) HandlerFunc {
