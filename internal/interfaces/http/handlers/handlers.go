@@ -6,7 +6,6 @@ import (
 	"cachacariaapi/internal/interfaces/http/handlers/authhandler"
 	"cachacariaapi/internal/interfaces/http/handlers/producthandler"
 	"cachacariaapi/internal/interfaces/http/handlers/userhandler"
-	"context"
 	"fmt"
 	"log"
 	"log/slog"
@@ -31,8 +30,13 @@ func NewMuxRouter(cfg *config.ServerConfig) *MuxRouter {
 func (r *MuxRouter) StartServer(h *Handlers, serverConfig *config.ServerConfig) {
 	slog.Info("Server configuration", "port", serverConfig.Port, "address", serverConfig.Address, "baseURL", serverConfig.BaseURL)
 
+	// Register handlers
 	r.registerHandlers(h)
+
+	// Middlewares
+	r.router.Use(LoggingMiddleware)
 	r.router.Use(CORSMiddleware)
+
 	r.serveHTTP(serverConfig.Address + ":" + serverConfig.Port)
 }
 
@@ -61,25 +65,22 @@ func (r *MuxRouter) registerHandlers(h *Handlers) {
 		http.FileServer(http.Dir("/app/images")),
 	))
 
-	r.router.Use(CORSMiddleware)
-	r.router.Use(LoggingMiddleware)
-
 	// user related handlers
-	r.router.HandleFunc("/users", Handle(h.UserHandler.GetAll))
-	r.router.HandleFunc("/users/{id}", Handle(h.UserHandler.GetUser))
-	r.router.HandleFunc("/users/delete/{id}", Handle(h.UserHandler.DeleteUser))
-	r.router.HandleFunc("/users/update/{id}", Handle(h.UserHandler.UpdateUser))
+	r.router.HandleFunc("/users", Handle(AuthMiddleware(h.UserHandler.GetAll)))
+	r.router.HandleFunc("/users/{id}", Handle(AuthMiddleware(h.UserHandler.GetUser)))
+	r.router.HandleFunc("/users/delete/{id}", Handle(AuthMiddleware(h.UserHandler.DeleteUser)))
+	r.router.HandleFunc("/users/update/{id}", Handle(AuthMiddleware(h.UserHandler.UpdateUser)))
 
 	// auth handlers
 	r.router.HandleFunc("/auth/register", Handle(h.AuthHandler.Register))
 	r.router.HandleFunc("/auth/login", Handle(h.AuthHandler.Login))
 
 	// product handlers
-	r.router.HandleFunc("/products/add", Handle(h.ProductHandler.Add))
+	r.router.HandleFunc("/products/add", Handle(AuthMiddleware(h.ProductHandler.Add)))
 	r.router.HandleFunc("/products", Handle(h.ProductHandler.GetAll))
 	r.router.HandleFunc("/products/{id}", Handle(h.ProductHandler.GetProduct))
-	r.router.HandleFunc("/products/delete/{id}", Handle(h.ProductHandler.DeleteProduct))
-	r.router.HandleFunc("/products/update/{id}", Handle(h.ProductHandler.UpdateProduct))
+	r.router.HandleFunc("/products/delete/{id}", Handle(AuthMiddleware(h.ProductHandler.DeleteProduct)))
+	r.router.HandleFunc("/products/update/{id}", Handle(AuthMiddleware(h.ProductHandler.UpdateProduct)))
 
 	r.router.HandleFunc("/docs", Handle(AuthMiddleware(func(w http.ResponseWriter, req *http.Request) *core.ServerError {
 		http.ServeFile(w, req, "index.html")
@@ -121,14 +122,15 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 		var tokenString string
 
 		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" && strings.HasPrefix(authHeader, "Bearer ") {
+		if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
 			tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+			slog.Info("token string", "token string", tokenString)
 		} else {
 			cookie, err := r.Cookie("auth_token")
 			if err != nil {
 				return &core.ServerError{
 					Code:    http.StatusUnauthorized,
-					Message: "unauthorized: no token provided",
+					Message: "no token provided",
 					Err:     err,
 				}
 			}
@@ -147,7 +149,7 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 		if err != nil || !token.Valid {
 			return &core.ServerError{
 				Code:    http.StatusUnauthorized,
-				Message: "unauthorized: invalid token",
+				Message: "invalid token",
 				Err:     err,
 			}
 		}
@@ -156,21 +158,20 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 		if !ok || !token.Valid {
 			return &core.ServerError{
 				Code:    http.StatusUnauthorized,
-				Message: "unauthorized: invalid token",
+				Message: "invalid token",
 				Err:     err,
 			}
 		}
 
-		userID, ok := claims["user_id"].(float64)
+		_, ok = claims["user_id"].(float64)
 		if !ok {
 			return &core.ServerError{
 				Code:    http.StatusUnauthorized,
-				Message: "unauthorized: invalid user_id",
+				Message: "invalid user_id",
 			}
 		}
 
-		ctx := context.WithValue(r.Context(), "user_id", int64(userID))
-		return next(w, r.WithContext(ctx))
+		return next(w, r)
 	}
 }
 

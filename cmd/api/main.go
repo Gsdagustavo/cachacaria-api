@@ -22,11 +22,8 @@ func main() {
 		log.Fatalf("Failed to create log file: %v", err)
 	}
 
-	log.Printf("Logging to file: %s", filePath)
 	logger := slog.New(slog.NewJSONHandler(file, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
-
-	slog.Info("Hello World!")
 
 	dbConfig := config.NewDBConfig()
 
