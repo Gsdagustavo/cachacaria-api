@@ -6,6 +6,7 @@ import (
 	"cachacariaapi/internal/interfaces/http/core"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -29,12 +30,14 @@ func (u *ProductUseCases) AddProduct(req entities.AddProductRequest) (*entities.
 
 	for _, fileHeader := range req.Photos {
 		if err := validateImageType(fileHeader); err != nil {
+			slog.Error("error validating image type", "error", err.Error())
 			return nil, err
 		}
 	}
 
 	res, err := u.r.AddProduct(req)
 	if err != nil {
+		slog.Error("error adding product", "error", err.Error())
 		return nil, err
 	}
 	productID := res.ID
@@ -42,12 +45,12 @@ func (u *ProductUseCases) AddProduct(req entities.AddProductRequest) (*entities.
 	var filenames []string
 	for _, fileHeader := range req.Photos {
 		if err := validateImageType(fileHeader); err != nil {
-			return nil, err
+			slog.Error("error validating image type", "error", err.Error())
 		}
 
 		src, err := fileHeader.Open()
 		if err != nil {
-			return nil, err
+			slog.Error("error opening file header", "error", err.Error())
 		}
 
 		filename := fmt.Sprintf("product_%d_%d%s", productID, time.Now().UnixNano(), filepath.Ext(fileHeader.Filename))
@@ -55,12 +58,14 @@ func (u *ProductUseCases) AddProduct(req entities.AddProductRequest) (*entities.
 
 		dst, err := os.Create(filePath)
 		if err != nil {
+			slog.Error("error creating", "error", err.Error())
 			return nil, err
 		}
 
 		_, err = io.Copy(dst, src)
 		src.Close()
 		if err != nil {
+			slog.Error("error copying file", "error", err.Error())
 			return nil, err
 		}
 
@@ -87,6 +92,7 @@ func (u *ProductUseCases) GetProduct(id int64) (*entities.Product, error) {
 func (u *ProductUseCases) DeleteProduct(id int64) (*entities.DeleteProductResponse, error) {
 	prod, err := u.GetProduct(id)
 	if err != nil {
+		slog.Error("error getting product", "error", err.Error())
 		return nil, err
 	}
 
@@ -96,6 +102,7 @@ func (u *ProductUseCases) DeleteProduct(id int64) (*entities.DeleteProductRespon
 
 	res, err := u.r.DeleteProduct(id)
 	if err != nil {
+		slog.Error("error deleting product", "error", err.Error())
 		return nil, err
 	}
 
@@ -105,6 +112,7 @@ func (u *ProductUseCases) DeleteProduct(id int64) (*entities.DeleteProductRespon
 func (u *ProductUseCases) UpdateProduct(id int64, product entities.UpdateProductRequest) (*entities.UpdateProductResponse, error) {
 	prod, err := u.GetProduct(id)
 	if err != nil {
+		slog.Error("error getting product", "error", err.Error())
 		return nil, err
 	}
 
@@ -114,6 +122,7 @@ func (u *ProductUseCases) UpdateProduct(id int64, product entities.UpdateProduct
 
 	res, err := u.r.UpdateProduct(id, product)
 	if err != nil {
+		slog.Error("error updating product", "error", err.Error())
 		return nil, err
 	}
 
@@ -123,6 +132,7 @@ func (u *ProductUseCases) UpdateProduct(id int64, product entities.UpdateProduct
 func validateImageType(header *multipart.FileHeader) error {
 	src, err := header.Open()
 	if err != nil {
+		slog.Error("error opening file", "error", err.Error())
 		return err
 	}
 
@@ -130,7 +140,7 @@ func validateImageType(header *multipart.FileHeader) error {
 
 	buf := make([]byte, 512)
 	if _, err := src.Read(buf); err != nil {
-		return err
+		slog.Error("error reading image bytes", "error", err.Error())
 	}
 
 	contentType := http.DetectContentType(buf)
