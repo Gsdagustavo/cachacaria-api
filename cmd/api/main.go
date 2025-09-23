@@ -11,9 +11,23 @@ import (
 	"cachacariaapi/internal/interfaces/http/handlers/userhandler"
 	"database/sql"
 	"log"
+	"log/slog"
+	"os"
 )
 
 func main() {
+	filePath := "logs/app.log"
+	file, err := os.Create(filePath)
+	if err != nil {
+		log.Fatalf("Failed to create log file: %v", err)
+	}
+
+	log.Printf("Logging to file: %s", filePath)
+	logger := slog.New(slog.NewJSONHandler(file, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+
+	slog.Info("Hello World!")
+
 	dbConfig := config.NewDBConfig()
 
 	serverConfig := config.NewServerConfig(dbConfig)

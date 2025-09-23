@@ -1,0 +1,2 @@
+{"time":"2025-09-23T18:09:33.059673137Z","level":"INFO","msg":"Hello World!"}
+{"time":"2025-09-23T18:09:33.060307048Z","level":"INFO","msg":"Server configuration","port":"8080","address":"0.0.0.0","baseURL":"http://localhost:8080"}

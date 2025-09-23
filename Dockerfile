@@ -14,7 +14,7 @@ COPY . .
 RUN go build -o main ./cmd/api
 
 # Runtime stage (small, secure image)
-FROM gcr.io/distroless/base-debian12
+FROM debian:bookworm-slim
 
 WORKDIR /app
 

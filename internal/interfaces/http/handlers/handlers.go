@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -28,6 +29,8 @@ func NewMuxRouter(cfg *config.ServerConfig) *MuxRouter {
 }
 
 func (r *MuxRouter) StartServer(h *Handlers, serverConfig *config.ServerConfig) {
+	slog.Info("Server configuration", "port", serverConfig.Port, "address", serverConfig.Address, "baseURL", serverConfig.BaseURL)
+
 	r.registerHandlers(h)
 	r.router.Use(CORSMiddleware)
 	r.serveHTTP(serverConfig.Address + ":" + serverConfig.Port)
@@ -57,6 +60,9 @@ func (r *MuxRouter) registerHandlers(h *Handlers) {
 	r.router.PathPrefix("/images/").Handler(http.StripPrefix("/images/",
 		http.FileServer(http.Dir("/app/images")),
 	))
+
+	r.router.Use(CORSMiddleware)
+	r.router.Use(LoggingMiddleware)
 
 	// user related handlers
 	r.router.HandleFunc("/users", Handle(h.UserHandler.GetAll))
@@ -90,6 +96,24 @@ func Handle(h HandlerFunc) http.HandlerFunc {
 			apiErr.WriteHTTP(w)
 		}
 	}
+}
+
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Incoming request",
+			"method", r.Method,
+			"url", r.URL.Path,
+			"remote_addr", r.RemoteAddr,
+			"user_agent", r.UserAgent(),
+			"host", r.Host,
+			"cookies", r.Cookies(),
+			"body", r.Body,
+			"form", r.Form,
+			"post_form", r.PostForm,
+			"multipart_form", r.MultipartForm,
+		)
+		next.ServeHTTP(w, r)
+	})
 }
 
 func AuthMiddleware(next HandlerFunc) HandlerFunc {

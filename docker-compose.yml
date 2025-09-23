@@ -32,7 +32,9 @@ services:
       - "8080:8080"
     volumes:
       - products_images:/app/images
+      - ./logs:/app/logs
 
 volumes:
   mysql_data:
   products_images:
+  logs:
