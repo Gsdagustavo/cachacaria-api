@@ -14,7 +14,7 @@ services:
       - ./database.sql:/docker-entrypoint-initdb.d/database.sql
 
   app:
-    build: .
+    image: gsdagustavo/cachacaria-api
     depends_on:
       - mysql
     environment:
@@ -25,9 +25,9 @@ services:
       DB_PORT: 3306
       DB_NAME: cachacadb
       SERVER_PORT: 8080
-      SERVER_ADDRESS: 0.0.0.0
+      SERVER_ADDRESS: 192.168.0.120
       JWT_SECRET: secret
-      BASE_URL: http://localhost:8080
+      BASE_URL: http://192.168.0.120
     ports:
       - "8080:8080"
     volumes:
