@@ -1,4 +1,1 @@
-{"time":"2025-09-24T17:32:43.289634073Z","level":"INFO","msg":"Hello World!"}
-{"time":"2025-09-24T17:32:43.291405001Z","level":"INFO","msg":"Server configuration","port":"8080","address":"192.168.0.120","baseURL":"http://192.168.0.120"}
-{"time":"2025-09-24T17:32:43.294065804Z","level":"INFO","msg":"Server is listening on 192.168.0.120:8080"}
-{"time":"2025-09-24T17:32:43.294416788Z","level":"INFO","msg":"listen tcp 192.168.0.120:8080: bind: cannot assign requested address"}
+{"time":"2025-09-24T17:43:26.595431549Z","level":"INFO","msg":"Server configuration","port":"8080","address":"0.0.0.0","baseURL":"http://localhost"}

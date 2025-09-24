@@ -14,7 +14,7 @@ services:
       - ./database.sql:/docker-entrypoint-initdb.d/database.sql
 
   app:
-    image: gsdagustavo/cachacaria-api
+    build: .
     depends_on:
       - mysql
     environment:
