@@ -1,7 +1,8 @@
-package userusecases
+package usecases
 
 import (
 	"cachacariaapi/internal/domain/entities"
+	"cachacariaapi/internal/domain/repositories"
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/core"
 	"errors"
@@ -16,7 +17,7 @@ var (
 )
 
 type UserUseCases struct {
-	r *persistence.MySQLUserRepository
+	r repositories.UserRepository
 }
 
 func NewUserUseCases(r *persistence.MySQLUserRepository) *UserUseCases {

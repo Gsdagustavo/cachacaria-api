@@ -2,12 +2,15 @@
 GET http://localhost:8080/products
 
 ###
+GET http://localhost:8080/products?limit=5&page=1
+
+###
 @get_id = 1
 GET http://localhost:8080/products/{{get_id}}
 
 ###
 POST http://localhost:8080/products/add
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTg3NDg3MDksInVzZXJfaWQiOjF9.cU6pCBoRbh2DVBUXvdai0YGsZEpGwraDj_wEBfph1DQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTkyMzg1ODcsInVzZXJfaWQiOjF9.khRtIkeW4oSgjKgI2Uj6lh-zvvOhVuIqeQ-7EgGI97Y
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
 --WebAppBoundary

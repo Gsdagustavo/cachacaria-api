@@ -42,3 +42,10 @@ type UpdateProductRequest struct {
 type UpdateProductResponse struct {
 	ID int64 `json:"id"`
 }
+
+type PaginatedProducts struct {
+	Page     int
+	Offset   int
+	Limit    int
+	Products []Product
+}

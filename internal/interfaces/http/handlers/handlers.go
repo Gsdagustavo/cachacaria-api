@@ -3,9 +3,6 @@ package handlers
 import (
 	"cachacariaapi/internal/infrastructure/config"
 	"cachacariaapi/internal/interfaces/http/core"
-	"cachacariaapi/internal/interfaces/http/handlers/authhandler"
-	"cachacariaapi/internal/interfaces/http/handlers/producthandler"
-	"cachacariaapi/internal/interfaces/http/handlers/userhandler"
 	"fmt"
 	"log"
 	"log/slog"
@@ -50,20 +47,18 @@ func (r *MuxRouter) serveHTTP(serverAddress string) {
 
 // === HANDLERS ===
 type Handlers struct {
-	UserHandler    *userhandler.UserHandler
-	AuthHandler    *authhandler.AuthHandler
-	ProductHandler *producthandler.ProductHandler
+	UserHandler    *UserHandler
+	AuthHandler    *AuthHandler
+	ProductHandler *ProductHandler
 }
 
-func NewHandlers(userHandler *userhandler.UserHandler, authHandler *authhandler.AuthHandler, productHandler *producthandler.ProductHandler) *Handlers {
+func NewHandlers(userHandler *UserHandler, authHandler *AuthHandler, productHandler *ProductHandler) *Handlers {
 	return &Handlers{UserHandler: userHandler, AuthHandler: authHandler, ProductHandler: productHandler}
 }
 
 func (r *MuxRouter) registerHandlers(h *Handlers) {
 	// This serves all files from /app/images as /images/*
-	r.router.PathPrefix("/images/").Handler(http.StripPrefix("/images/",
-		http.FileServer(http.Dir("/app/images")),
-	))
+	r.router.PathPrefix("/images/").Handler(http.StripPrefix("/images/", http.FileServer(http.Dir("/app/images"))))
 
 	// user related handlers
 	r.router.HandleFunc("/users", Handle(AuthMiddleware(h.UserHandler.GetAll)))
@@ -101,18 +96,7 @@ func Handle(h HandlerFunc) http.HandlerFunc {
 
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("Incoming request",
-			"method", r.Method,
-			"url", r.URL.Path,
-			"remote_addr", r.RemoteAddr,
-			"user_agent", r.UserAgent(),
-			"host", r.Host,
-			"cookies", r.Cookies(),
-			"body", r.Body,
-			"form", r.Form,
-			"post_form", r.PostForm,
-			"multipart_form", r.MultipartForm,
-		)
+		slog.Info("Incoming request", "method", r.Method, "url", r.URL.Path, "remote_addr", r.RemoteAddr, "user_agent", r.UserAgent(), "host", r.Host, "cookies", r.Cookies(), "body", r.Body, "form", r.Form, "post_form", r.PostForm, "multipart_form", r.MultipartForm)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -124,7 +108,6 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
 			tokenString = strings.TrimPrefix(authHeader, "Bearer ")
-			slog.Info("token string", "token string", tokenString)
 		} else {
 			cookie, err := r.Cookie("auth_token")
 			if err != nil {

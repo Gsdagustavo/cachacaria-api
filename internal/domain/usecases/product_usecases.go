@@ -1,7 +1,8 @@
-package product
+package usecases
 
 import (
 	"cachacariaapi/internal/domain/entities"
+	"cachacariaapi/internal/domain/repositories"
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/core"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 )
 
 type ProductUseCases struct {
-	r *persistence.MySQLProductRepository
+	r repositories.ProductRepository
 }
 
 func NewProductUseCases(r *persistence.MySQLProductRepository) *ProductUseCases {
@@ -81,8 +82,14 @@ func (u *ProductUseCases) AddProduct(req entities.AddProductRequest) (*entities.
 	return &entities.AddProductResponse{ID: productID}, nil
 }
 
-func (u *ProductUseCases) GetAll() ([]entities.Product, error) {
-	return u.r.GetAll()
+func (u *ProductUseCases) GetAll(limit, page int) ([]entities.Product, error) {
+	if page < 1 {
+		page = 1
+	}
+
+	offset := (page - 1) * limit
+
+	return u.r.GetAll(limit, offset)
 }
 
 func (u *ProductUseCases) GetProduct(id int64) (*entities.Product, error) {
