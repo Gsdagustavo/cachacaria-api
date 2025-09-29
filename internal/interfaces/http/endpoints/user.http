@@ -1,13 +1,13 @@
 ###
-GET http://localhost:8080/users
+GET http://localhost:8080/api/users
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTg3NDYyMzAsInVzZXJfaWQiOjF9.TindUSodERTk0bPAbRwBjk1h2Vu1Rnyh7px-s_QXDoc
 
 ###
 @get_id = 1
-GET http://localhost:8080/users/{{get_id}}
+GET http://localhost:8080/api/users/{{get_id}}
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTg3NDYyMzAsInVzZXJfaWQiOjF9.TindUSodERTk0bPAbRwBjk1h2Vu1Rnyh7px-s_QXDoc
 
 ###
 @delete_id = 1
-DELETE http://localhost:8080/users/delete/{{delete_id}}
+DELETE http://localhost:8080/api/users/delete/{{delete_id}}
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTg3NDYyMzAsInVzZXJfaWQiOjF9.TindUSodERTk0bPAbRwBjk1h2Vu1Rnyh7px-s_QXDoc

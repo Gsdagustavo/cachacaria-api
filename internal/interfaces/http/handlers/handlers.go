@@ -57,31 +57,28 @@ func NewHandlers(userHandler *UserHandler, authHandler *AuthHandler, productHand
 }
 
 func (r *MuxRouter) registerHandlers(h *Handlers) {
+
+	router := r.router.PathPrefix("/api").Subrouter()
+
 	// This serves all files from /app/images as /images/*
-	r.router.PathPrefix("/images/").Handler(http.StripPrefix("/images/", http.FileServer(http.Dir("/app/images"))))
+	router.PathPrefix("/images/").Handler(http.StripPrefix("/images/", http.FileServer(http.Dir("/app/images"))))
 
 	// user related handlers
-	r.router.HandleFunc("/users", Handle(AuthMiddleware(h.UserHandler.GetAll)))
-	r.router.HandleFunc("/users/{id}", Handle(AuthMiddleware(h.UserHandler.GetUser)))
-	r.router.HandleFunc("/users/delete/{id}", Handle(AuthMiddleware(h.UserHandler.DeleteUser)))
-	r.router.HandleFunc("/users/update/{id}", Handle(AuthMiddleware(h.UserHandler.UpdateUser)))
+	router.HandleFunc("/users", Handle(AuthMiddleware(h.UserHandler.GetAll)))
+	router.HandleFunc("/users/{id}", Handle(AuthMiddleware(h.UserHandler.GetUser)))
+	router.HandleFunc("/users/delete/{id}", Handle(AuthMiddleware(h.UserHandler.DeleteUser)))
+	router.HandleFunc("/users/update/{id}", Handle(AuthMiddleware(h.UserHandler.UpdateUser)))
 
 	// auth handlers
-	r.router.HandleFunc("/auth/register", Handle(h.AuthHandler.Register))
-	r.router.HandleFunc("/auth/login", Handle(h.AuthHandler.Login))
+	router.HandleFunc("/auth/register", Handle(h.AuthHandler.Register))
+	router.HandleFunc("/auth/login", Handle(h.AuthHandler.Login))
 
 	// product handlers
-	r.router.HandleFunc("/products/add", Handle(AuthMiddleware(h.ProductHandler.Add)))
-	r.router.HandleFunc("/products", Handle(h.ProductHandler.GetAll))
-	r.router.HandleFunc("/products/{id}", Handle(h.ProductHandler.GetProduct))
-	r.router.HandleFunc("/products/delete/{id}", Handle(AuthMiddleware(h.ProductHandler.DeleteProduct)))
-	r.router.HandleFunc("/products/update/{id}", Handle(AuthMiddleware(h.ProductHandler.UpdateProduct)))
-
-	r.router.HandleFunc("/docs", Handle(AuthMiddleware(func(w http.ResponseWriter, req *http.Request) *core.ServerError {
-		http.ServeFile(w, req, "index.html")
-		log.Printf("user enterd in docs middleware")
-		return nil
-	})))
+	router.HandleFunc("/products/add", Handle(AuthMiddleware(h.ProductHandler.Add)))
+	router.HandleFunc("/products", Handle(h.ProductHandler.GetAll))
+	router.HandleFunc("/products/{id}", Handle(h.ProductHandler.GetProduct))
+	router.HandleFunc("/products/delete/{id}", Handle(AuthMiddleware(h.ProductHandler.DeleteProduct)))
+	router.HandleFunc("/products/update/{id}", Handle(AuthMiddleware(h.ProductHandler.UpdateProduct)))
 }
 
 type HandlerFunc func(http.ResponseWriter, *http.Request) *core.ServerError

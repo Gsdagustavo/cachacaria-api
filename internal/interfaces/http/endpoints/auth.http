@@ -1,5 +1,5 @@
 ###
-POST http://localhost:8080/auth/register
+POST http://localhost:8080/api/auth/register
 
 {
     "email": "test@gmail.com",
@@ -9,7 +9,7 @@ POST http://localhost:8080/auth/register
 }
 
 ###
-POST http://localhost:8080/auth/login
+POST http://localhost:8080/api/auth/login
 
 {
     "email": "test@gmail.com",
