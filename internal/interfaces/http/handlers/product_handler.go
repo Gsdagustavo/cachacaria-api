@@ -17,6 +17,9 @@ import (
 
 const maxImagesMemory = 20 << 20
 
+const defaultPagePagination = 1
+const defaultLimitPagination = 20
+
 type ProductHandler struct {
 	ProductUseCases *usecases.ProductUseCases
 }
@@ -89,7 +92,43 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.Se
 		return apiErr.WithError("product handler / get all")
 	}
 
-	products, err := h.ProductUseCases.GetAll()
+	var limit, page int
+
+	query := r.URL.Query()
+	limitStr := query.Get("limit")
+	pageStr := query.Get("page")
+
+	if limitStr == "" {
+		limit = defaultLimitPagination
+	} else {
+		parsed, err := strconv.ParseInt(limitStr, 10, 32)
+		if err != nil {
+			return (&core.ServerError{
+				Code:    http.StatusBadRequest,
+				Message: "invalid limit",
+				Err:     err,
+			}).WithError("prod handler / get prod paginated")
+		}
+
+		limit = int(parsed)
+	}
+
+	if pageStr == "" {
+		page = defaultPagePagination
+	} else {
+		parsed, err := strconv.ParseInt(pageStr, 10, 32)
+		if err != nil {
+			return (&core.ServerError{
+				Code:    http.StatusBadRequest,
+				Message: "invalid page",
+				Err:     err,
+			}).WithError("prod handler / get prod paginated")
+		}
+
+		page = int(parsed)
+	}
+
+	products, err := h.ProductUseCases.GetAll(limit, page)
 
 	if err != nil {
 		if errors.Is(err, core.ErrNotFound) {

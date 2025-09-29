@@ -41,10 +41,11 @@ func (r *MySQLProductRepository) AddProductPhotos(productID int64, filenames []s
 	return nil
 }
 
-func (r *MySQLProductRepository) GetAll() ([]entities.Product, error) {
+func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, error) {
 	var products []entities.Product
 
-	rows, err := r.DB.Query("SELECT id, name, description, price, stock FROM products")
+	const query = "SELECT id, name, description, price, stock FROM products ORDER BY id LIMIT ? OFFSET ?"
+	rows, err := r.DB.Query(query, limit, offset)
 	if err != nil {
 		slog.Error("[MySQLProductRepository.GetAll] error getting all products", "error", err.Error())
 
