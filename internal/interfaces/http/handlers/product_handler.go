@@ -1,8 +1,8 @@
-package producthandler
+package handlers
 
 import (
 	"cachacariaapi/internal/domain/entities"
-	"cachacariaapi/internal/domain/usecases/product"
+	"cachacariaapi/internal/domain/usecases"
 	"cachacariaapi/internal/interfaces/http/core"
 	"encoding/json"
 	"errors"
@@ -18,10 +18,10 @@ import (
 const maxImagesMemory = 20 << 20
 
 type ProductHandler struct {
-	ProductUseCases *product.ProductUseCases
+	ProductUseCases *usecases.ProductUseCases
 }
 
-func NewProductHandler(productUseCases *product.ProductUseCases) *ProductHandler {
+func NewProductHandler(productUseCases *usecases.ProductUseCases) *ProductHandler {
 	return &ProductHandler{productUseCases}
 }
 

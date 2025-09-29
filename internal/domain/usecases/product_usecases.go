@@ -1,4 +1,4 @@
-package product
+package usecases
 
 import (
 	"cachacariaapi/internal/domain/entities"

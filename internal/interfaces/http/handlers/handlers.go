@@ -3,9 +3,6 @@ package handlers
 import (
 	"cachacariaapi/internal/infrastructure/config"
 	"cachacariaapi/internal/interfaces/http/core"
-	"cachacariaapi/internal/interfaces/http/handlers/authhandler"
-	"cachacariaapi/internal/interfaces/http/handlers/producthandler"
-	"cachacariaapi/internal/interfaces/http/handlers/userhandler"
 	"fmt"
 	"log"
 	"log/slog"
@@ -50,12 +47,12 @@ func (r *MuxRouter) serveHTTP(serverAddress string) {
 
 // === HANDLERS ===
 type Handlers struct {
-	UserHandler    *userhandler.UserHandler
-	AuthHandler    *authhandler.AuthHandler
-	ProductHandler *producthandler.ProductHandler
+	UserHandler    *UserHandler
+	AuthHandler    *AuthHandler
+	ProductHandler *ProductHandler
 }
 
-func NewHandlers(userHandler *userhandler.UserHandler, authHandler *authhandler.AuthHandler, productHandler *producthandler.ProductHandler) *Handlers {
+func NewHandlers(userHandler *UserHandler, authHandler *AuthHandler, productHandler *ProductHandler) *Handlers {
 	return &Handlers{UserHandler: userHandler, AuthHandler: authHandler, ProductHandler: productHandler}
 }
 

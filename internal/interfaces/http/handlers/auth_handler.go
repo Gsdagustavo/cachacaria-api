@@ -1,8 +1,8 @@
-package authhandler
+package handlers
 
 import (
 	"cachacariaapi/internal/domain/entities"
-	userusecases "cachacariaapi/internal/domain/usecases/user"
+	userusecases "cachacariaapi/internal/domain/usecases"
 	"cachacariaapi/internal/interfaces/http/core"
 
 	"encoding/json"
