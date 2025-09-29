@@ -2,12 +2,11 @@ package repositories
 
 import (
 	"cachacariaapi/internal/domain/entities"
-	"mime/multipart"
 )
 
 type ProductRepository interface {
 	AddProduct(product entities.AddProductRequest) (*entities.AddProductResponse, error)
-	AddProductPhotos(photos []*multipart.FileHeader) error
+	AddProductPhotos(productID int64, filenames []string) error
 	GetAll() ([]entities.Product, error)
 	GetProduct(id int64) (*entities.Product, error)
 	DeleteProduct(id int64) (*entities.DeleteProductResponse, error)

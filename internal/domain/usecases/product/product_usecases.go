@@ -2,6 +2,7 @@ package product
 
 import (
 	"cachacariaapi/internal/domain/entities"
+	"cachacariaapi/internal/domain/repositories"
 	"cachacariaapi/internal/infrastructure/persistence"
 	"cachacariaapi/internal/interfaces/http/core"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 )
 
 type ProductUseCases struct {
-	r *persistence.MySQLProductRepository
+	r repositories.ProductRepository
 }
 
 func NewProductUseCases(r *persistence.MySQLProductRepository) *ProductUseCases {
