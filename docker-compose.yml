@@ -14,7 +14,7 @@ services:
       - ./database.sql:/docker-entrypoint-initdb.d/database.sql
     ports:
       - "3307:3306"
-    profiles: ["dev"] # only run MySQL locally; production likely uses external DB
+    profiles: ["dev", "prod"]
 
   app:
     build:
