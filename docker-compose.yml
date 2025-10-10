@@ -19,7 +19,7 @@ services:
   app:
     build:
       context: build/docker
-      dockerfile: build/docker/Dockerfile
+      dockerfile: Dockerfile
     depends_on:
       - mysql
     volumes:
@@ -34,7 +34,7 @@ services:
   app-prod:
     build:
       context: build/docker
-      dockerfile: build/docker/Dockerfile
+      dockerfile: Dockerfile
     depends_on:
       - mysql
     restart: always

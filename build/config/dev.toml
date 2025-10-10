@@ -1,0 +1,14 @@
+symmetric_key = "VpDL97pWPbIkSooYc2eQvQdhx84BUbQM"
+
+[Server]
+port = 8080
+address = "0.0.0.0"
+base_url = "http://localhost:8008"
+
+[Database]
+port = 3306
+driver = "mysql"
+host = "localhost"
+user = "root"
+password = "root"
+name = "cachacadb"
