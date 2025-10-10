@@ -6,9 +6,9 @@ base_url = "http://localhost:8008"
 [Database]
 port = 3306
 driver = "mysql"
-host = "localhost"
-user = "root"
-password = "root"
+host = "mysql"
+user = "appuser"
+password = "apppass"
 name = "cachacadb"
 
 [Crypt]
