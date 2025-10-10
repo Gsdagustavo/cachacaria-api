@@ -53,7 +53,7 @@ func (u *UserUseCases) Update(user entities.User, userId int64) error {
 		return nil
 	}
 
-	_, err := u.r.Update(user, userId)
+	err := u.r.Update(user, userId)
 	if err != nil {
 		slog.Error("error updating user", "error", err.Error())
 		return nil

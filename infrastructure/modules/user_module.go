@@ -1,9 +1,9 @@
-package handlers
+package modules
 
 import (
 	"cachacariaapi/domain/entities"
 	"cachacariaapi/domain/usecases"
-	core2 "cachacariaapi/interfaces/http/core"
+	"cachacariaapi/interfaces/http/core"
 	"encoding/json"
 	"errors"
 	"log"
@@ -18,21 +18,35 @@ const maxImagesMemory = 20 << 20
 const defaultPagePagination = 1
 const defaultLimitPagination = 20
 
-type ProductHandler struct {
+type ProductModule struct {
 	ProductUseCases *usecases.ProductUseCases
+	name            string
+	path            string
 }
 
-func NewProductHandler(productUseCases *usecases.ProductUseCases) *ProductHandler {
-	return &ProductHandler{productUseCases}
+func NewProductModule(productUseCases *usecases.ProductUseCases) *ProductModule {
+	return &ProductModule{
+		ProductUseCases: productUseCases,
+		name:            "auth",
+		path:            "/auth",
+	}
 }
 
-func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core2.ServerError {
-	if apiErr := core2.ValidateRequestMethod(r, http.MethodPost); apiErr != nil {
+func (m ProductModule) Name() string {
+	return m.name
+}
+
+func (m ProductModule) Path() string {
+	return m.path
+}
+
+func (m ProductModule) add(w http.ResponseWriter, r *http.Request) *core.ServerError {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodPost); apiErr != nil {
 		return apiErr.WithError("products handler / add product")
 	}
 
 	if err := r.ParseMultipartForm(maxImagesMemory); err != nil {
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "Imagens excedem o máximo de memória permitido",
 			Err:     err,
@@ -53,25 +67,25 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core2.Serv
 		Photos:      photos,
 	}
 
-	response, err := h.ProductUseCases.AddProduct(request)
+	response, err := m.ProductUseCases.AddProduct(request)
 	if err != nil {
 		log.Printf("error adding product: %v", err)
 
-		if errors.Is(err, core2.ErrConflict) {
-			return (&core2.ServerError{
+		if errors.Is(err, core.ErrConflict) {
+			return (&core.ServerError{
 				Code:    http.StatusConflict,
 				Message: "Este produto já existew",
 			}).WithError("products handler / add product")
 		}
 
-		if errors.Is(err, core2.ErrBadRequest) {
-			return (&core2.ServerError{
+		if errors.Is(err, core.ErrBadRequest) {
+			return (&core.ServerError{
 				Code:    http.StatusBadRequest,
 				Message: "Requisição inválida",
 			}).WithError("products handler / add product")
 		}
 
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: "Erro interno no servidor",
 		}).WithError("product handler / add product")
@@ -82,8 +96,8 @@ func (h *ProductHandler) Add(w http.ResponseWriter, r *http.Request) *core2.Serv
 	return nil
 }
 
-func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core2.ServerError {
-	if apiErr := core2.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
+func (m ProductModule) getAll(w http.ResponseWriter, r *http.Request) *core.ServerError {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
 		return apiErr.WithError("product handler / get all")
 	}
 
@@ -98,7 +112,7 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core2.S
 	} else {
 		parsed, err := strconv.ParseInt(limitStr, 10, 32)
 		if err != nil {
-			return (&core2.ServerError{
+			return (&core.ServerError{
 				Code:    http.StatusBadRequest,
 				Message: "Limite inválido",
 			}).WithError("prod handler / get prod paginated")
@@ -112,7 +126,7 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core2.S
 	} else {
 		parsed, err := strconv.ParseInt(pageStr, 10, 32)
 		if err != nil {
-			return (&core2.ServerError{
+			return (&core.ServerError{
 				Code:    http.StatusBadRequest,
 				Message: "Página inválida",
 			}).WithError("prod handler / get prod paginated")
@@ -121,18 +135,18 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core2.S
 		page = int(parsed)
 	}
 
-	products, err := h.ProductUseCases.GetAll(limit, page)
+	products, err := m.ProductUseCases.GetAll(limit, page)
 
 	if err != nil {
-		if errors.Is(err, core2.ErrNotFound) {
-			return (&core2.ServerError{
+		if errors.Is(err, core.ErrNotFound) {
+			return (&core.ServerError{
 				Code:    http.StatusNotFound,
 				Message: "Nenhum produto encontrado",
 				Err:     nil,
 			}).WithError("product handler / get all")
 		}
 
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: "Erro interno no servidor",
 		}).WithError("product handler / get products")
@@ -152,15 +166,15 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) *core2.S
 	return nil
 }
 
-func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *core2.ServerError {
-	if apiErr := core2.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
+func (m ProductModule) get(w http.ResponseWriter, r *http.Request) *core.ServerError {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodGet); apiErr != nil {
 		return apiErr.WithError("prod handler / get all")
 	}
 
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 	if idStr == "" {
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "ID do produto inválido",
 		}).WithError("prod handler / get prod")
@@ -168,22 +182,22 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *cor
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "ID do produto inválido",
 		}).WithError("prod handler / get prod")
 	}
 
-	prod, err := h.ProductUseCases.GetProduct(id)
+	prod, err := m.ProductUseCases.GetProduct(id)
 	if err != nil {
-		if errors.Is(err, core2.ErrNotFound) {
-			return (&core2.ServerError{
+		if errors.Is(err, core.ErrNotFound) {
+			return (&core.ServerError{
 				Code:    http.StatusNotFound,
 				Message: "Produto não encontrado",
 			}).WithError("prod handler / get prod")
 		}
 
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: "Erro interno no servidor",
 		}).WithError("prod handler / get prod")
@@ -194,15 +208,15 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) *cor
 	return nil
 }
 
-func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) *core2.ServerError {
-	if apiErr := core2.ValidateRequestMethod(r, http.MethodDelete); apiErr != nil {
+func (m ProductModule) delete(w http.ResponseWriter, r *http.Request) *core.ServerError {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodDelete); apiErr != nil {
 		return apiErr.WithError("prod handler / delete")
 	}
 
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 	if idStr == "" {
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "ID do produto inválido",
 		}).WithError("prod handler / delete")
@@ -210,22 +224,22 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) *
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "ID do produto inválido",
 		}).WithError("prod handler / delete")
 	}
 
-	res, err := h.ProductUseCases.DeleteProduct(id)
+	res, err := m.ProductUseCases.DeleteProduct(id)
 	if err != nil {
-		if errors.Is(err, core2.ErrNotFound) {
-			return (&core2.ServerError{
+		if errors.Is(err, core.ErrNotFound) {
+			return (&core.ServerError{
 				Code:    http.StatusNotFound,
 				Message: "Produto não encontrado",
 			}).WithError("prod handler / delete")
 		}
 
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: "Erro interno no servidor",
 		}).WithError("prod handler / delete")
@@ -236,15 +250,15 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) *
 	return nil
 }
 
-func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) *core2.ServerError {
-	if apiErr := core2.ValidateRequestMethod(r, http.MethodPatch); apiErr != nil {
+func (m ProductModule) update(w http.ResponseWriter, r *http.Request) *core.ServerError {
+	if apiErr := core.ValidateRequestMethod(r, http.MethodPatch); apiErr != nil {
 		return apiErr.WithError("product handler / update product")
 	}
 
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 	if idStr == "" {
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "ID do produto inválido",
 		}).WithError("prod handler / update")
@@ -252,7 +266,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) *
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "ID do produto inválido",
 			Err:     err,
@@ -260,7 +274,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) *
 	}
 
 	if err := r.ParseMultipartForm(maxImagesMemory); err != nil {
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusBadRequest,
 			Message: "",
 			Err:     err,
@@ -284,21 +298,21 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) *
 	}
 
 	if err = json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code: http.StatusBadRequest,
 		}).WithError("prod handler / update")
 	}
 
-	res, err := h.ProductUseCases.UpdateProduct(id, request)
+	res, err := m.ProductUseCases.UpdateProduct(id, request)
 	if err != nil {
-		if errors.Is(err, core2.ErrNotFound) {
-			return (&core2.ServerError{
+		if errors.Is(err, core.ErrNotFound) {
+			return (&core.ServerError{
 				Code:    http.StatusNotFound,
 				Message: "Produto não encontrado",
 			}).WithError("prod handler / update")
 		}
 
-		return (&core2.ServerError{
+		return (&core.ServerError{
 			Code:    http.StatusInternalServerError,
 			Message: "Erro interno no servidor",
 		}).WithError("prod handler / update")

@@ -10,8 +10,8 @@ RUN go mod download
 # Copy the source code
 COPY . .
 
-# Build binary from cmd/api/main.go
-RUN go build -o main ./cmd/api
+# Build binary from main.go
+RUN go build -o main.go
 
 # Runtime stage (small, secure image)
 FROM debian:bookworm-slim

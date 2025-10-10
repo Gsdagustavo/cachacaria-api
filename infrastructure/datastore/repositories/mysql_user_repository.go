@@ -13,7 +13,7 @@ type MySQLUserRepository struct {
 	DB *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) *MySQLUserRepository {
+func NewMySQLUserRepository(db *sql.DB) *MySQLUserRepository {
 	return &MySQLUserRepository{DB: db}
 }
 
@@ -23,7 +23,7 @@ func (r *MySQLUserRepository) GetAll() ([]entities.User, error) {
 
 	rows, err := r.DB.Query("SELECT id, email, password, phone, is_adm FROM users")
 	if err != nil {
-		slog.Error("[MySQLUserRepository.GetAll] error getting users", "error", err.Error())
+		slog.Error("[MySQLUserRepository.getAll] error getting users", "error", err.Error())
 
 		if errors.Is(err, sql.ErrNoRows) {
 			return users, nil
@@ -37,14 +37,14 @@ func (r *MySQLUserRepository) GetAll() ([]entities.User, error) {
 	for rows.Next() {
 		var user entities.User
 		if err := rows.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
-			slog.Error("[MySQLUserRepository.GetAll] error scanning users row", "error", err.Error())
+			slog.Error("[MySQLUserRepository.getAll] error scanning users row", "error", err.Error())
 			return nil, core.ErrInternal
 		}
 		users = append(users, user)
 	}
 
 	if err := rows.Err(); err != nil {
-		slog.Error("[MySQLUserRepository.GetAll] error getting users", "error", err.Error())
+		slog.Error("[MySQLUserRepository.getAll] error getting users", "error", err.Error())
 		return nil, core.ErrInternal
 	}
 
@@ -66,7 +66,7 @@ func (r *MySQLUserRepository) Add(user entities.User) error {
 
 	id, _ := res.LastInsertId()
 
-	slog.Info(fmt.Sprintf("[MySQLUserRepository.Add] user with id %v added successfully", id))
+	slog.Info(fmt.Sprintf("[MySQLUserRepository.add] user with id %v added successfully", id))
 
 	return nil
 }
@@ -107,7 +107,7 @@ func (r *MySQLUserRepository) FindByEmail(email string) (*entities.User, error) 
 	return &user, nil
 }
 
-// FindById returns the user with the given userId in the database, or an error if any occurs
+// FindById returns the user with the given userId in the database, or an error if any occur
 func (r *MySQLUserRepository) FindById(userId int64) (*entities.User, error) {
 	const query = "SELECT id, email, password, phone, is_adm FROM users WHERE id = ?"
 
@@ -152,10 +152,8 @@ func (r *MySQLUserRepository) Update(user entities.User, userId int64) error {
 	_, err = r.DB.Exec(query, existing.Email, existing.Password, existing.Phone, existing.IsAdm, userId)
 	if err != nil {
 		slog.Error("[MySQLUserRepository.Update] error updating user", "error", err.Error(), "query", query)
-		return nil, err
+		return err
 	}
 
-	slog.Info(fmt.Sprintf("[MySQLUserRepository.Update] user with id %v updated successfully", existing.ID))
-
-	return &entities.UserResponse{ID: userId}, nil
+	return nil
 }

@@ -14,11 +14,13 @@ type Server struct {
 	Host    string `toml:"host"`
 	BaseURL string `toml:"base_url"`
 	Router  *mux.Router
+	Server  *http.Server
 }
 
 func NewServer() *Server {
 	return &Server{
 		Router: mux.NewRouter(),
+		Server: &http.Server{},
 	}
 }
 

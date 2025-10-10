@@ -3,7 +3,7 @@ package infrastructure
 import (
 	"cachacariaapi/domain/usecases"
 	"cachacariaapi/infrastructure/config"
-	"cachacariaapi/infrastructure/datastore"
+	"cachacariaapi/infrastructure/datastore/repositories"
 	"cachacariaapi/infrastructure/modules"
 	"cachacariaapi/infrastructure/util"
 	"log"
@@ -35,9 +35,13 @@ func Init(configFilePath string) {
 
 	// Repositories
 	authRepository := repositories.NewMySQLAuthRepository(conn)
+	//productRepository := repositories.NewMySQLProductRepository(conn)
+	//userRepository := repositories.NewMySQLUserRepository(conn)
 
 	// Use Cases
 	authUseCases := usecases.NewAuthUseCases(authRepository, crypt)
+	//productUseCases := usecases.NewProductUseCases(productRepository)
+	//userUseCases := usecases.NewUserUseCases(userRepository)
 
 	// Modules
 	healthModule := modules.NewHealthModule()

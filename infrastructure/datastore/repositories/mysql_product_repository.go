@@ -47,7 +47,7 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 	const query = "SELECT id, name, description, price, stock FROM products ORDER BY id LIMIT ? OFFSET ?"
 	rows, err := r.DB.Query(query, limit, offset)
 	if err != nil {
-		slog.Error("[MySQLProductRepository.GetAll] error getting all products", "error", err.Error())
+		slog.Error("[MySQLProductRepository.getAll] error getting all products", "error", err.Error())
 
 		if errors.Is(err, sql.ErrNoRows) {
 			return products, nil
@@ -61,7 +61,7 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 	for rows.Next() {
 		var product entities.Product
 		if err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Stock); err != nil {
-			slog.Error("[MySQLProductRepository.GetAll] error scanning products rows", "error", err.Error())
+			slog.Error("[MySQLProductRepository.getAll] error scanning products rows", "error", err.Error())
 			return nil, core.ErrInternal
 		}
 
@@ -69,7 +69,7 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 		const query = "SELECT id, filename FROM products_photos WHERE product_id = ?"
 		photoRows, err := r.DB.Query(query, product.ID)
 		if err != nil {
-			slog.Warn("[MySQLProductRepository.GetAll] warning on get product select", "warning", err.Error(), "query", query)
+			slog.Warn("[MySQLProductRepository.getAll] warning on get product select", "warning", err.Error(), "query", query)
 			continue
 		}
 
@@ -77,7 +77,7 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 			var photoID int64
 			var filename string
 			if err := photoRows.Scan(&photoID, &filename); err != nil {
-				slog.Error("[MySQLProductRepository.GetAll] error scanning photo rows", "error", err.Error())
+				slog.Error("[MySQLProductRepository.getAll] error scanning photo rows", "error", err.Error())
 				return nil, core.ErrInternal
 			}
 
@@ -89,7 +89,7 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 	}
 
 	if err := rows.Err(); err != nil {
-		slog.Error("[MySQLProductRepository.GetAll] error on get product photos", "error", err.Error())
+		slog.Error("[MySQLProductRepository.getAll] error on get product photos", "error", err.Error())
 		return nil, core.ErrInternal
 	}
 
@@ -107,7 +107,7 @@ func (r *MySQLProductRepository) GetProduct(id int64) (*entities.Product, error)
 	var product entities.Product
 
 	if err := row.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Stock); err != nil {
-		slog.Error("[MySQLProductRepository.GetProduct] error on scanning proudcts", "error", err.Error(), "query", query)
+		slog.Error("[MySQLProductRepository.get] error on scanning proudcts", "error", err.Error(), "query", query)
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, core.ErrNotFound
 		}
@@ -118,7 +118,7 @@ func (r *MySQLProductRepository) GetProduct(id int64) (*entities.Product, error)
 	const photoQuery = "SELECT id, filename FROM products_photos WHERE product_id = ?"
 	photoRows, err := r.DB.Query(photoQuery, product.ID)
 	if err != nil {
-		slog.Error("[MySQLProductRepository.GetProduct] error on deleting product", "error", err.Error(), "query", query)
+		slog.Error("[MySQLProductRepository.get] error on deleting product", "error", err.Error(), "query", query)
 	} else {
 		defer photoRows.Close()
 		photos := make([]string, 0)
@@ -126,7 +126,7 @@ func (r *MySQLProductRepository) GetProduct(id int64) (*entities.Product, error)
 			var photoID int64
 			var filename string
 			if err := photoRows.Scan(&photoID, &filename); err != nil {
-				slog.Error("[MySQLProductRepository.GetProduct] error on scanning product photos row", "error", err.Error(), "query", query)
+				slog.Error("[MySQLProductRepository.get] error on scanning product photos row", "error", err.Error(), "query", query)
 				return nil, core.ErrInternal
 			}
 			photos = append(photos, filename)
@@ -146,25 +146,25 @@ func (r *MySQLProductRepository) DeleteProduct(id int64) (*entities.DeleteProduc
 
 	txn, err := r.DB.Begin()
 	if err != nil {
-		slog.Error("[MySQLProductRepository.DeleteProduct] error on deleting product", "error", err.Error(), "query", query)
+		slog.Error("[MySQLProductRepository.delete] error on deleting product", "error", err.Error(), "query", query)
 		return nil, err
 	}
 
 	res, err := txn.Exec(query, id)
 	if err != nil {
-		slog.Error("[MySQLProductRepository.DeleteProduct] error on deleting product", "error", err.Error(), "query", query)
+		slog.Error("[MySQLProductRepository.delete] error on deleting product", "error", err.Error(), "query", query)
 		txn.Rollback()
 		return nil, err
 	}
 
 	if rows, err := res.RowsAffected(); err != nil || rows != 1 {
-		slog.Error("[MySQLProductRepository.DeleteProduct] error on deleting product", "error", err.Error(), "query", query)
+		slog.Error("[MySQLProductRepository.delete] error on deleting product", "error", err.Error(), "query", query)
 		txn.Rollback()
 		return nil, err
 	}
 
 	if err := txn.Commit(); err != nil {
-		slog.Error("[MySQLProductRepository.DeleteProduct] error on deleting product", "error", err.Error(), "query", query)
+		slog.Error("[MySQLProductRepository.delete] error on deleting product", "error", err.Error(), "query", query)
 		txn.Rollback()
 		return nil, err
 	}
@@ -176,12 +176,12 @@ func (r *MySQLProductRepository) UpdateProduct(id int64, product entities.Update
 	const query = "UPDATE products SET name = ?, description = ?, price = ?, stock = ? WHERE id = ?"
 	res, err := r.DB.Exec(query, product.Name, product.Description, product.Price, product.Stock, id)
 	if err != nil {
-		slog.Error("[MySQLProductRepository.UpdateProduct] error on update product", "error", err.Error(), "query", query)
+		slog.Error("[MySQLProductRepository.update] error on update product", "error", err.Error(), "query", query)
 		return nil, err
 	}
 
 	if rows, err := res.RowsAffected(); err != nil || rows != 1 {
-		slog.Error("[MySQLProductRepository.UpdateProduct] no rows affected on update product", "error", err.Error(), "query", query)
+		slog.Error("[MySQLProductRepository.update] no rows affected on update product", "error", err.Error(), "query", query)
 		return nil, err
 	}
 

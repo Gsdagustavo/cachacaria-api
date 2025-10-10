@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"cachacariaapi/infrastructure/config"
+	"cachacariaapi/infrastructure/modules"
 	"cachacariaapi/interfaces/http/core"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,69 +17,62 @@ import (
 // === ROUTER ===
 type MuxRouter struct {
 	router *mux.Router
-	cfg    *config.ServerConfig
+	cfg    *config.Server
 }
 
-func NewMuxRouter(cfg *config.ServerConfig) *MuxRouter {
+func NewMuxRouter(cfg *config.Server) *MuxRouter {
 	return &MuxRouter{router: mux.NewRouter(), cfg: cfg}
 }
 
-func (r *MuxRouter) StartServer(h *Handlers, serverConfig *config.ServerConfig) {
-	slog.Info("Server configuration", "port", serverConfig.Port, "address", serverConfig.Address, "baseURL", serverConfig.BaseURL)
+func (r *MuxRouter) StartServer(serverConfig *config.Server) {
+	slog.Info("Server configuration", "port", serverConfig.Port, "host", serverConfig.Host, "baseURL", serverConfig.BaseURL)
 
-	// Register handlers
-	r.registerHandlers(h)
+	//// Register handlers
+	//r.registerHandlers(h)
 
 	// Middlewares
 	r.router.Use(LoggingMiddleware)
-	r.router.Use(CORSMiddleware)
+	mux.CORSMethodMiddleware(r.router)
 
-	r.serveHTTP(serverConfig.Address + ":" + serverConfig.Port)
-}
-
-func (r *MuxRouter) serveHTTP(serverAddress string) {
-	err := http.ListenAndServe(serverAddress, r.router)
-	log.Printf("Server is listening on %s", serverAddress)
+	r.cfg.Router.PathPrefix("/api").Subrouter()
+	err := r.cfg.Server.ListenAndServe()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
 
-// === HANDLERS ===
-type Handlers struct {
-	UserHandler    *UserHandler
-	AuthHandler    *AuthHandler
-	ProductHandler *ProductHandler
+func (r *MuxRouter) SetupRoutes(modules []modules.Module) {
+	for _, module := range modules {
+		module.RegisterRoutes(r.router)
+	}
 }
 
-func NewHandlers(userHandler *UserHandler, authHandler *AuthHandler, productHandler *ProductHandler) *Handlers {
-	return &Handlers{UserHandler: userHandler, AuthHandler: authHandler, ProductHandler: productHandler}
-}
-
-func (r *MuxRouter) registerHandlers(h *Handlers) {
-
-	router := r.router.PathPrefix("/api").Subrouter()
-
-	// This serves all files from /app/images as /images/*
-	router.PathPrefix("/images/").Handler(http.StripPrefix("/images/", http.FileServer(http.Dir("/app/images"))))
-
-	// user related handlers
-	router.HandleFunc("/users", Handle(AuthMiddleware(h.UserHandler.GetAll)))
-	router.HandleFunc("/users/{id}", Handle(AuthMiddleware(h.UserHandler.GetUser)))
-	router.HandleFunc("/users/delete/{id}", Handle(AuthMiddleware(h.UserHandler.DeleteUser)))
-	router.HandleFunc("/users/update/{id}", Handle(AuthMiddleware(h.UserHandler.UpdateUser)))
-
-	// auth handlers
-	router.HandleFunc("/auth/register", Handle(h.AuthHandler.Register))
-	router.HandleFunc("/auth/login", Handle(h.AuthHandler.Login))
-
-	// product handlers
-	router.HandleFunc("/products/add", Handle(AuthMiddleware(h.ProductHandler.Add)))
-	router.HandleFunc("/products", Handle(h.ProductHandler.GetAll))
-	router.HandleFunc("/products/{id}", Handle(h.ProductHandler.GetProduct))
-	router.HandleFunc("/products/delete/{id}", Handle(AuthMiddleware(h.ProductHandler.DeleteProduct)))
-	router.HandleFunc("/products/update/{id}", Handle(AuthMiddleware(h.ProductHandler.UpdateProduct)))
-}
+//func (r *MuxRouter) registerHandlers(h *Handlers) {
+//
+//	router := r.router.PathPrefix("/api").Subrouter()
+//
+//	// This serves all files from /app/images as /images/*
+//	router.PathPrefix("/images/").Handler(http.StripPrefix("/images/", http.FileServer(http.Dir("/app/images"))))
+//
+//	// user related handlers
+//	router.HandleFunc("/users", Handle(AuthMiddleware(h.UserHandler.GetAll)))
+//	router.HandleFunc("/users/{id}", Handle(AuthMiddleware(h.UserHandler.GetUser)))
+//	router.HandleFunc("/users/delete/{id}", Handle(AuthMiddleware(h.UserHandler.DeleteUser)))
+//	router.HandleFunc("/users/update/{id}", Handle(AuthMiddleware(h.UserHandler.UpdateUser)))
+//
+//	// auth handlers
+//	//router.HandleFunc("/auth/register", Handle(h.AuthHandler.Register))
+//	//router.HandleFunc("/auth/login", Handle(h.AuthHandler.Login))
+//
+//	h.AuthHandler.RegisterRoutes(router)
+//
+//	// product handlers
+//	router.HandleFunc("/products/add", Handle(AuthMiddleware(h.ProductHandler.Add)))
+//	router.HandleFunc("/products", Handle(h.ProductHandler.GetAll))
+//	router.HandleFunc("/products/{id}", Handle(h.ProductHandler.GetProduct))
+//	router.HandleFunc("/products/delete/{id}", Handle(AuthMiddleware(h.ProductHandler.DeleteProduct)))
+//	router.HandleFunc("/products/update/{id}", Handle(AuthMiddleware(h.ProductHandler.UpdateProduct)))
+//}
 
 type HandlerFunc func(http.ResponseWriter, *http.Request) *core.ServerError
 
@@ -153,35 +146,4 @@ func AuthMiddleware(next HandlerFunc) HandlerFunc {
 
 		return next(w, r)
 	}
-}
-
-func CORSMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-
-		origins := map[string]bool{
-			"http://127.0.0.1:5000": true,
-			"http://127.0.0.1:5001": true,
-			"http://127.0.0.1:5500": true,
-			"http://127.0.0.1:5501": true,
-			"http://localhost:5173": true,
-		}
-
-		if origins[origin] {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-		}
-
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		w.Header().Set("Access-Control-Expose-Headers", "Authorization")
-
-		if r.Method == http.MethodOptions {
-			log.Printf("[CORS Middleware] allow options | no content")
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
 }

@@ -60,7 +60,7 @@ func (a AuthModule) RegisterRoutes(router *mux.Router) {
 }
 
 func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
-	var credentials entities.UserCre
+	var credentials entities.UserCredentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

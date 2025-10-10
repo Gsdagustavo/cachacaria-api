@@ -6,4 +6,4 @@ type Config struct {
 	Crypt    struct {
 		SymmetricKey string `toml:"symmetric_key"`
 	}
-}
+}222

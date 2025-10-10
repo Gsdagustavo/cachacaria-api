@@ -6,7 +6,6 @@ import (
 	"cachacariaapi/interfaces/http/core"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -32,14 +31,14 @@ func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) *core.Serve
 		if errors.Is(err, core.ErrNotFound) {
 			return &core.ServerError{
 				Code:    http.StatusNotFound,
-				Message: "no users found",
+				Message: "Nenhjum usuário encontrado",
 				Err:     nil,
 			}
 		}
 
 		return &core.ServerError{
 			Code:    http.StatusInternalServerError,
-			Message: "could not get users",
+			Message: "Erro interno no servidor",
 			Err:     err,
 		}
 	}
@@ -59,7 +58,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core.Serv
 	if idStr == "" {
 		return &core.ServerError{
 			Code:    http.StatusBadRequest,
-			Message: "id is required",
+			Message: "ID de usuário inválido",
 		}
 	}
 
@@ -67,7 +66,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core.Serv
 	if err != nil {
 		return &core.ServerError{
 			Code:    http.StatusBadRequest,
-			Message: "invalid id",
+			Message: "ID de usuário inválido",
 			Err:     err,
 		}
 	}
@@ -77,7 +76,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) *core.Serv
 		if errors.Is(err, core.ErrNotFound) {
 			return &core.ServerError{
 				Code:    http.StatusNotFound,
-				Message: "user not found",
+				Message: "Usuário não encontrado",
 				Err:     err,
 			}
 		}
@@ -104,7 +103,7 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.S
 	if idStr == "" {
 		return &core.ServerError{
 			Code:    http.StatusBadRequest,
-			Message: "id is required",
+			Message: "ID de usuário inválido",
 		}
 	}
 
@@ -112,7 +111,7 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.S
 	if err != nil {
 		return &core.ServerError{
 			Code:    http.StatusBadRequest,
-			Message: "invalid id",
+			Message: "ID de usuário inválido",
 			Err:     err,
 		}
 	}
@@ -122,7 +121,7 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.S
 		if errors.Is(err, core.ErrNotFound) {
 			return &core.ServerError{
 				Code:    http.StatusNotFound,
-				Message: "user not found",
+				Message: "Usuário não encontrado",
 			}
 		}
 
@@ -139,7 +138,6 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) *core.S
 
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.ServerError {
 	if apiErr := core.ValidateRequestMethod(r, http.MethodPut); apiErr != nil {
-		log.Printf("returning api err %v", apiErr)
 		return apiErr
 	}
 
@@ -148,7 +146,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.S
 	if idStr == "" {
 		return &core.ServerError{
 			Code:    http.StatusBadRequest,
-			Message: "id is required",
+			Message: "ID de usuário inválido",
 		}
 	}
 
@@ -156,21 +154,20 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.S
 	if err != nil {
 		return &core.ServerError{
 			Code:    http.StatusBadRequest,
-			Message: "invalid id",
+			Message: "ID de usuário inválido",
 			Err:     err,
 		}
 	}
 
-	var req entities
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var req entities.User
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return &core.ServerError{
-			Code:    http.StatusBadRequest,
-			Message: core.ErrBadRequest.Error(),
-			Err:     err,
+			Code: http.StatusBadRequest,
+			Err:  err,
 		}
 	}
 
-	res, err := h.UserUseCases.Update(req, id)
+	err = h.UserUseCases.Update(req, id)
 	if err != nil {
 		var apiErr *core.ServerError
 		if errors.As(err, &apiErr) {
@@ -180,7 +177,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.S
 		if errors.Is(err, core.ErrNotFound) {
 			return &core.ServerError{
 				Code:    http.StatusNotFound,
-				Message: "user not found",
+				Message: "Usuário não encontrado",
 				Err:     err,
 			}
 		}
@@ -192,7 +189,15 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) *core.S
 		}
 	}
 
+	type Response struct {
+		Message string `json:"message"`
+		Status  int    `json:"status"`
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	json.NewEncoder(w).Encode(Response{
+		Message: "Usuário atualizado com sucesso",
+		Status:  200,
+	})
 	return nil
 }
