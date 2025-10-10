@@ -53,6 +53,9 @@ func Init() {
 	// Assign a router to the server
 	cfg.Server.Router = mux.NewRouter()
 
+	cfg.Server.Router.Use()
+	mux.CORSMethodMiddleware(r.router)
+
 	// Register routes
 	cfg.Server.RegisterModules(healthModule, authModule)
 

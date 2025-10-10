@@ -42,20 +42,20 @@ func (a AuthModule) RegisterRoutes(router *mux.Router) {
 	routes := []ModuleRoute{
 		{
 			Name:    "Login",
-			Path:    a.path + "/login",
+			Path:    "/login",
 			Handler: a.login,
 			Methods: []string{http.MethodPost},
 		},
 		{
 			Name:    "Register",
-			Path:    a.path + "/register",
+			Path:    "/register",
 			Handler: a.register,
 			Methods: []string{http.MethodPost},
 		},
 	}
 
 	for _, route := range routes {
-		router.HandleFunc(route.Path, route.Handler).Methods(route.Methods...)
+		router.HandleFunc(a.path+route.Path, route.Handler).Methods(route.Methods...)
 	}
 }
 

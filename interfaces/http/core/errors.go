@@ -35,6 +35,12 @@ var (
 	ErrTokenExpired         = errors.New("token expired")
 )
 
+type ServerResponse struct {
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Err     error  `json:"err,omitempty"`
+}
+
 type ServerError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -73,7 +79,6 @@ func (e *ServerError) WriteHTTP(w http.ResponseWriter) {
 	}
 }
 
-// === Constructors (HTTP) ===
 func BadRequest(msg string, err error) *ServerError {
 	if msg == "" {
 		msg = ErrBadRequest.Error()
