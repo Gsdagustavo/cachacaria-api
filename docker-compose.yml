@@ -18,7 +18,7 @@ services:
 
   app:
     build:
-#      context: build/docker
+      context: .
       dockerfile: Dockerfile
     depends_on:
       - mysql
@@ -33,7 +33,7 @@ services:
 
   app-prod:
     build:
-#      context: docker
+      context: .
       dockerfile: Dockerfile
     depends_on:
       - mysql
