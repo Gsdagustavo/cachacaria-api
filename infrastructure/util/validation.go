@@ -1,4 +1,4 @@
-222222package util
+package util
 
 import (
 	"strings"

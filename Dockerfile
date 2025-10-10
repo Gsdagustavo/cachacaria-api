@@ -1,27 +1,22 @@
 # Build stage
 FROM golang:1.24.6 AS builder
-
 WORKDIR /app
 
-# Cache dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the source code
-COPY . .
+COPY build/docker .
 
-# Build binary from main.go
-RUN go build -o main.go
+RUN go build -o main ./cmd/main.go  # adjust path if needed
 
-# Runtime stage (small, secure image)
+# Runtime stage
 FROM debian:bookworm-slim
-
 WORKDIR /app
 
 COPY --from=builder /app/main .
 
-# Expose port for clarity (optional, Compose handles it anyway)
-EXPOSE 8080
+# Copy configs (both, to keep image generic)
+COPY build/config ./config
 
-# Run the Go app
+EXPOSE 8080
 CMD ["./main"]

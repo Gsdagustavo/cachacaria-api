@@ -7,28 +7,31 @@ import (
 	"cachacariaapi/infrastructure/modules"
 	"cachacariaapi/infrastructure/util"
 	"log"
+	"log/slog"
+	"os"
 
-	"github.com/BurntSushi/toml"
 	"github.com/gorilla/mux"
 )
 
-func Init(configFilePath string) {
-	var cfg config.Config
-	_, err := toml.DecodeFile(configFilePath, &cfg)
+func Init() {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		panic(err)
+		log.Fatalf("error loading config: %v", err)
 	}
 
 	log.Printf("config file read successfully")
 
 	// Config database
-	err = config.Connect(&cfg)
+	err = config.Connect(cfg)
 	if err != nil {
-		panic(err)
+		log.Fatalf("error connecting to database: %v", err)
 	}
 
 	// Config utils
-	maker := util.NewPasetoMaker(cfg.Crypt.SymmetricKey)
+	maker := util.NewPasetoMaker(cfg.SymmetricKey)
 	crypt := util.NewCrypt(maker)
 
 	conn := cfg.Database.Conn
@@ -55,7 +58,7 @@ func Init(configFilePath string) {
 
 	log.Printf("server running on port %d", cfg.Server.Port)
 
-	err = cfg.Server.Run(cfg)
+	err = cfg.Server.Run(*cfg)
 	if err != nil {
 		panic(err)
 	}
