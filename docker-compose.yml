@@ -22,6 +22,7 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - mysql
+    restart: always
     volumes:
       - products_images:/app/images
       - ./logs:/app/logs
@@ -37,7 +38,6 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - mysql
-    restart: always
     volumes:
       - products_images:/app/images
       - ./logs:/app/logs

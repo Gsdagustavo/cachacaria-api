@@ -12,9 +12,8 @@ type User struct {
 }
 
 type UserCredentials struct {
-	Name     string `json:"name"`
 	Email    string `json:"email"`
-	Phone    string `json:"phone"`
 	Password string `json:"password"`
-	IsAdm    bool   `json:"is_adm"`
+	Phone    string `json:"phone,omitempty"`
+	IsAdm    bool   `json:"is_adm,omitempty"`
 }

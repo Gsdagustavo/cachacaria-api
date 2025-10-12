@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"cachacariaapi/domain/entities"
-	"cachacariaapi/interfaces/http/core"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -29,7 +28,7 @@ func (r *MySQLUserRepository) GetAll() ([]entities.User, error) {
 			return users, nil
 		}
 
-		return nil, core.ErrInternal
+		return nil, entities.ErrInternal
 	}
 
 	defer rows.Close()
@@ -37,15 +36,19 @@ func (r *MySQLUserRepository) GetAll() ([]entities.User, error) {
 	for rows.Next() {
 		var user entities.User
 		if err := rows.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
-			slog.Error("[MySQLUserRepository.getAll] error scanning users row", "error", err.Error())
-			return nil, core.ErrInternal
+			slog.Error(
+				"[MySQLUserRepository.getAll] error scanning users row",
+				"error",
+				err.Error(),
+			)
+			return nil, entities.ErrInternal
 		}
 		users = append(users, user)
 	}
 
 	if err := rows.Err(); err != nil {
 		slog.Error("[MySQLUserRepository.getAll] error getting users", "error", err.Error())
-		return nil, core.ErrInternal
+		return nil, entities.ErrInternal
 	}
 
 	if users == nil {
@@ -78,11 +81,19 @@ func (r *MySQLUserRepository) Delete(userId int64) error {
 	_, err := r.DB.Exec(query, userId)
 
 	if err != nil {
-		slog.Error("[MySQLUserRepository.Delete] error deleting user", "error", err.Error(), "query", query)
+		slog.Error(
+			"[MySQLUserRepository.Delete] error deleting user",
+			"error",
+			err.Error(),
+			"query",
+			query,
+		)
 		return err
 	}
 
-	slog.Info(fmt.Sprintf("[MySQLUserRepository.Delete] user with id %v deleted successfully", userId))
+	slog.Info(
+		fmt.Sprintf("[MySQLUserRepository.Delete] user with id %v deleted successfully", userId),
+	)
 
 	return nil
 }
@@ -95,13 +106,19 @@ func (r *MySQLUserRepository) FindByEmail(email string) (*entities.User, error) 
 
 	var user entities.User
 	if err := row.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
-		slog.Error("[MySQLUserRepository.FindByEmail] error scanning user rows", "error", err.Error(), "query", query)
+		slog.Error(
+			"[MySQLUserRepository.FindByEmail] error scanning user rows",
+			"error",
+			err.Error(),
+			"query",
+			query,
+		)
 
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, core.ErrNotFound
+			return nil, entities.ErrNotFound
 		}
 
-		return nil, core.ErrInternal
+		return nil, entities.ErrInternal
 	}
 
 	return &user, nil
@@ -115,13 +132,19 @@ func (r *MySQLUserRepository) FindById(userId int64) (*entities.User, error) {
 
 	var user entities.User
 	if err := row.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
-		slog.Error("[MySQLUserRepository.FindById] error scanning user rows", "error", err.Error(), "query", query)
+		slog.Error(
+			"[MySQLUserRepository.FindById] error scanning user rows",
+			"error",
+			err.Error(),
+			"query",
+			query,
+		)
 
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, core.ErrNotFound
+			return nil, entities.ErrNotFound
 		}
 
-		return nil, core.ErrInternal
+		return nil, entities.ErrInternal
 	}
 
 	return &user, nil
@@ -149,9 +172,22 @@ func (r *MySQLUserRepository) Update(user entities.User, userId int64) error {
 	existing.IsAdm = user.IsAdm
 
 	const query = "UPDATE users SET email = ?, password = ?, phone = ?, id_adm = ? WHERE id = ?"
-	_, err = r.DB.Exec(query, existing.Email, existing.Password, existing.Phone, existing.IsAdm, userId)
+	_, err = r.DB.Exec(
+		query,
+		existing.Email,
+		existing.Password,
+		existing.Phone,
+		existing.IsAdm,
+		userId,
+	)
 	if err != nil {
-		slog.Error("[MySQLUserRepository.Update] error updating user", "error", err.Error(), "query", query)
+		slog.Error(
+			"[MySQLUserRepository.Update] error updating user",
+			"error",
+			err.Error(),
+			"query",
+			query,
+		)
 		return err
 	}
 

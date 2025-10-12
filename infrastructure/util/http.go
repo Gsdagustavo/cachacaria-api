@@ -1,34 +1,61 @@
 package util
 
 import (
+	"cachacariaapi/domain/entities"
+	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
-func WriteError(w http.ResponseWriter, error interface{}) {
-	w.Header().Set("Content-Type", "application/json")
+// ContextKey is a private type used for context keys.
+type ContextKey string
 
-	var statusCode int
-	var response map[string]interface{}
+// UserIDContextKey is the key for the user ID in the request context.
+const UserIDContextKey ContextKey = "userID"
 
-	switch e := error.(type) {
-	case struct {
-		Status  int    `json:"status"`
-		Message string `json:"message"`
-	}:
-		statusCode = e.Status
-		response = map[string]interface{}{
-			"status":  e.Status,
-			"message": e.Message,
-		}
-	default:
-		statusCode = http.StatusInternalServerError
-		response = map[string]interface{}{
-			"status":  statusCode,
-			"message": error,
+func NewContextWithUserID(ctx context.Context, userID int) context.Context {
+	return context.WithValue(ctx, UserIDContextKey, userID)
+}
+
+func ValidateRequestMethod(r *http.Request, allowedMethod string) *entities.ServerError {
+	if r.Method != allowedMethod {
+		return &entities.ServerError{
+			Code: http.StatusMethodNotAllowed,
+			Err:  nil,
 		}
 	}
+	return nil
+}
 
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(response)
+func WriteGenericResponse(w http.ResponseWriter, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+
+	err := json.NewEncoder(w).Encode(v)
+	if err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+func WritServerResponse(w http.ResponseWriter, response *entities.ServerResponse) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.Code)
+
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+func WriteServerError(w http.ResponseWriter, error *entities.ServerError) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(error.Code)
+
+	err := json.NewEncoder(w).Encode(error)
+	if err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }

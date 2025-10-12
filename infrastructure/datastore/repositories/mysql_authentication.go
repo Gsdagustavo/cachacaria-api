@@ -22,10 +22,18 @@ func NewMySQLAuthRepository(db *sql.DB) *MySQLAuthRepository {
 
 func (r MySQLAuthRepository) AddUser(ctx context.Context, user *entities.User) error {
 	const query = `
-		INSERT INTO users (uuid, name, email, password) VALUES (?, ?, ?, ?)
+		INSERT INTO users (uuid, email, password, phone, is_adm) VALUES (?, ?, ?, ?, ?)
 	`
 
-	_, err := r.db.ExecContext(ctx, query, user.UUID, user.Email, user.Password)
+	_, err := r.db.ExecContext(
+		ctx,
+		query,
+		user.UUID,
+		user.Email,
+		user.Password,
+		user.Phone,
+		user.IsAdm,
+	)
 	if err != nil {
 		return fmt.Errorf("error adding user: %s", err)
 	}
@@ -33,13 +41,17 @@ func (r MySQLAuthRepository) AddUser(ctx context.Context, user *entities.User) e
 	return nil
 }
 
-func (r MySQLAuthRepository) GetUserByEmail(ctx context.Context, email string) (*entities.User, error) {
+func (r MySQLAuthRepository) GetUserByEmail(
+	ctx context.Context,
+	email string,
+) (*entities.User, error) {
 	const query = `
 		SELECT id, uuid, email, password, phone, is_adm FROM users WHERE email = ?
 	`
 
 	var user entities.User
-	err := r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.IsAdm)
+	err := r.db.QueryRowContext(ctx, query, email).
+		Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.Phone, &user.IsAdm)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -57,7 +69,8 @@ func (r MySQLAuthRepository) GetUserByID(ctx context.Context, id int) (*entities
 	`
 
 	var user entities.User
-	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.Phone, &user.IsAdm)
+	err := r.db.QueryRowContext(ctx, query, id).
+		Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.Phone, &user.IsAdm)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -69,19 +82,23 @@ func (r MySQLAuthRepository) GetUserByID(ctx context.Context, id int) (*entities
 	return &user, nil
 }
 
-func (r MySQLAuthRepository) GetUserByUUID(ctx context.Context, uuid uuid.UUID) (*entities.User, error) {
+func (r MySQLAuthRepository) GetUserByUUID(
+	ctx context.Context,
+	uuid uuid.UUID,
+) (*entities.User, error) {
 	const query = `
-		SELECT id, uuid, name, email, password FROM users WHERE id = ?
+		SELECT id, uuid, email, password, phone, is_adm FROM users WHERE uuid = ?
 	`
 
 	var user entities.User
-	err := r.db.QueryRowContext(ctx, query, uuid).Scan(&user.ID, &user.UUID, &user.Email, &user.Password)
+	err := r.db.QueryRowContext(ctx, query, uuid).
+		Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.Phone, &user.IsAdm)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 
-		return nil, fmt.Errorf("error getting user by email: %s", err)
+		return nil, errors.Join(errors.New("error in [QueryRowContext]"), err)
 	}
 
 	return &user, nil

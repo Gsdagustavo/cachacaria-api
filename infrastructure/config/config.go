@@ -6,8 +6,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	_ "github.com/go-sql-driver/mysql"
@@ -25,13 +27,12 @@ func LoadConfig() (*Config, error) {
 	flag.StringVar(&path, "config", "", "Path to config TOML file")
 	flag.Parse()
 
-	// fallback to env var if not provided
 	if path == "" {
 		path = os.Getenv("CONFIG_PATH")
 	}
 
 	if path == "" {
-		path = "./build/config/dev.toml" // default fallback
+		path = "./build/config/dev.toml"
 	}
 
 	data, err := os.ReadFile(path)
@@ -55,9 +56,9 @@ type Server struct {
 	Server  *http.Server
 }
 
-func (s Server) RegisterModules(modules ...modules.Module) {
+func (s Server) RegisterModules(router *mux.Router, modules ...modules.Module) {
 	for _, module := range modules {
-		module.RegisterRoutes(s.Router)
+		module.RegisterRoutes(router)
 	}
 }
 
@@ -65,7 +66,15 @@ func (s Server) Run(cfg Config) error {
 	address := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	log.Printf("Starting HTTP server on %s", address)
 
+	mux.CORSMethodMiddleware(s.Router)
+	s.Router.Use(LoggingMiddleware)
+
+	s.Router.PathPrefix("/images/").Handler(http.StripPrefix("/images/",
+		http.FileServer(http.Dir("/app/images")),
+	))
+
 	s.Router.PathPrefix("/").Handler(http.FileServer(http.Dir("./public")))
+
 	return http.ListenAndServe(address, s.Router)
 }
 
@@ -80,24 +89,56 @@ type Database struct {
 }
 
 func (d Database) GetDSN() string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", d.User, d.Password, d.Host, d.Port, d.Name)
+	return fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		d.User,
+		d.Password,
+		d.Host,
+		d.Port,
+		d.Name,
+	)
 }
 
 func Connect(cfg *Config) error {
 	log.Printf("Connecting to database %s", cfg.Database.Name)
 	log.Printf("Driver: %s", cfg.Database.Driver)
+	var conn *sql.DB
+	var err error
 
-	conn, err := sql.Open(cfg.Database.Driver, cfg.Database.GetDSN())
-	if err != nil {
-		return fmt.Errorf("error opening connection: %s", err)
-	}
-
-	err = conn.Ping()
-	if err != nil {
-		return fmt.Errorf("error pinging database: %s", err)
+	for i := 0; i < 10; i++ {
+		conn, err = sql.Open(cfg.Database.Driver, cfg.Database.GetDSN())
+		if err != nil {
+			log.Printf("Error connecting to database: %s", err)
+			log.Printf("Retrying in 1 second...")
+			time.Sleep(1 * time.Second)
+			continue
+		}
 	}
 
 	cfg.Database.Conn = conn
 	log.Println("Database connection established successfully")
 	return nil
+}
+
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(
+			"Incoming request",
+			"method",
+			r.Method,
+			"url",
+			r.URL.Path,
+			"remote_addr",
+			r.RemoteAddr,
+			"user_agent",
+			r.UserAgent(),
+			"host",
+			r.Host,
+			"cookies",
+			r.Cookies(),
+			"body",
+			r.Body,
+		)
+		next.ServeHTTP(w, r)
+	})
 }
