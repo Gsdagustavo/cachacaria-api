@@ -3,7 +3,7 @@ POST http://localhost:8080/api/auth/register
 
 {
     "email": "test@gmail.com",
-    "password": "12345678",
+    "password": "Rg547571856g$",
     "phone": "123123123123",
     "is_adm": true
 }
@@ -13,6 +13,6 @@ POST http://localhost:8080/api/auth/login
 
 {
     "email": "test@gmail.com",
-    "password": "12345678"
+    "password": "Rg547571856g$"
 }
 

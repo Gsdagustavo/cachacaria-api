@@ -17,12 +17,12 @@ type AuthResponse struct {
 }
 
 type AuthModule struct {
-	authUseCases usecases.AuthUseCases
+	authUseCases *usecases.AuthUseCases
 	name         string
 	path         string
 }
 
-func NewAuthModule(authUseCases usecases.AuthUseCases) *AuthModule {
+func NewAuthModule(authUseCases *usecases.AuthUseCases) *AuthModule {
 	return &AuthModule{
 		authUseCases: authUseCases,
 		name:         "auth",
@@ -83,7 +83,6 @@ func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		// At this point headers are already sent, log the error
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

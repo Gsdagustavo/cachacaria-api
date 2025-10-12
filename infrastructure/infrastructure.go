@@ -14,14 +14,13 @@ import (
 )
 
 func Init() {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("error loading config: %v", err)
 	}
-
 	log.Printf("config file read successfully")
 
 	// Config database
@@ -38,26 +37,32 @@ func Init() {
 
 	// Repositories
 	authRepository := repositories.NewMySQLAuthRepository(conn)
-	//productRepository := repositories.NewMySQLProductRepository(conn)
-	//userRepository := repositories.NewMySQLUserRepository(conn)
+	userRepository := repositories.NewMySQLUserRepository(conn)
+	productRepository := repositories.NewMySQLProductRepository(conn)
 
 	// Use Cases
 	authUseCases := usecases.NewAuthUseCases(authRepository, crypt)
-	//productUseCases := usecases.NewProductUseCases(productRepository)
-	//userUseCases := usecases.NewUserUseCases(userRepository)
+	userUseCases := usecases.NewUserUseCases(userRepository)
+	productUseCases := usecases.NewProductUseCases(productRepository, cfg.Server.BaseURL)
 
 	// Modules
 	healthModule := modules.NewHealthModule()
-	authModule := modules.NewAuthModule(*authUseCases)
+	authModule := modules.NewAuthModule(authUseCases)
+	userModule := modules.NewUserModule(userUseCases)
+	productModule := modules.NewProductModule(productUseCases)
 
 	// Assign a router to the server
-	cfg.Server.Router = mux.NewRouter()
+	router := mux.NewRouter()
+	server := &cfg.Server
+	server.Router = router
 
-	cfg.Server.Router.Use()
-	mux.CORSMethodMiddleware(r.router)
+	apiSubrouter := router.PathPrefix("/api").Subrouter()
 
-	// Register routes
-	cfg.Server.RegisterModules(healthModule, authModule)
+	// Register health module
+	cfg.Server.RegisterModules(server.Router, healthModule)
+
+	// Register modules
+	cfg.Server.RegisterModules(apiSubrouter, authModule, userModule, productModule)
 
 	log.Printf("server running on port %d", cfg.Server.Port)
 

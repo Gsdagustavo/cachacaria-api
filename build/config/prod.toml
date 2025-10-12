@@ -1,7 +1,9 @@
+symmetric_key = "VpDL97pWPbIkSooYc2eQvQdhx84BUbQM"
+
 [Server]
 port = 8080
 address = "0.0.0.0"
-base_url = "http://localhost:8008"
+base_url = "http://localhost:8080"
 
 [Database]
 port = 3306
@@ -10,6 +12,3 @@ host = "mysql"
 user = "appuser"
 password = "apppass"
 name = "cachacadb"
-
-[Crypt]
-symmetric_key = "VpDL97pWPbIkSooYc2eQvQdhx84BUbQM"

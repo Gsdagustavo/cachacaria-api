@@ -1,4 +1,4 @@
-package core
+package entities
 
 import (
 	"encoding/json"
@@ -39,6 +39,19 @@ type ServerResponse struct {
 	Code    int    `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
 	Err     error  `json:"err,omitempty"`
+}
+
+func NewServerResponse(code int, message string, err error) *ServerResponse {
+	return &ServerResponse{
+		Code:    code,
+		Message: message,
+		Err:     err,
+	}
+}
+
+func (r *ServerResponse) WriteHTTP(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(r.Code)
 }
 
 type ServerError struct {
@@ -135,8 +148,6 @@ func Internal(msg string, err error) *ServerError {
 	return &ServerError{Code: http.StatusInternalServerError, Message: msg, Err: err}
 }
 
-// === Constructors (Domain-specific helpers) ===
-// Product
 func InvalidProductName(err error) *ServerError {
 	return BadRequest(ErrInvalidProductName.Error(), err)
 }
