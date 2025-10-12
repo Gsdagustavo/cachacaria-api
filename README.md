@@ -1,115 +1,195 @@
 # Cachacaria Wilbert API
 
-A Go-based REST API for managing users, authentication (JWT), and products (with photo uploads) for Cachacaria Wilbert (liquor store). It exposes HTTP endpoints for user registration/login, browsing products, and serving uploaded product images. A MySQL database is used for persistence. Docker and Docker Compose are provided for local development.
+A Go-based REST API for managing a liquor store (Cachacaria Wilbert) with user authentication, product management, and image uploads.
+
+## Prerequisites
+
+- **Docker** and **Docker Compose** (recommended)
+- **Go 1.24.6** (if building locally without Docker)
+- **MySQL 8** (if running locally without Docker)
 
 ## Tech Stack
-- Language: Go (module: `cachacariaapi`)
-- Frameworks/Libraries:
-  - HTTP router: `gorilla/mux`
-  - JWT: `github.com/dgrijalva/jwt-go`
-  - MySQL driver: `github.com/go-sql-driver/mysql`
-  - Crypto: `golang.org/x/crypto`
-- Database: MySQL 8
-- Containerization: Docker, Docker Compose
 
-## Project Layout
-- `cmd/api/main.go` — API service entry point
-- `cmd/client/main.go` — Client entry (currently unused in Compose; see TODO)
-- `internal/` — Clean architecture layers
-  - `domain/entities` — Domain entities and request/response models
-  - `domain/repositories` — Repository interfaces
-  - `domain/usecases` — Application use cases
-  - `infrastructure/persistence` — MySQL implementations and errors
-  - `interfaces/http` — HTTP layer (router, handlers, middleware)
-- `database.sql` — Initial schema/data used by MySQL container
-- `Dockerfile` — Multi-stage build for API
-- `docker-compose.yml` — MySQL + API services and volumes
-- `index.html` — Served as simple docs page at `/docs`
+- **Language:** Go 1.24.6
+- **HTTP Router:** gorilla/mux
+- **Database:** MySQL 8.0
+- **Authentication:** PASETO tokens
+- **Configuration:** TOML files
+- **Containerization:** Docker & Docker Compose
 
-## API Overview
-Base URL: `http://localhost:8080`
+## Quick Start with Docker Compose
 
-Public endpoints:
-- `POST /auth/register` — Register user; returns a JWT (Authorization header + JSON body)
-- `POST /auth/login` — Login; returns a JWT (Authorization header + JSON body)
-- `GET /products` — List products
-- `GET /products/{id}` — Get a product by ID
-- `GET /images/{filename}` — Serves uploaded product images
-- `GET /docs` — Serves `index.html`; protected by JWT middleware
+### Development Mode
 
-Product management:
-- `POST /products/add` — Multipart form upload to add a product with images
-  - Form fields: `name` (string), `description` (string), `price` (float), `stock` (int)
-  - Files: `photos` (one or more), allowed types: `image/jpeg` or `image/png`
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd cachacaria-api
+   ```
 
-User management (additional):
-- `GET /users` — List users
-- `GET /users/{id}` — Get user by ID
-- `POST /users/update/{id}` — Update user (method enforced by handler)
-- `POST /users/delete/{id}` — Delete user (method enforced by handler)
+2. **Start the services**
+   ```bash
+   docker compose --profile dev up --build
+   ```
 
-Note: Some endpoints enforce HTTP methods via middleware; ensure you use the correct method (see code in `interfaces/http/core/utils.go`).
+3. **Access the API**
+    - API: http://localhost:8080
+    - MySQL: localhost:3307 (from host machine)
 
-## Requirements
-- Go 1.24.x (module uses `go 1.24.4`)
-- Docker 24+ and Docker Compose v2
-- Make sure ports 8080 (API) and 3307 (host mapped to MySQL 3306) are available
+### Production Mode
+```
+bash
+docker compose --profile prod up --build
+```
+The database schema and initial data from `database.sql` will be automatically loaded on first run.
 
-## Configuration (Environment Variables)
-The API reads the following variables (see `cmd/api/main.go`, handlers):
-- `DB_USER` — MySQL username
-- `DB_PASSWORD` — MySQL password
-- `DB_HOST` — MySQL host (e.g., `localhost` or service name `mysql` in Compose)
-- `DB_PORT` — MySQL port (e.g., `3306`)
-- `DB_NAME` — Database name
-- `SERVER_PORT` — Port API listens on (default used in Compose: `8080`)
-- `JWT_SECRET` — Secret for signing/validating JWTs (used by auth and middleware)
-- `BASE_URL` — Base URL to prefix product image URLs in responses (e.g., `http://localhost:8080`)
+## Configuration
+
+The API uses TOML configuration files located in `build/config/`:
+
+- **`dev.toml`** - Development configuration
+- **`prod.toml`** - Production configuration
+
+### Configuration Structure
+```
+toml
+symmetric_key = "your-32-character-secret-key"
+
+[Server]
+port = 8080
+address = "0.0.0.0"
+base_url = "http://localhost:8080"
+
+[Database]
+port = 3306
+driver = "mysql"
+host = "mysql"
+user = "appuser"
+password = "apppass"
+name = "cachacadb"
+```
+The configuration file is selected via the `CONFIG_PATH` environment variable (set in docker-compose.yml).
+
+## Building the API
+
+### Using Docker
+
+Build the Docker image:
+```
+bash
+docker build -t cachacaria-api:latest .
+```
+Run the container:
+```
+bash
+docker run -p 8080:8080 \
+  -e CONFIG_PATH=/app/config/dev.toml \
+  -v $(pwd)/build/config:/app/config \
+  cachacaria-api:latest
+```
+### Building Locally (without Docker)
+
+1. **Install dependencies**
+   ```bash
+   go mod download
+   ```
+
+2. **Build the binary**
+   ```bash
+   go build -o api-server main.go
+   ```
+
+3. **Set the configuration path**
+   ```bash
+   export CONFIG_PATH=./build/config/dev.toml
+   ```
+
+4. **Run the API**
+   ```bash
+   ./api-server
+   ```
+
+## Docker Architecture
+
+The Dockerfile uses a multi-stage build:
+
+1. **Builder stage:** Uses `golang:1.24.6` to compile the Go application
+2. **Runtime stage:** Uses `debian:bookworm-slim` for a minimal production image
+    - Runs as non-root user (`appuser`)
+    - Includes config files from `build/config/`
+    - Exposes port 8080
+
+### Volumes
+
+- **`mysql_data`** - Persists MySQL database
+- **`products_images`** - Stores uploaded product images
+- **`logs`** - Application logs
+
+## API Endpoints
+
+Base URL: `http://localhost:8080/api`
+
+### Authentication
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login and receive PASETO token
+
+### Products
+- `GET /api/products` - List all products
+- `GET /api/products/{id}` - Get product by ID
+- `POST /api/products` - Add product with images (multipart/form-data)
+
+### Users
+- `GET /api/users` - List all users
+- `GET /api/users/{id}` - Get user by ID
+
+### Health Check
+- `GET /health` - Health check endpoint (outside `/api` prefix)
+
+## Database Setup
+
+The MySQL container is configured with:
+- **Root Password:** `root`
+- **Database:** `cachacadb`
+- **User:** `appuser`
+- **Password:** `apppass`
+- **Port:** 3306 (internal), 3307 (host)
+
+The `database.sql` file is automatically executed on first initialization.
+
+## Stopping the Services
+```
+bash
+docker compose --profile dev down
+```
+To remove volumes (including database data):
+```bash
+docker compose --profile dev down -v
+```
 
 
+## Project Structure
 
-## Database
-When using Docker Compose, `database.sql` is mounted into the MySQL container and executed on first initialization. This file should contain your schema and any seed data.
-
-## Running the Project
-
-### Option A: Docker Compose (recommended)
-- Start services:
-  - `docker compose up --build`
-- API available at: `http://localhost:8080`
-- MySQL available on host: `localhost:3307` (container internal port 3306)
-- Product images are persisted in the named volume `products_images` and served from `/images/*`.
-
-
-### Building a container image
-- `docker build -t cachacaria-api:local .`
-- `docker run --rm -p 8080:8080 --env-file <(printenv | grep -E 'DB_|SERVER_PORT|JWT_SECRET|BASE_URL') cachacaria-api:local`  
-  Note: On Windows PowerShell, use `--env` flags or an env file instead of process substitution.
-
-
-
-## Known Issues / TODOs
-- `cmd/client/main.go` exists but is not documented/integrated. TODO: Document intended use or remove if obsolete.
-- Some request method enforcement may not align with conventional REST (e.g., update/delete via POST paths). TODO: Review and standardize HTTP verbs and routes.
-- Product delete/update endpoints for products are not implemented; only add/get endpoints exist. TODO: Complete product CRUD as needed.
-
-## Project Structure (abridged)
-- `cmd/`
-  - `api/main.go`
-  - `client/main.go`
-- `internal/`
-  - `domain/`
-    - `entities/` (auth.go, order.go, product.go, review.go, user.go)
-    - `repositories/` (product_repository.go, user_repository.go)
-    - `usecases/` (product/, user/)
-  - `infrastructure/persistence/` (mysql_*_repository.go, errors.go)
-  - `interfaces/http/`
-    - `core/` (errors.go, utils.go)
-    - `handlers/` (authhandler, producthandler, userhandler, router/middleware)
-- `database.sql`
-- `Dockerfile`
-- `docker-compose.yml`
-- `index.html`
+```
+.
+├── main.go                          # Application entry point
+├── infrastructure/
+│   ├── infrastructure.go            # Infrastructure initialization
+│   ├── config/                      # Configuration management
+│   ├── datastore/repositories/      # Database repositories
+│   ├── modules/                     # HTTP modules/routes
+│   └── util/                        # Utilities (crypto, validation)
+├── domain/
+│   ├── entities/                    # Domain models
+│   └── usecases/                    # Business logic
+├── build/
+│   └── config/
+│       ├── dev.toml                 # Development config
+│       └── prod.toml                # Production config
+├── database.sql                     # Database schema and seeds
+├── docker-compose.yml               # Docker Compose configuration
+└── Dockerfile                       # Multi-stage Docker build
+```
 
 ## License
+
 This project, Cachacaria Wilbert API, is licensed under the MIT License — see the LICENSE file for details.
