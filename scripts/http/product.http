@@ -5,7 +5,7 @@ GET http://localhost:8080/api/product
 GET http://localhost:8080/api/product?limit=5&page=1
 
 ###
-@get_id = 5
+@get_id = 1
 GET http://localhost:8080/api/product/{{get_id}}
 
 ###

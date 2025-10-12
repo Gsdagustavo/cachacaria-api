@@ -95,7 +95,19 @@ func (u *ProductUseCases) GetAll(limit, page int) ([]entities.Product, error) {
 
 	offset := (page - 1) * limit
 
-	return u.r.GetAll(limit, offset)
+	products, err := u.r.GetAll(limit, offset)
+	if err != nil {
+		slog.Error("error getting all products", "error", err.Error())
+		return nil, err
+	}
+
+	for _, product := range products {
+		for i := range product.Photos {
+			product.Photos[i] = u.buildProductImageURL(product.Photos[i])
+		}
+	}
+
+	return products, nil
 }
 
 func (u *ProductUseCases) GetProduct(id int64) (*entities.Product, error) {
