@@ -38,7 +38,7 @@ func WriteGenericResponse(w http.ResponseWriter, v interface{}) {
 	}
 }
 
-func WritServerResponse(w http.ResponseWriter, response *entities.ServerResponse) {
+func WriteServerResponse(w http.ResponseWriter, response *entities.ServerResponse) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.Code)
 
