@@ -3,7 +3,7 @@ symmetric_key = "VpDL97pWPbIkSooYc2eQvQdhx84BUbQM"
 [Server]
 port = 8080
 address = "0.0.0.0"
-base_url = "http://localhost:8080"
+base_url = "http://192.168.0.120:8080"
 
 [Database]
 port = 3306
