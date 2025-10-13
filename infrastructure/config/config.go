@@ -66,8 +66,8 @@ func (s Server) Run(cfg Config) error {
 	address := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	log.Printf("Starting HTTP server on %s", address)
 
-	mux.CORSMethodMiddleware(s.Router)
 	s.Router.Use(LoggingMiddleware)
+	s.Router.Use(CORSMiddleware)
 
 	s.Router.PathPrefix("/images/").Handler(http.StripPrefix("/images/",
 		http.FileServer(http.Dir("/app/images")),
@@ -139,6 +139,27 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 			"body",
 			r.Body,
 		)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func CORSMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Expose-Headers", "Authorization")
+
+		if r.Method == http.MethodOptions {
+			log.Printf("[CORS Middleware] allow options | no content")
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
