@@ -1,11 +1,8 @@
-DROP
-    DATABASE IF EXISTS cachacadb;
+DROP DATABASE IF EXISTS cachacadb;
 
-CREATE
-    DATABASE IF NOT EXISTS cachacadb;
+CREATE DATABASE IF NOT EXISTS cachacadb;
 
-USE
-    cachacadb;
+USE cachacadb;
 
 -- Tabela Users
 CREATE TABLE users

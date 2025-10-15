@@ -11,14 +11,18 @@ import (
 
 var ErrExpiredToken = errors.New("TOKEN_HAS_EXPIRED")
 
+// Remade Maker interface
 type Maker interface {
-	CreateToken(email string, duration time.Duration) (string, error)
+	// UPDATED: Now requires the userID (int) when creating a token
+	CreateToken(email string, userID int, duration time.Duration) (string, error)
 	VerifyToken(token string) (*Payload, error)
 }
 
+// Remade Payload struct
 type Payload struct {
 	ID        uuid.UUID `json:"id"`
 	Email     string    `json:"email"`
+	UserID    int       `json:"user_id"` // NEW FIELD for context storage
 	IssuedAt  time.Time `json:"issued_at"`
 	ExpiresAt time.Time `json:"expires_at"`
 }
@@ -30,7 +34,8 @@ func (payload *Payload) Valid() error {
 	return nil
 }
 
-func NewPayload(email string, duration time.Duration) (*Payload, error) {
+// Remade NewPayload function
+func NewPayload(email string, userID int, duration time.Duration) (*Payload, error) { // UPDATED signature
 	tokenUUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("error generating token uuid: %s", err)
@@ -39,6 +44,7 @@ func NewPayload(email string, duration time.Duration) (*Payload, error) {
 	payload := &Payload{
 		ID:        tokenUUID,
 		Email:     email,
+		UserID:    userID, // SET the new field
 		IssuedAt:  time.Now(),
 		ExpiresAt: time.Now().Add(duration),
 	}
@@ -46,6 +52,7 @@ func NewPayload(email string, duration time.Duration) (*Payload, error) {
 	return payload, nil
 }
 
+// Concrete struct definition for PasetoMaker
 type PasetoMaker struct {
 	paseto       *paseto.V2
 	symmetricKey string
@@ -58,8 +65,9 @@ func NewPasetoMaker(symmetricKey string) Maker {
 	}
 }
 
-func (m *PasetoMaker) CreateToken(email string, duration time.Duration) (string, error) {
-	payload, err := NewPayload(email, duration)
+// Remade PasetoMaker.CreateToken method
+func (m *PasetoMaker) CreateToken(email string, userID int, duration time.Duration) (string, error) { // UPDATED signature
+	payload, err := NewPayload(email, userID, duration) // UPDATED call
 	if err != nil {
 		return "", err
 	}

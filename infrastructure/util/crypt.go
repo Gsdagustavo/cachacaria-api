@@ -9,10 +9,16 @@ import (
 const DefaultCost = bcrypt.DefaultCost
 const DefaultTokenDuration = 12 * time.Hour // hours
 
+// Remade Crypt interface
 type Crypt interface {
 	HashPassword(password string) (string, error)
 	CheckPasswordHash(password, hash string) bool
-	GenerateAuthToken(email string) (string, error)
+
+	// UPDATED: Now requires the userID (int)
+	GenerateAuthToken(email string, userID int) (string, error)
+
+	// NEW: Exposes token verification to use cases/middleware
+	VerifyAuthToken(token string) (*Payload, error)
 }
 
 type crypt struct {
@@ -39,6 +45,14 @@ func (c crypt) CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func (c crypt) GenerateAuthToken(email string) (string, error) {
-	return c.maker.CreateToken(email, DefaultTokenDuration)
+// Remade crypt.GenerateAuthToken method
+func (c crypt) GenerateAuthToken(email string, userID int) (string, error) { // Corrected receiver to concrete type 'crypt'
+	// Delegation to the Maker
+	return c.maker.CreateToken(email, userID, DefaultTokenDuration)
+}
+
+// NEW: crypt.VerifyAuthToken method
+func (c crypt) VerifyAuthToken(token string) (*Payload, error) { // Corrected receiver to concrete type 'crypt'
+	// Delegation to the Maker
+	return c.maker.VerifyToken(token)
 }

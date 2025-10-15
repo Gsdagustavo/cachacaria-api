@@ -4,8 +4,10 @@ import (
 	"cachacariaapi/domain/entities"
 	"cachacariaapi/domain/status_codes"
 	"cachacariaapi/domain/usecases"
+	"cachacariaapi/infrastructure/util"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -85,6 +87,7 @@ func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+
 }
 
 func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
@@ -114,8 +117,29 @@ func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		// At this point headers are already sent, log the error
+	if err = json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (a AuthModule) SessionMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+
+		if authHeader != "" {
+			token := strings.TrimPrefix(authHeader, "Bearer ")
+			userID, err := a.authUseCases.GetUserIDByAuthToken(token)
+
+			if err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			ctx := util.NewContextWithUserID(r.Context(), userID)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	})
 }

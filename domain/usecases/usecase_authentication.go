@@ -29,7 +29,6 @@ func (a AuthUseCases) AttemptLogin(
 	ctx context.Context,
 	credentials entities.UserCredentials,
 ) (string, status_codes.LoginStatusCode, error) {
-	// Check if the user exists
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
 		return "", status_codes.LoginFailure, fmt.Errorf(
@@ -43,12 +42,10 @@ func (a AuthUseCases) AttemptLogin(
 	}
 
 	if !a.crypt.CheckPasswordHash(credentials.Password, user.Password) {
-
 		return "", status_codes.LoginInvalidCredentials, nil
 	}
 
-	// Generate token
-	token, err := a.crypt.GenerateAuthToken(credentials.Email)
+	token, err := a.crypt.GenerateAuthToken(credentials.Email, user.ID)
 	if err != nil {
 		return "", status_codes.LoginFailure, fmt.Errorf(
 			"[AttemptLogin] error generating token: %s",
@@ -63,7 +60,6 @@ func (a AuthUseCases) RegisterUser(
 	ctx context.Context,
 	credentials entities.UserCredentials,
 ) (status_codes.RegisterStatusCode, error) {
-	// Check if the user exists
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
 		return status_codes.RegisterFailure, fmt.Errorf(
@@ -76,7 +72,6 @@ func (a AuthUseCases) RegisterUser(
 		return status_codes.RegisterUserAlreadyExist, nil
 	}
 
-	// Validate credentials
 	credentials.Email = util.TrimSpace(credentials.Email)
 	credentials.Password = util.TrimSpace(credentials.Password)
 
@@ -90,7 +85,6 @@ func (a AuthUseCases) RegisterUser(
 		return status_codes.RegisterInvalidPassword, nil
 	}
 
-	// Hash user password before saving
 	credentials.Password, err = a.crypt.HashPassword(credentials.Password)
 	if err != nil {
 		return status_codes.RegisterFailure, fmt.Errorf(
@@ -115,11 +109,18 @@ func (a AuthUseCases) RegisterUser(
 		IsAdm:    credentials.IsAdm,
 	}
 
-	// Save user
 	err = a.repository.AddUser(ctx, user)
 	if err != nil {
 		return status_codes.RegisterFailure, fmt.Errorf("[RegisterUser] error saving user: %s", err)
 	}
 
 	return status_codes.RegisterSuccess, nil
+}
+func (a AuthUseCases) GetUserIDByAuthToken(token string) (int, error) {
+	payload, err := a.crypt.VerifyAuthToken(token)
+	if err != nil {
+		return 0, err
+	}
+
+	return payload.UserID, nil
 }

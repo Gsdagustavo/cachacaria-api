@@ -18,6 +18,11 @@ func NewContextWithUserID(ctx context.Context, userID int) context.Context {
 	return context.WithValue(ctx, UserIDContextKey, userID)
 }
 
+func GetUserIDFromContext(ctx context.Context) (int, bool) {
+	userID, ok := ctx.Value(UserIDContextKey).(int)
+	return userID, ok
+}
+
 func ValidateRequestMethod(r *http.Request, allowedMethod string) *entities.ServerError {
 	if r.Method != allowedMethod {
 		return &entities.ServerError{

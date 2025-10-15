@@ -1,5 +1,5 @@
 ###
-POST http://192.168.0.120:8080/api/auth/register
+POST http://localhost:8080/api/auth/register
 
 {
     "email": "test@gmail.com",
