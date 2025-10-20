@@ -108,7 +108,12 @@ func (m ProductModule) add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	res := util.ServerResponse{
+		Status:  status.Int(),
+		Message: status.String(),
+	}
+
+	util.Write(w, res)
 }
 
 func (m ProductModule) getAll(w http.ResponseWriter, r *http.Request) {
@@ -294,23 +299,11 @@ func (m ProductModule) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateRes, err := m.ProductUseCases.UpdateProduct(id, request)
+	err = m.ProductUseCases.UpdateProduct(id, request)
 	if err != nil {
-		if errors.Is(err, entities.ErrNotFound) {
-			res = entities.ServerResponse{
-				Code:    http.StatusNotFound,
-				Message: "Produto não encontrado",
-			}
-		} else {
-			res = entities.ServerResponse{
-				Code:    http.StatusInternalServerError,
-				Message: "Erro interno no servidor",
-			}
-		}
-		res.WriteHTTP(w)
+		util.WriteInternalError(w)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(updateRes)
+	http.
 }

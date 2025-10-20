@@ -27,6 +27,10 @@ func (s AddProductStatus) String() string {
 	}
 }
 
+func (s AddProductStatus) Int() int {
+	return int(s)
+}
+
 type DeleteProductStatus int
 
 const (
@@ -43,5 +47,11 @@ func (s DeleteProductStatus) String() string {
 		return "Produto não encontrado"
 	case DeleteProductStatusError:
 		return "Erro interno no servidor"
+	default:
+		return "Erro desconhecido"
 	}
+}
+
+func (s DeleteProductStatus) Int() int {
+	return int(s)
 }
