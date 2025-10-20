@@ -1,7 +1,7 @@
 package modules
 
 import (
-	"encoding/json"
+	"cachacariaapi/infrastructure/util"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -42,20 +42,11 @@ func (h HealthModule) RegisterRoutes(router *mux.Router) {
 	}
 }
 
-func (h HealthModule) health(w http.ResponseWriter, r *http.Request) {
-	type HealthResponse struct {
-		Status  string `json:"status"`
-		Message string `json:"message"`
-	}
-
-	response := HealthResponse{
-		Status:  "OK",
+func (h HealthModule) health(w http.ResponseWriter, _ *http.Request) {
+	response := util.ServerResponse{
+		Status:  http.StatusOK,
 		Message: "Server is healthy",
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	util.Write(w, response)
 }

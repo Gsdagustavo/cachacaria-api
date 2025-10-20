@@ -7,8 +7,8 @@ import (
 	"cachacariaapi/domain/status_codes"
 	"cachacariaapi/infrastructure/util"
 	"context"
+	"errors"
 	"fmt"
-	"log"
 
 	"github.com/google/uuid"
 )
@@ -31,10 +31,7 @@ func (a AuthUseCases) AttemptLogin(
 ) (string, status_codes.LoginStatusCode, error) {
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
-		return "", status_codes.LoginFailure, fmt.Errorf(
-			"[AttemptLogin] error checking user: %s",
-			err,
-		)
+		return "", status_codes.LoginFailure, errors.Join(fmt.Errorf("failed to get user by email"), err)
 	}
 
 	if user == nil {
@@ -47,10 +44,7 @@ func (a AuthUseCases) AttemptLogin(
 
 	token, err := a.crypt.GenerateAuthToken(credentials.Email, user.ID)
 	if err != nil {
-		return "", status_codes.LoginFailure, fmt.Errorf(
-			"[AttemptLogin] error generating token: %s",
-			err,
-		)
+		return "", status_codes.LoginFailure, errors.Join(fmt.Errorf("failed to generate auth token"), err)
 	}
 
 	return token, status_codes.LoginSuccess, nil
@@ -62,10 +56,7 @@ func (a AuthUseCases) RegisterUser(
 ) (status_codes.RegisterStatusCode, error) {
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf(
-			"[RegisterUser] error checking user: %s",
-			err,
-		)
+		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to check user"), err)
 	}
 
 	if user != nil {
@@ -76,29 +67,21 @@ func (a AuthUseCases) RegisterUser(
 	credentials.Password = util.TrimSpace(credentials.Password)
 
 	if !rules.IsValidEmail(credentials.Email) {
-		log.Printf("[RegisterUser] invalid email: %s", credentials.Email)
 		return status_codes.RegisterInvalidEmail, nil
 	}
 
 	if !rules.IsValidPassword(credentials.Password) {
-		log.Printf("[RegisterUser] invalid password: %s", credentials.Password)
 		return status_codes.RegisterInvalidPassword, nil
 	}
 
 	credentials.Password, err = a.crypt.HashPassword(credentials.Password)
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf(
-			"[RegisterUser] error hashing password: %s",
-			err,
-		)
+		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to hash password"), err)
 	}
 
 	userUUID, err := uuid.NewRandom()
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf(
-			"[RegisterUser] error generating user uuid: %s",
-			err,
-		)
+		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to generate uuid"), err)
 	}
 
 	user = &entities.User{
@@ -111,7 +94,7 @@ func (a AuthUseCases) RegisterUser(
 
 	err = a.repository.AddUser(ctx, user)
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf("[RegisterUser] error saving user: %s", err)
+		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to add user"), err)
 	}
 
 	return status_codes.RegisterSuccess, nil

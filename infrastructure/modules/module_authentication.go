@@ -2,10 +2,10 @@ package modules
 
 import (
 	"cachacariaapi/domain/entities"
-	"cachacariaapi/domain/status_codes"
 	"cachacariaapi/domain/usecases"
 	"cachacariaapi/infrastructure/util"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -65,13 +65,14 @@ func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
 	var credentials entities.UserCredentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteBadRequest(w)
 		return
 	}
 
 	token, statusCode, err := a.authUseCases.AttemptLogin(r.Context(), credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		slog.Error("failed to login", "cause", err)
+		util.WriteInternalError(w)
 		return
 	}
 
@@ -81,45 +82,30 @@ func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
 		Token:   token,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
+	util.Write(w, response)
 }
 
 func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
 	var credentials entities.UserCredentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteBadRequest(w)
 		return
-	}
-
-	type Response struct {
-		Status  status_codes.RegisterStatusCode `json:"status"`
-		Message string                          `json:"message"`
 	}
 
 	statusCode, err := a.authUseCases.RegisterUser(r.Context(), credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		slog.Error("failed to register user", "cause", err)
+		util.WriteInternalError(w)
 		return
 	}
 
-	response := Response{
-		Status:  statusCode,
+	response := util.ServerResponse{
+		Status:  statusCode.Int(),
 		Message: statusCode.String(),
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	if err = json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	util.Write(w, response)
 }
 
 func (a AuthModule) SessionMiddleware(next http.Handler) http.Handler {

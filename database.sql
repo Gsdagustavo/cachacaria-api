@@ -50,13 +50,11 @@ CREATE TABLE carts_products
 (
     id          INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     cart_id     INT NOT NULL,
-    product_id  INT NOT NULL,
     quantity    INT NOT NULL,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_carts_product FOREIGN KEY (cart_id) REFERENCES carts (id) ON DELETE CASCADE
 );
-
 
 CREATE TABLE reviews
 (

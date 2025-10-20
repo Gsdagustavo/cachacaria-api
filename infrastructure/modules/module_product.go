@@ -3,9 +3,9 @@ package modules
 import (
 	"cachacariaapi/domain/entities"
 	"cachacariaapi/domain/usecases"
+	"cachacariaapi/infrastructure/util"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -84,7 +84,7 @@ func (m ProductModule) add(w http.ResponseWriter, r *http.Request) {
 			Code:    http.StatusBadRequest,
 			Message: "Imagens excedem o máximo de memória permitido",
 		}
-		res.WriteHTTP(w)
+		util.Write(w, res)
 		return
 	}
 
@@ -102,34 +102,13 @@ func (m ProductModule) add(w http.ResponseWriter, r *http.Request) {
 		Photos:      photos,
 	}
 
-	response, err := m.ProductUseCases.AddProduct(request)
+	status, err := m.ProductUseCases.AddProduct(request)
 	if err != nil {
-		log.Printf("error adding product: %v", err)
-
-		var res entities.ServerResponse
-		if errors.Is(err, entities.ErrConflict) {
-			res = entities.ServerResponse{
-				Code:    http.StatusConflict,
-				Message: "Este produto já existe",
-			}
-		} else if errors.Is(err, entities.ErrBadRequest) {
-			res = entities.ServerResponse{
-				Code:    http.StatusBadRequest,
-				Message: "Requisição inválida",
-			}
-		} else {
-			res = entities.ServerResponse{
-				Code:    http.StatusInternalServerError,
-				Message: "Erro interno no servidor",
-			}
-		}
-		res.WriteHTTP(w)
+		util.WriteInternalError(w)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
 }
 
 func (m ProductModule) getAll(w http.ResponseWriter, r *http.Request) {

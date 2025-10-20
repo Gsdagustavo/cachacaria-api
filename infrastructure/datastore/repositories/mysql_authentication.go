@@ -35,7 +35,7 @@ func (r MySQLAuthRepository) AddUser(ctx context.Context, user *entities.User) e
 		user.IsAdm,
 	)
 	if err != nil {
-		return fmt.Errorf("error adding user: %s", err)
+		return errors.Join(fmt.Errorf("failed to add user"), err)
 	}
 
 	return nil
@@ -57,7 +57,7 @@ func (r MySQLAuthRepository) GetUserByEmail(
 			return nil, nil
 		}
 
-		return nil, fmt.Errorf("error getting user by email: %s", err)
+		return nil, errors.Join(fmt.Errorf("failed to query/scan user"), err)
 	}
 
 	return &user, nil
@@ -76,7 +76,7 @@ func (r MySQLAuthRepository) GetUserByID(ctx context.Context, id int) (*entities
 			return nil, nil
 		}
 
-		return nil, fmt.Errorf("error getting user by email: %s", err)
+		return nil, errors.Join(fmt.Errorf("failed to query/scan user"), err)
 	}
 
 	return &user, nil
@@ -98,7 +98,7 @@ func (r MySQLAuthRepository) GetUserByUUID(
 			return nil, nil
 		}
 
-		return nil, errors.Join(errors.New("error in [QueryRowContext]"), err)
+		return nil, errors.Join(fmt.Errorf("failed to query/scan user"), err)
 	}
 
 	return &user, nil
@@ -111,7 +111,7 @@ func (r MySQLAuthRepository) DeleteUser(ctx context.Context, id int) error {
 
 	_, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("error deleting user: %s", err)
+		return errors.Join(fmt.Errorf("failed to delete user"), err)
 	}
 
 	return nil

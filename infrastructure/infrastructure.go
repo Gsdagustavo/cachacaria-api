@@ -67,6 +67,7 @@ func Init() {
 	log.Printf("server running on port %d", cfg.Server.Port)
 
 	err = cfg.Server.Run(*cfg)
+	
 	if err != nil {
 		panic(err)
 	}

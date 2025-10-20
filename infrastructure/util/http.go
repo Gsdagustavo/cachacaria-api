@@ -4,7 +4,8 @@ import (
 	"cachacariaapi/domain/entities"
 	"context"
 	"encoding/json"
-	"log"
+	"io/ioutil"
+	"log/slog"
 	"net/http"
 )
 
@@ -33,34 +34,53 @@ func ValidateRequestMethod(r *http.Request, allowedMethod string) *entities.Serv
 	return nil
 }
 
-func WriteGenericResponse(w http.ResponseWriter, v interface{}) {
+func WriteResponse(w http.ResponseWriter, statusCode int, response interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-
-	err := json.NewEncoder(w).Encode(v)
+	w.WriteHeader(statusCode)
+	bytes, err := json.Marshal(response)
 	if err != nil {
-		log.Printf("Error encoding response: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		slog.Error("error writing response", "cause", err)
+		return
+	}
+
+	w.Write(bytes)
+}
+
+type ServerResponse struct {
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+}
+
+func Write(w http.ResponseWriter, v any) {
+	bytes, err := json.Marshal(v)
+	if err != nil {
+		slog.Error("failed to marshal response", "cause", err)
+		WriteInternalError(w)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(bytes)
+	if err != nil {
+		slog.Error("failed to write response", "cause", err)
+		WriteInternalError(w)
 	}
 }
 
-func WriteServerResponse(w http.ResponseWriter, response *entities.ServerResponse) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(response.Code)
-
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
-		log.Printf("Error encoding response: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
+func WriteInternalError(w http.ResponseWriter) {
+	http.Error(w, "Internal server error", http.StatusInternalServerError)
 }
 
-func WriteServerError(w http.ResponseWriter, error *entities.ServerError) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(error.Code)
+func WriteBadRequest(w http.ResponseWriter) {
+	http.Error(w, "Bad request", http.StatusBadRequest)
+}
 
-	err := json.NewEncoder(w).Encode(error)
+func Read(r *http.Request, v any) error {
+	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Error encoding response: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return err
 	}
+
+	err = json.Unmarshal(bytes, v)
+	return nil
 }
