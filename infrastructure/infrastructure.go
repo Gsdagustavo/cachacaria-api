@@ -6,7 +6,7 @@ import (
 	"cachacariaapi/infrastructure/datastore/repositories"
 	"cachacariaapi/infrastructure/modules"
 	"cachacariaapi/infrastructure/util"
-	"log"
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -14,19 +14,20 @@ import (
 )
 
 func Init() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("error loading config: %v", err)
+		slog.Error("failed to load config", "error", err)
 	}
-	log.Printf("config file read successfully")
+
+	slog.Info("config loaded")
 
 	// Config database
 	err = config.Connect(cfg)
 	if err != nil {
-		log.Fatalf("error connecting to database: %v", err)
+		slog.Error("failed to connect to database", "error", err)
 	}
 
 	// Config utils
@@ -64,7 +65,7 @@ func Init() {
 	// Register modules
 	cfg.Server.RegisterModules(apiSubrouter, authModule, userModule, productModule)
 
-	log.Printf("server running on port %d", cfg.Server.Port)
+	slog.Info(fmt.Sprintf("server running on port %d", cfg.Server.Port))
 
 	err = cfg.Server.Run(*cfg)
 	if err != nil {
