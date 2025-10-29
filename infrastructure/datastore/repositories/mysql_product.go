@@ -45,7 +45,7 @@ func (r *MySQLProductRepository) AddProductPhotos(productID int64, filenames []s
 }
 
 func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, error) {
-	var products []entities.Product
+	products := make([]entities.Product, 0)
 
 	/// Products
 	const query = "SELECT id, name, description, price, stock FROM products ORDER BY id LIMIT ? OFFSET ?"
@@ -70,8 +70,8 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 		var photos []string
 		const query = "SELECT id, filename FROM products_photos WHERE product_id = ?"
 		photoRows, err := r.DB.Query(query, product.ID)
-		if err == nil {
-			return nil, errors.Join(fmt.Errorf("failed to query products"), err)
+		if err != nil {
+			return nil, errors.Join(fmt.Errorf("failed to query products images"), err)
 		}
 
 		for photoRows.Next() {
@@ -90,10 +90,6 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 
 	if err = rows.Err(); err != nil {
 		return nil, errors.Join(fmt.Errorf("failed to scan products"), err)
-	}
-
-	if products == nil {
-		products = []entities.Product{}
 	}
 
 	return products, nil

@@ -37,23 +37,18 @@ CREATE TABLE products_photos
     CONSTRAINT fk_product_photo FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
 );
 
-CREATE TABLE carts
-(
-    id          INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    user_id     INT NOT NULL UNIQUE,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-);
-
 CREATE TABLE carts_products
 (
+
     id          INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    cart_id     INT NOT NULL,
-    quantity    INT NOT NULL,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_carts_product FOREIGN KEY (cart_id) REFERENCES carts (id) ON DELETE CASCADE
+    user_id     INT NOT NULL,
+    product_id  INT NOT NULL,
+    quantity    INT NOT NULL DEFAULT 1,
+    created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT fk_carts_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+    CONSTRAINT unique_product UNIQUE (user_id, product_id)
 );
 
 CREATE TABLE reviews

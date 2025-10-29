@@ -1,6 +1,13 @@
 package entities
 
-type Cart struct {
-	UserID int `json:"user_id"`
-	CartID int `json:"cart_id"`
+import "time"
+
+type CartItem struct {
+	ID         int64
+	UserID     int64
+	ProductID  int64
+	Product    *Product
+	Quantity   int
+	CreatedAt  time.Time
+	ModifiedAt time.Time
 }

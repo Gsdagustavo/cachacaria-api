@@ -6,6 +6,7 @@ import (
 	"cachacariaapi/infrastructure/util"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -155,19 +156,8 @@ func (m ProductModule) getAll(w http.ResponseWriter, r *http.Request) {
 
 	products, err := m.ProductUseCases.GetAll(limit, page)
 	if err != nil {
-		var res entities.ServerResponse
-		if errors.Is(err, entities.ErrNotFound) {
-			res = entities.ServerResponse{
-				Code:    http.StatusNotFound,
-				Message: "Nenhum produto encontrado",
-			}
-		} else {
-			res = entities.ServerResponse{
-				Code:    http.StatusInternalServerError,
-				Message: "Erro interno no servidor",
-			}
-		}
-		res.WriteHTTP(w)
+		slog.Error("failed to get all products", slog.String("err", err.Error()))
+		util.WriteInternalError(w)
 		return
 	}
 
@@ -304,6 +294,4 @@ func (m ProductModule) update(w http.ResponseWriter, r *http.Request) {
 		util.WriteInternalError(w)
 		return
 	}
-
-	http.
 }
