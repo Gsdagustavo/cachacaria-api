@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"cachacariaapi/infrastructure/util"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -37,6 +38,9 @@ func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.Handler
 				})
 				return
 			}
+
+			log.Printf("admin only: %v", adminOnly)
+			log.Printf("is admin: %v", payload.IsAdmin)
 
 			if adminOnly && !payload.IsAdmin {
 				util.Write(w, util.ServerResponse{
