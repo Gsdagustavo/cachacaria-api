@@ -14,6 +14,7 @@ import (
 // CartModule handles cart endpoints
 type CartModule struct {
 	CartUseCases *usecases.CartUseCases
+	crypt        *util.Crypt
 	name         string
 	path         string
 }
@@ -29,8 +30,8 @@ func NewCartModule(cartUseCases *usecases.CartUseCases) *CartModule {
 func (m CartModule) Name() string { return m.name }
 func (m CartModule) Path() string { return m.path }
 
-func (m CartModule) RegisterRoutes(router *mux.Router, crypt util.Crypt) {
-	auth := middleware.AuthMiddleware(crypt) // use middleware function (we’ll define it below)
+func (m CartModule) RegisterRoutes(router *mux.Router) {
+	auth := middleware.AuthMiddleware(*m.crypt) // use middleware function (we’ll define it below)
 
 	routes := []ModuleRoute{
 		{

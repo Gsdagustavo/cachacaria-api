@@ -2,41 +2,34 @@ package usecases
 
 import (
 	"cachacariaapi/domain/entities"
+	"cachacariaapi/domain/repositories"
 	"context"
 )
 
 type CartUseCases struct {
-	repo CartRepository
+	repository repositories.CartRepository
 }
 
-type CartRepository interface {
-	AddToCart(ctx context.Context, userID, productID int64, quantity int) error
-	GetCartItems(ctx context.Context, userID int64) ([]*entities.CartItem, error)
-	UpdateCartItem(ctx context.Context, userID, productID int64, quantity int) error
-	DeleteCartItem(ctx context.Context, userID, productID int64) error
-	ClearCart(ctx context.Context, userID int64) error
-}
-
-func NewCartUseCases(repo CartRepository) *CartUseCases {
-	return &CartUseCases{repo: repo}
+func NewCartUseCases(repo repositories.CartRepository) *CartUseCases {
+	return &CartUseCases{repository: repo}
 }
 
 func (uc *CartUseCases) AddToCart(ctx context.Context, userID, productID int64, quantity int) error {
-	return uc.repo.AddToCart(ctx, userID, productID, quantity)
+	return uc.repository.AddToCart(ctx, userID, productID, quantity)
 }
 
 func (uc *CartUseCases) GetCartItems(ctx context.Context, userID int64) ([]*entities.CartItem, error) {
-	return uc.repo.GetCartItems(ctx, userID)
+	return uc.repository.GetCartItems(ctx, userID)
 }
 
 func (uc *CartUseCases) UpdateCartItem(ctx context.Context, userID, productID int64, quantity int) error {
-	return uc.repo.UpdateCartItem(ctx, userID, productID, quantity)
+	return uc.repository.UpdateCartItem(ctx, userID, productID, quantity)
 }
 
 func (uc *CartUseCases) DeleteCartItem(ctx context.Context, userID, productID int64) error {
-	return uc.repo.DeleteCartItem(ctx, userID, productID)
+	return uc.repository.DeleteCartItem(ctx, userID, productID)
 }
 
 func (uc *CartUseCases) ClearCart(ctx context.Context, userID int64) error {
-	return uc.repo.ClearCart(ctx, userID)
+	return uc.repository.ClearCart(ctx, userID)
 }

@@ -1,27 +1,14 @@
 package repositories
 
-import "cachacariaapi/domain/entities"
-
-type AddProductToCartRequest struct {
-	product  entities.Product
-	user     entities.User
-	quantity int
-}
-
-type DeleteProductFromCartRequest struct {
-	product  entities.Product
-	user     entities.User
-	quantity int
-}
-
-type UpdateCartRequest struct {
-	product  entities.Product
-	user     entities.User
-	quantity int
-}
+import (
+	"cachacariaapi/domain/entities"
+	"context"
+)
 
 type CartRepository interface {
-	GetCartByUserID(id int64) ([]entities.CartItem, error)
-	AddProductToCart(userID, productID int64, quantity int) error
-	RemoveProductFromCart(userID, productID int64) error
+	AddToCart(ctx context.Context, userID, productID int64, quantity int) error
+	GetCartItems(ctx context.Context, userID int64) ([]*entities.CartItem, error)
+	UpdateCartItem(ctx context.Context, userID, productID int64, quantity int) error
+	DeleteCartItem(ctx context.Context, userID, productID int64) error
+	ClearCart(ctx context.Context, userID int64) error
 }
