@@ -40,10 +40,10 @@ func (c crypt) CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func (c crypt) GenerateAuthToken(email string, userID int, isAdmin bool) (string, error) { // Corrected receiver to concrete type 'crypt'
+func (c crypt) GenerateAuthToken(email string, userID int, isAdmin bool) (string, error) {
 	return c.maker.CreateToken(email, userID, isAdmin, DefaultTokenDuration)
 }
 
-func (c crypt) VerifyAuthToken(token string) (*Payload, error) { // Corrected receiver to concrete type 'crypt'
+func (c crypt) VerifyAuthToken(token string) (*Payload, error) {
 	return c.maker.VerifyToken(token)
 }
