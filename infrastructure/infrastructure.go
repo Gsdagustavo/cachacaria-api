@@ -52,7 +52,7 @@ func Init() {
 	authModule := modules.NewAuthModule(authUseCases)
 	userModule := modules.NewUserModule(userUseCases)
 	productModule := modules.NewProductModule(productUseCases)
-	cartModule := modules.NewCartModule(cartUseCases)
+	cartModule := modules.NewCartModule(cartUseCases, crypt)
 
 	// Assign a router to the server
 	router := mux.NewRouter()

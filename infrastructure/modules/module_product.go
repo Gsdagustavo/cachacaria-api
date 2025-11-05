@@ -21,7 +21,7 @@ const defaultLimitPagination = 20
 
 type ProductModule struct {
 	ProductUseCases *usecases.ProductUseCases
-	crypt           *util.Crypt
+	crypt           util.Crypt
 	name            string
 	path            string
 }
@@ -43,7 +43,7 @@ func (m ProductModule) Path() string {
 }
 
 func (m ProductModule) RegisterRoutes(router *mux.Router) {
-	auth := middleware.AuthMiddleware(*m.crypt)
+	auth := middleware.AuthMiddleware(m.crypt)
 
 	routes := []ModuleRoute{
 		{
