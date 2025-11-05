@@ -8,8 +8,6 @@ import (
 // Password rules
 const (
 	PasswordMinLetters = 8
-	PasswordMinNumbers = 1
-	PasswordMinSpecial = 1
 	PasswordMaxLetters = 32
 )
 

@@ -11,14 +11,12 @@ import (
 
 var ErrExpiredToken = errors.New("TOKEN_HAS_EXPIRED")
 
-// Remade Maker interface
 type Maker interface {
 	// UPDATED: Now requires the userID (int) when creating a token
 	CreateToken(email string, userID int, isAdmin bool, duration time.Duration) (string, error)
 	VerifyToken(token string) (*Payload, error)
 }
 
-// Remade Payload struct
 type Payload struct {
 	ID        uuid.UUID `json:"id"`
 	Email     string    `json:"email"`
@@ -35,7 +33,6 @@ func (payload *Payload) Valid() error {
 	return nil
 }
 
-// Remade NewPayload function
 func NewPayload(email string, userID int, isAdmin bool, duration time.Duration) (*Payload, error) { // UPDATED signature
 	tokenUUID, err := uuid.NewRandom()
 	if err != nil {
@@ -54,7 +51,6 @@ func NewPayload(email string, userID int, isAdmin bool, duration time.Duration) 
 	return payload, nil
 }
 
-// Concrete struct definition for PasetoMaker
 type PasetoMaker struct {
 	paseto       *paseto.V2
 	symmetricKey string
@@ -67,7 +63,6 @@ func NewPasetoMaker(symmetricKey string) Maker {
 	}
 }
 
-// Remade PasetoMaker.CreateToken method
 func (m *PasetoMaker) CreateToken(email string, userID int, isAdmin bool, duration time.Duration) (string, error) { // UPDATED signature
 	payload, err := NewPayload(email, userID, isAdmin, duration) // UPDATED call
 	if err != nil {

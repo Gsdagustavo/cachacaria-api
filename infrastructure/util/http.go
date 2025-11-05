@@ -9,18 +9,15 @@ import (
 	"net/http"
 )
 
-// ContextKey é um tipo privado usado para armazenar dados no contexto
 type ContextKey string
 
 const userContextKey ContextKey = "userContext"
 
-// UserContext guarda informações do usuário autenticado
 type UserContext struct {
 	UserID  int
 	IsAdmin bool
 }
 
-// NewContextWithUser armazena o ID e o papel do usuário no contexto da requisição
 func NewContextWithUser(ctx context.Context, userID int, isAdmin bool) context.Context {
 	return context.WithValue(ctx, userContextKey, &UserContext{
 		UserID:  userID,
@@ -28,7 +25,6 @@ func NewContextWithUser(ctx context.Context, userID int, isAdmin bool) context.C
 	})
 }
 
-// GetUserFromContext recupera o usuário autenticado do contexto
 func GetUserFromContext(ctx context.Context) (*UserContext, bool) {
 	user, ok := ctx.Value(userContextKey).(*UserContext)
 	return user, ok
