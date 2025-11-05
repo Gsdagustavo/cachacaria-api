@@ -3,6 +3,7 @@ package modules
 import (
 	"cachacariaapi/domain/entities"
 	"cachacariaapi/domain/usecases"
+	"cachacariaapi/infrastructure/middleware"
 	"cachacariaapi/infrastructure/util"
 	"encoding/json"
 	"errors"
@@ -20,6 +21,7 @@ const defaultLimitPagination = 20
 
 type ProductModule struct {
 	ProductUseCases *usecases.ProductUseCases
+	crypt           *util.Crypt
 	name            string
 	path            string
 }
@@ -41,35 +43,37 @@ func (m ProductModule) Path() string {
 }
 
 func (m ProductModule) RegisterRoutes(router *mux.Router) {
+	auth := middleware.AuthMiddleware(*m.crypt)
+
 	routes := []ModuleRoute{
 		{
 			Name:    "Add",
 			Path:    "",
-			Handler: m.add,
+			Handler: auth(m.add),
 			Methods: []string{http.MethodPost},
 		},
 		{
 			Name:    "GetAll",
 			Path:    "",
-			Handler: m.getAll,
+			Handler: m.getAll, // Public
 			Methods: []string{http.MethodGet},
 		},
 		{
 			Name:    "Get",
 			Path:    "/{id}",
-			Handler: m.get,
+			Handler: m.get, // Public
 			Methods: []string{http.MethodGet},
 		},
 		{
 			Name:    "Update",
 			Path:    "/{id}",
-			Handler: m.update,
-			Methods: []string{http.MethodPatch},
+			Handler: auth(m.update),
+			Methods: []string{http.MethodPut},
 		},
 		{
 			Name:    "Delete",
 			Path:    "/{id}",
-			Handler: m.delete,
+			Handler: auth(m.delete),
 			Methods: []string{http.MethodDelete},
 		},
 	}

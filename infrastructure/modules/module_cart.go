@@ -2,10 +2,16 @@ package modules
 
 import (
 	"cachacariaapi/domain/usecases"
+	"cachacariaapi/infrastructure/middleware"
+	"cachacariaapi/infrastructure/util"
+	"encoding/json"
+	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
 
+// CartModule handles cart endpoints
 type CartModule struct {
 	CartUseCases *usecases.CartUseCases
 	name         string
@@ -20,49 +26,165 @@ func NewCartModule(cartUseCases *usecases.CartUseCases) *CartModule {
 	}
 }
 
-func (m CartModule) Name() string {
-	return m.name
+func (m CartModule) Name() string { return m.name }
+func (m CartModule) Path() string { return m.path }
+
+func (m CartModule) RegisterRoutes(router *mux.Router, crypt util.Crypt) {
+	auth := middleware.AuthMiddleware(crypt) // use middleware function (we’ll define it below)
+
+	routes := []ModuleRoute{
+		{
+			Name:    "AddToCart",
+			Path:    "",
+			Handler: auth(m.addToCart), // protected
+			Methods: []string{http.MethodPost},
+		},
+		{
+			Name:    "GetCart",
+			Path:    "",
+			Handler: auth(m.getCart), // protected
+			Methods: []string{http.MethodGet},
+		},
+		{
+			Name:    "UpdateCartItem",
+			Path:    "/{product_id}",
+			Handler: auth(m.updateCartItem), // protected
+			Methods: []string{http.MethodPatch},
+		},
+		{
+			Name:    "DeleteCartItem",
+			Path:    "/{product_id}",
+			Handler: auth(m.deleteCartItem), // protected
+			Methods: []string{http.MethodDelete},
+		},
+		{
+			Name:    "ClearCart",
+			Path:    "/clear",
+			Handler: auth(m.clearCart), // protected
+			Methods: []string{http.MethodDelete},
+		},
+	}
+
+	for _, route := range routes {
+		router.HandleFunc(m.path+route.Path, route.Handler).Methods(route.Methods...)
+	}
 }
 
-func (m CartModule) Path() string {
-	return m.path
+func (m CartModule) addToCart(w http.ResponseWriter, r *http.Request) {
+	userID, ok := util.GetUserIDFromContext(r.Context())
+	if !ok {
+		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
+		return
+	}
+
+	var req struct {
+		ProductID int64 `json:"product_id"`
+		Quantity  int   `json:"quantity"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		util.WriteBadRequest(w)
+		return
+	}
+
+	if req.Quantity <= 0 {
+		req.Quantity = 1
+	}
+
+	err := m.CartUseCases.AddToCart(r.Context(), int64(userID), req.ProductID, req.Quantity)
+	if err != nil {
+		util.WriteInternalError(w)
+		return
+	}
+
+	util.Write(w, util.ServerResponse{
+		Status:  http.StatusOK,
+		Message: "Produto adicionado ao carrinho com sucesso",
+	})
 }
 
-func (m CartModule) RegisterRoutes(router *mux.Router) {
-	//routes := []ModuleRoute{
-	//	{
-	//		Name:    "Add",
-	//		Path:    "",
-	//		Handler: m.add,
-	//		Methods: []string{http.MethodPost},
-	//	},
-	//	{
-	//		Name:    "GetAll",
-	//		Path:    "",
-	//		Handler: m.getAll,
-	//		Methods: []string{http.MethodGet},
-	//	},
-	//	{
-	//		Name:    "Get",
-	//		Path:    "/{id}",
-	//		Handler: m.get,
-	//		Methods: []string{http.MethodGet},
-	//	},
-	//	{
-	//		Name:    "Update",
-	//		Path:    "/{id}",
-	//		Handler: m.update,
-	//		Methods: []string{http.MethodPatch},
-	//	},
-	//	{
-	//		Name:    "Delete",
-	//		Path:    "/{id}",
-	//		Handler: m.delete,
-	//		Methods: []string{http.MethodDelete},
-	//	},
-	//}
+func (m CartModule) getCart(w http.ResponseWriter, r *http.Request) {
+	userID, ok := util.GetUserIDFromContext(r.Context())
+	if !ok {
+		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
+		return
+	}
 
-	//for _, route := range routes {
-	//	router.HandleFunc(m.path+route.Path, route.Handler).Methods(route.Methods...)
-	//}
+	items, err := m.CartUseCases.GetCartItems(r.Context(), int64(userID))
+	if err != nil {
+		util.WriteInternalError(w)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
+}
+
+func (m CartModule) updateCartItem(w http.ResponseWriter, r *http.Request) {
+	userID, ok := util.GetUserIDFromContext(r.Context())
+	if !ok {
+		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
+		return
+	}
+
+	productIDStr := mux.Vars(r)["product_id"]
+	productID, err := strconv.ParseInt(productIDStr, 10, 64)
+	if err != nil {
+		util.WriteBadRequest(w)
+		return
+	}
+
+	var req struct {
+		Quantity int `json:"quantity"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		util.WriteBadRequest(w)
+		return
+	}
+
+	err = m.CartUseCases.UpdateCartItem(r.Context(), int64(userID), productID, req.Quantity)
+	if err != nil {
+		util.WriteInternalError(w)
+		return
+	}
+
+	util.Write(w, util.ServerResponse{Status: http.StatusOK, Message: "Quantidade atualizada com sucesso"})
+}
+
+func (m CartModule) deleteCartItem(w http.ResponseWriter, r *http.Request) {
+	userID, ok := util.GetUserIDFromContext(r.Context())
+	if !ok {
+		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
+		return
+	}
+
+	productIDStr := mux.Vars(r)["product_id"]
+	productID, err := strconv.ParseInt(productIDStr, 10, 64)
+	if err != nil {
+		util.WriteBadRequest(w)
+		return
+	}
+
+	err = m.CartUseCases.DeleteCartItem(r.Context(), int64(userID), productID)
+	if err != nil {
+		util.WriteInternalError(w)
+		return
+	}
+
+	util.Write(w, util.ServerResponse{Status: http.StatusOK, Message: "Produto removido do carrinho"})
+}
+
+func (m CartModule) clearCart(w http.ResponseWriter, r *http.Request) {
+	userID, ok := util.GetUserIDFromContext(r.Context())
+	if !ok {
+		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
+		return
+	}
+
+	err := m.CartUseCases.ClearCart(r.Context(), int64(userID))
+	if err != nil {
+		util.WriteInternalError(w)
+		return
+	}
+
+	util.Write(w, util.ServerResponse{Status: http.StatusOK, Message: "Carrinho limpo com sucesso"})
 }

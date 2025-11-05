@@ -43,8 +43,8 @@ func (m UserModule) RegisterRoutes(router *mux.Router) {
 		},
 		{
 			Name:    "GetUser",
-			Path:    "/{id}",
-			Handler: m.GetUser,
+			Path:    "/getData",
+			Handler: m.GetData,
 			Methods: []string{http.MethodGet},
 		},
 		{
@@ -66,6 +66,10 @@ func (m UserModule) RegisterRoutes(router *mux.Router) {
 	}
 }
 
+func (m UserModule) GetData(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func (m UserModule) GetAll(w http.ResponseWriter, _ *http.Request) {
 	users, err := m.userUseCases.GetAll()
 
@@ -78,33 +82,33 @@ func (m UserModule) GetAll(w http.ResponseWriter, _ *http.Request) {
 	util.Write(w, users)
 }
 
-func (m UserModule) GetUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	idStr := vars["id"]
-	if idStr == "" {
-		util.WriteBadRequest(w)
-		return
-	}
-
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		util.WriteBadRequest(w)
-		return
-	}
-
-	user, err := m.userUseCases.FindById(id)
-	if err != nil {
-		slog.Error("failed to get user by id", "cause", err)
-		util.WriteInternalError(w)
-	}
-
-	if user == nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	util.Write(w, user)
-}
+//func (m UserModule) GetUser(w http.ResponseWriter, r *http.Request) {
+//	vars := mux.Vars(r)
+//	idStr := vars["id"]
+//	if idStr == "" {
+//		util.WriteBadRequest(w)
+//		return
+//	}
+//
+//	id, err := strconv.ParseInt(idStr, 10, 64)
+//	if err != nil {
+//		util.WriteBadRequest(w)
+//		return
+//	}
+//
+//	user, err := m.userUseCases.FindById(id)
+//	if err != nil {
+//		slog.Error("failed to get user by id", "cause", err)
+//		util.WriteInternalError(w)
+//	}
+//
+//	if user == nil {
+//		w.WriteHeader(http.StatusNotFound)
+//		return
+//	}
+//
+//	util.Write(w, user)
+//}
 
 func (m UserModule) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

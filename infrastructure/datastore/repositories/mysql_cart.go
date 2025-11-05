@@ -12,31 +12,32 @@ type MySQLCartRepository struct {
 }
 
 func NewMySQLCartRepository(db *sql.DB) *MySQLCartRepository {
-	return &MySQLCartRepository{
-		DB: db,
-	}
+	return &MySQLCartRepository{DB: db}
 }
 
+// Get all items in the user's cart, with product data joined in.
 func (repo *MySQLCartRepository) GetCartByUserID(userID int64) ([]entities.CartItem, error) {
 	query := `
-        SELECT 
-            cp.id,
-            cp.user_id,
-            cp.product_id,
-            cp.quantity,
-            cp.created_at,
-            cp.modified_at,
-            p.name,
-            p.description,
-            p.price
-        FROM carts_products cp
-        JOIN products p ON cp.product_id = p.id
-        WHERE cp.user_id = ?;
-    `
+		SELECT 
+			cp.id,
+			cp.user_id,
+			cp.product_id,
+			cp.quantity,
+			cp.created_at,
+			cp.modified_at,
+			p.id,
+			p.name,
+			p.description,
+			p.price,
+			p.stock
+		FROM carts_products cp
+		JOIN products p ON cp.product_id = p.id
+		WHERE cp.user_id = ?;
+	`
 
 	rows, err := repo.DB.Query(query, userID)
 	if err != nil {
-		return nil, errors.Join(fmt.Errorf("failed to fetch cart for user"), err)
+		return nil, fmt.Errorf("failed to fetch cart for user: %w", err)
 	}
 	defer rows.Close()
 
@@ -44,145 +45,124 @@ func (repo *MySQLCartRepository) GetCartByUserID(userID int64) ([]entities.CartI
 	for rows.Next() {
 		var item entities.CartItem
 		var product entities.Product
-		err = rows.Scan(&item.ID, &item.UserID, &item.ProductID, &item.Quantity, &item.CreatedAt, &item.ModifiedAt, &product.Name, &product.Description, &product.Price)
+
+		err = rows.Scan(
+			&item.ID, &item.UserID, &item.ProductID, &item.Quantity, &item.CreatedAt, &item.ModifiedAt,
+			&product.ID, &product.Name, &product.Description, &product.Price, &product.Stock,
+		)
 		if err != nil {
 			return nil, err
 		}
+
 		item.Product = &product
 		items = append(items, item)
 	}
 
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return items, nil
+	return items, rows.Err()
 }
 
+// Add or increase a product’s quantity in the cart.
 func (repo *MySQLCartRepository) AddProductToCart(userID, productID int64, quantity int) error {
 	if quantity <= 0 {
-		return fmt.Errorf("quantity to add must be greater than zero")
+		return fmt.Errorf("quantity must be greater than zero")
 	}
 
 	tx, err := repo.DB.Begin()
 	if err != nil {
-		return errors.Join(fmt.Errorf("failed to begin transaction"), err)
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer func() {
-		_ = tx.Rollback() // rollback if not committed
-	}()
+	defer tx.Rollback()
 
-	// Try to get the current quantity
 	var currentQty int
-	querySelect := `
-        SELECT quantity
-        FROM carts_products
-        WHERE user_id = ? AND product_id = ?
-        FOR UPDATE;
-    `
-	err = tx.QueryRow(querySelect, userID, productID).Scan(&currentQty)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			// Product not in cart → insert new entry
-			queryInsert := `
-                INSERT INTO carts_products (user_id, product_id, quantity)
-                VALUES (?, ?, ?);
-            `
-			_, err = tx.Exec(queryInsert, userID, productID, quantity)
-			if err != nil {
-				return errors.Join(fmt.Errorf("failed to insert new product into cart"), err)
-			}
-		} else {
-			return errors.Join(fmt.Errorf("failed to check existing product quantity"), err)
-		}
-	} else {
-		// Product exists → update its quantity
-		newQty := currentQty + quantity
-		queryUpdate := `
-            UPDATE carts_products
-            SET quantity = ?, modified_at = CURRENT_TIMESTAMP
-            WHERE user_id = ? AND product_id = ?;
-        `
-		_, err = tx.Exec(queryUpdate, newQty, userID, productID)
+	err = tx.QueryRow(`
+		SELECT quantity
+		FROM carts_products
+		WHERE user_id = ? AND product_id = ? FOR UPDATE;
+	`, userID, productID).Scan(&currentQty)
+
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		_, err = tx.Exec(`
+			INSERT INTO carts_products (user_id, product_id, quantity, created_at, modified_at)
+			VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+		`, userID, productID, quantity)
 		if err != nil {
-			return errors.Join(fmt.Errorf("failed to update product quantity"), err)
+			return fmt.Errorf("failed to insert new product into cart: %w", err)
 		}
+	case err == nil:
+		_, err = tx.Exec(`
+			UPDATE carts_products
+			SET quantity = ?, modified_at = CURRENT_TIMESTAMP
+			WHERE user_id = ? AND product_id = ?;
+		`, currentQty+quantity, userID, productID)
+		if err != nil {
+			return fmt.Errorf("failed to update existing product quantity: %w", err)
+		}
+	default:
+		return fmt.Errorf("failed to query cart: %w", err)
 	}
 
-	if err = tx.Commit(); err != nil {
-		return errors.Join(fmt.Errorf("failed to commit transaction"), err)
-	}
-
-	return nil
+	return tx.Commit()
 }
 
+// Decrease quantity or remove product entirely.
 func (repo *MySQLCartRepository) DecreaseProductQuantity(userID, productID int64, quantity int) error {
 	if quantity <= 0 {
-		return fmt.Errorf("quantity to decrease must be greater than zero")
+		return fmt.Errorf("quantity must be greater than zero")
 	}
 
 	tx, err := repo.DB.Begin()
 	if err != nil {
-		return errors.Join(fmt.Errorf("failed to begin transaction"), err)
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer func() {
-		_ = tx.Rollback() // safe rollback if not committed
-	}()
+	defer tx.Rollback()
 
-	// Get current quantity
 	var currentQty int
-	querySelect := `
-        SELECT quantity
-        FROM carts_products
-        WHERE user_id = ? AND product_id = ?
-        FOR UPDATE;
-    `
-	err = tx.QueryRow(querySelect, userID, productID).Scan(&currentQty)
+	err = tx.QueryRow(`
+		SELECT quantity
+		FROM carts_products
+		WHERE user_id = ? AND product_id = ? FOR UPDATE;
+	`, userID, productID).Scan(&currentQty)
+	if errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("product not found in cart")
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("product not found in cart")
-		}
-		return errors.Join(fmt.Errorf("failed to fetch current quantity"), err)
+		return fmt.Errorf("failed to query cart: %w", err)
 	}
 
-	// Calculate new quantity
-	newQty := currentQty - quantity
-	if newQty <= 0 {
-		// Remove product entirely if quantity goes to zero or below
-		queryDelete := `
-            DELETE FROM carts_products
-            WHERE user_id = ? AND product_id = ?;
-        `
-		_, err = tx.Exec(queryDelete, userID, productID)
-		if err != nil {
-			return errors.Join(fmt.Errorf("failed to delete product from cart"), err)
-		}
+	if currentQty <= quantity {
+		_, err = tx.Exec(`
+			DELETE FROM carts_products
+			WHERE user_id = ? AND product_id = ?;
+		`, userID, productID)
 	} else {
-		// Just update the quantity
-		queryUpdate := `
-            UPDATE carts_products
-            SET quantity = ?, modified_at = CURRENT_TIMESTAMP
-            WHERE user_id = ? AND product_id = ?;
-        `
-		_, err = tx.Exec(queryUpdate, newQty, userID, productID)
-		if err != nil {
-			return errors.Join(fmt.Errorf("failed to update product quantity"), err)
-		}
+		_, err = tx.Exec(`
+			UPDATE carts_products
+			SET quantity = ?, modified_at = CURRENT_TIMESTAMP
+			WHERE user_id = ? AND product_id = ?;
+		`, currentQty-quantity, userID, productID)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to update or delete product: %w", err)
 	}
 
-	if err = tx.Commit(); err != nil {
-		return errors.Join(fmt.Errorf("failed to commit transaction"), err)
-	}
+	return tx.Commit()
+}
 
+// Remove product entirely.
+func (repo *MySQLCartRepository) RemoveProductFromCart(userID, productID int64) error {
+	_, err := repo.DB.Exec(`
+		DELETE FROM carts_products
+		WHERE user_id = ? AND product_id = ?;
+	`, userID, productID)
+	if err != nil {
+		return fmt.Errorf("failed to remove product from cart: %w", err)
+	}
 	return nil
 }
 
-func (repo *MySQLCartRepository) RemoveProductFromCart(userID, productID int64) error {
-	query := `DELETE FROM carts_products WHERE user_id = ? AND product_id = ?`
-	_, err := repo.DB.Exec(query, userID, productID)
-	if err != nil {
-		return errors.Join(fmt.Errorf("failed to remove product from cart"), err)
-	}
-
-	return nil
+// Clear all cart items (useful for order checkout).
+func (repo *MySQLCartRepository) ClearCart(userID int64) error {
+	_, err := repo.DB.Exec(`DELETE FROM carts_products WHERE user_id = ?;`, userID)
+	return err
 }
