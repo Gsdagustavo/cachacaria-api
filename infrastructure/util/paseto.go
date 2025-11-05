@@ -14,7 +14,7 @@ var ErrExpiredToken = errors.New("TOKEN_HAS_EXPIRED")
 // Remade Maker interface
 type Maker interface {
 	// UPDATED: Now requires the userID (int) when creating a token
-	CreateToken(email string, userID int, duration time.Duration) (string, error)
+	CreateToken(email string, userID int, isAdmin bool, duration time.Duration) (string, error)
 	VerifyToken(token string) (*Payload, error)
 }
 
@@ -23,6 +23,7 @@ type Payload struct {
 	ID        uuid.UUID `json:"id"`
 	Email     string    `json:"email"`
 	UserID    int       `json:"user_id"` // NEW FIELD for context storage
+	IsAdmin   bool      `json:"is_admin"`
 	IssuedAt  time.Time `json:"issued_at"`
 	ExpiresAt time.Time `json:"expires_at"`
 }
@@ -35,7 +36,7 @@ func (payload *Payload) Valid() error {
 }
 
 // Remade NewPayload function
-func NewPayload(email string, userID int, duration time.Duration) (*Payload, error) { // UPDATED signature
+func NewPayload(email string, userID int, isAdmin bool, duration time.Duration) (*Payload, error) { // UPDATED signature
 	tokenUUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("error generating token uuid: %s", err)
@@ -45,6 +46,7 @@ func NewPayload(email string, userID int, duration time.Duration) (*Payload, err
 		ID:        tokenUUID,
 		Email:     email,
 		UserID:    userID, // SET the new field
+		IsAdmin:   isAdmin,
 		IssuedAt:  time.Now(),
 		ExpiresAt: time.Now().Add(duration),
 	}
@@ -66,8 +68,8 @@ func NewPasetoMaker(symmetricKey string) Maker {
 }
 
 // Remade PasetoMaker.CreateToken method
-func (m *PasetoMaker) CreateToken(email string, userID int, duration time.Duration) (string, error) { // UPDATED signature
-	payload, err := NewPayload(email, userID, duration) // UPDATED call
+func (m *PasetoMaker) CreateToken(email string, userID int, isAdmin bool, duration time.Duration) (string, error) { // UPDATED signature
+	payload, err := NewPayload(email, userID, isAdmin, duration) // UPDATED call
 	if err != nil {
 		return "", err
 	}

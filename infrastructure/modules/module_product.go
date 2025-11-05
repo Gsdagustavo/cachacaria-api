@@ -43,7 +43,7 @@ func (m ProductModule) Path() string {
 }
 
 func (m ProductModule) RegisterRoutes(router *mux.Router) {
-	auth := middleware.AuthMiddleware(m.crypt)
+	auth := middleware.AuthMiddlewareWithAdmin(m.crypt, true)
 
 	routes := []ModuleRoute{
 		{

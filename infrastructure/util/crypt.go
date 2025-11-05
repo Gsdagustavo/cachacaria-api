@@ -15,7 +15,7 @@ type Crypt interface {
 	CheckPasswordHash(password, hash string) bool
 
 	// UPDATED: Now requires the userID (int)
-	GenerateAuthToken(email string, userID int) (string, error)
+	GenerateAuthToken(email string, userID int, isAdmin bool) (string, error)
 
 	// NEW: Exposes token verification to use cases/middleware
 	VerifyAuthToken(token string) (*Payload, error)
@@ -46,9 +46,9 @@ func (c crypt) CheckPasswordHash(password, hash string) bool {
 }
 
 // Remade crypt.GenerateAuthToken method
-func (c crypt) GenerateAuthToken(email string, userID int) (string, error) { // Corrected receiver to concrete type 'crypt'
+func (c crypt) GenerateAuthToken(email string, userID int, isAdmin bool) (string, error) { // Corrected receiver to concrete type 'crypt'
 	// Delegation to the Maker
-	return c.maker.CreateToken(email, userID, DefaultTokenDuration)
+	return c.maker.CreateToken(email, userID, isAdmin, DefaultTokenDuration)
 }
 
 // NEW: crypt.VerifyAuthToken method

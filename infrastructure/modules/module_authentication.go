@@ -114,14 +114,14 @@ func (a AuthModule) SessionMiddleware(next http.Handler) http.Handler {
 
 		if authHeader != "" {
 			token := strings.TrimPrefix(authHeader, "Bearer ")
-			userID, err := a.authUseCases.GetUserIDByAuthToken(token)
+			user, err := a.authUseCases.GetUserByAuthToken(token)
 
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 
-			ctx := util.NewContextWithUserID(r.Context(), userID)
+			ctx := util.NewContextWithUser(r.Context(), user.ID, user.IsAdm)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		} else {

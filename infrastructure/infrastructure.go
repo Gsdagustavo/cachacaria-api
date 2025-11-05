@@ -42,7 +42,7 @@ func Init() {
 	cartRepository := repositories.NewMySQLCartRepository(conn)
 
 	// Use Cases
-	authUseCases := usecases.NewAuthUseCases(authRepository, crypt)
+	authUseCases := usecases.NewAuthUseCases(authRepository, userRepository, crypt)
 	userUseCases := usecases.NewUserUseCases(userRepository)
 	productUseCases := usecases.NewProductUseCases(productRepository, cfg.Server.BaseURL)
 	cartUseCases := usecases.NewCartUseCases(cartRepository)

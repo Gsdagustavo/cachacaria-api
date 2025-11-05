@@ -9,19 +9,29 @@ import (
 	"net/http"
 )
 
-// ContextKey is a private type used for context keys.
+// ContextKey é um tipo privado usado para armazenar dados no contexto
 type ContextKey string
 
-// UserIDContextKey is the key for the user ID in the request context.
-const UserIDContextKey ContextKey = "userID"
+const userContextKey ContextKey = "userContext"
 
-func NewContextWithUserID(ctx context.Context, userID int) context.Context {
-	return context.WithValue(ctx, UserIDContextKey, userID)
+// UserContext guarda informações do usuário autenticado
+type UserContext struct {
+	UserID  int
+	IsAdmin bool
 }
 
-func GetUserIDFromContext(ctx context.Context) (int, bool) {
-	userID, ok := ctx.Value(UserIDContextKey).(int)
-	return userID, ok
+// NewContextWithUser armazena o ID e o papel do usuário no contexto da requisição
+func NewContextWithUser(ctx context.Context, userID int, isAdmin bool) context.Context {
+	return context.WithValue(ctx, userContextKey, &UserContext{
+		UserID:  userID,
+		IsAdmin: isAdmin,
+	})
+}
+
+// GetUserFromContext recupera o usuário autenticado do contexto
+func GetUserFromContext(ctx context.Context) (*UserContext, bool) {
+	user, ok := ctx.Value(userContextKey).(*UserContext)
+	return user, ok
 }
 
 func ValidateRequestMethod(r *http.Request, allowedMethod string) *entities.ServerError {

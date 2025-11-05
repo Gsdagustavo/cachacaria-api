@@ -6,8 +6,7 @@ import (
 	"strings"
 )
 
-// AuthMiddleware validates the PASETO token in the Authorization header
-func AuthMiddleware(crypt util.Crypt) func(http.HandlerFunc) http.HandlerFunc {
+func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -20,7 +19,6 @@ func AuthMiddleware(crypt util.Crypt) func(http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			// Expected format: "Bearer <token>"
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 				util.Write(w, util.ServerResponse{
@@ -40,8 +38,16 @@ func AuthMiddleware(crypt util.Crypt) func(http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			// Store userID in the request context for use in handlers
-			ctx := util.NewContextWithUserID(r.Context(), payload.UserID)
+			if adminOnly && !payload.IsAdmin {
+				util.Write(w, util.ServerResponse{
+					Status:  http.StatusForbidden,
+					Message: "Acesso negado: apenas administradores podem acessar esta rota",
+				})
+				return
+			}
+
+			// Armazena o ID do usuário no contexto
+			ctx := util.NewContextWithUser(r.Context(), payload.UserID, payload.IsAdmin)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 	}

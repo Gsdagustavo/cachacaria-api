@@ -32,7 +32,7 @@ func (m CartModule) Name() string { return m.name }
 func (m CartModule) Path() string { return m.path }
 
 func (m CartModule) RegisterRoutes(router *mux.Router) {
-	auth := middleware.AuthMiddleware(m.crypt) // use middleware function (we’ll define it below)
+	auth := middleware.AuthMiddlewareWithAdmin(m.crypt, false) // use middleware function (we’ll define it below)
 
 	routes := []ModuleRoute{
 		{
@@ -73,7 +73,7 @@ func (m CartModule) RegisterRoutes(router *mux.Router) {
 }
 
 func (m CartModule) addToCart(w http.ResponseWriter, r *http.Request) {
-	userID, ok := util.GetUserIDFromContext(r.Context())
+	user, ok := util.GetUserFromContext(r.Context())
 	if !ok {
 		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
 		return
@@ -92,7 +92,7 @@ func (m CartModule) addToCart(w http.ResponseWriter, r *http.Request) {
 		req.Quantity = 1
 	}
 
-	err := m.CartUseCases.AddToCart(r.Context(), int64(userID), req.ProductID, req.Quantity)
+	err := m.CartUseCases.AddToCart(r.Context(), int64(user.UserID), req.ProductID, req.Quantity)
 	if err != nil {
 		util.WriteInternalError(w)
 		return
@@ -105,13 +105,13 @@ func (m CartModule) addToCart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m CartModule) getCart(w http.ResponseWriter, r *http.Request) {
-	userID, ok := util.GetUserIDFromContext(r.Context())
+	user, ok := util.GetUserFromContext(r.Context())
 	if !ok {
 		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
 		return
 	}
 
-	items, err := m.CartUseCases.GetCartItems(r.Context(), int64(userID))
+	items, err := m.CartUseCases.GetCartItems(r.Context(), int64(user.UserID))
 	if err != nil {
 		util.WriteInternalError(w)
 		return
@@ -122,7 +122,7 @@ func (m CartModule) getCart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m CartModule) updateCartItem(w http.ResponseWriter, r *http.Request) {
-	userID, ok := util.GetUserIDFromContext(r.Context())
+	user, ok := util.GetUserFromContext(r.Context())
 	if !ok {
 		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
 		return
@@ -143,7 +143,7 @@ func (m CartModule) updateCartItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.CartUseCases.UpdateCartItem(r.Context(), int64(userID), productID, req.Quantity)
+	err = m.CartUseCases.UpdateCartItem(r.Context(), int64(user.UserID), productID, req.Quantity)
 	if err != nil {
 		util.WriteInternalError(w)
 		return
@@ -153,7 +153,7 @@ func (m CartModule) updateCartItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m CartModule) deleteCartItem(w http.ResponseWriter, r *http.Request) {
-	userID, ok := util.GetUserIDFromContext(r.Context())
+	user, ok := util.GetUserFromContext(r.Context())
 	if !ok {
 		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
 		return
@@ -166,7 +166,7 @@ func (m CartModule) deleteCartItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.CartUseCases.DeleteCartItem(r.Context(), int64(userID), productID)
+	err = m.CartUseCases.DeleteCartItem(r.Context(), int64(user.UserID), productID)
 	if err != nil {
 		util.WriteInternalError(w)
 		return
@@ -176,13 +176,13 @@ func (m CartModule) deleteCartItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m CartModule) clearCart(w http.ResponseWriter, r *http.Request) {
-	userID, ok := util.GetUserIDFromContext(r.Context())
+	user, ok := util.GetUserFromContext(r.Context())
 	if !ok {
 		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
 		return
 	}
 
-	err := m.CartUseCases.ClearCart(r.Context(), int64(userID))
+	err := m.CartUseCases.ClearCart(r.Context(), int64(user.UserID))
 	if err != nil {
 		util.WriteInternalError(w)
 		return

@@ -14,14 +14,16 @@ import (
 )
 
 type AuthUseCases struct {
-	repository repositories.AuthRepository
-	crypt      util.Crypt
+	repository     repositories.AuthRepository
+	userRepository repositories.UserRepository
+	crypt          util.Crypt
 }
 
-func NewAuthUseCases(repository repositories.AuthRepository, crypt util.Crypt) *AuthUseCases {
+func NewAuthUseCases(repository repositories.AuthRepository, userRepository repositories.UserRepository, crypt util.Crypt) *AuthUseCases {
 	return &AuthUseCases{
-		repository: repository,
-		crypt:      crypt,
+		repository:     repository,
+		userRepository: userRepository,
+		crypt:          crypt,
 	}
 }
 
@@ -42,7 +44,7 @@ func (a AuthUseCases) AttemptLogin(
 		return "", status_codes.LoginInvalidCredentials, nil
 	}
 
-	token, err := a.crypt.GenerateAuthToken(credentials.Email, user.ID)
+	token, err := a.crypt.GenerateAuthToken(credentials.Email, user.ID, user.IsAdm)
 	if err != nil {
 		return "", status_codes.LoginFailure, errors.Join(fmt.Errorf("failed to generate auth token"), err)
 	}
@@ -99,11 +101,11 @@ func (a AuthUseCases) RegisterUser(
 
 	return status_codes.RegisterSuccess, nil
 }
-func (a AuthUseCases) GetUserIDByAuthToken(token string) (int, error) {
+func (a AuthUseCases) GetUserByAuthToken(token string) (*entities.User, error) {
 	payload, err := a.crypt.VerifyAuthToken(token)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return payload.UserID, nil
+	return a.userRepository.FindById(int64(payload.UserID))
 }
