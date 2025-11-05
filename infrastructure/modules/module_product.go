@@ -49,7 +49,7 @@ func (m ProductModule) RegisterRoutes(router *mux.Router) {
 		{
 			Name:    "Add",
 			Path:    "",
-			Handler: auth(m.add),
+			Handler: m.add,
 			Methods: []string{http.MethodPost},
 		},
 		{
@@ -73,7 +73,7 @@ func (m ProductModule) RegisterRoutes(router *mux.Router) {
 		{
 			Name:    "Delete",
 			Path:    "/{id}",
-			Handler: auth(m.delete),
+			Handler: m.delete,
 			Methods: []string{http.MethodDelete},
 		},
 	}
