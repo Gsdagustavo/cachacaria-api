@@ -12,8 +12,7 @@ func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.Handler
 			authHeader := r.Header.Get("Authorization")
 
 			if authHeader == "" {
-				w.WriteHeader(http.StatusUnauthorized)
-				util.Write(w, util.ServerResponse{
+				util.WriteResponse(w, util.ServerResponse{
 					Status:  http.StatusUnauthorized,
 					Message: "Sem autorização",
 				})
@@ -22,8 +21,7 @@ func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.Handler
 
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-				w.WriteHeader(http.StatusUnauthorized)
-				util.Write(w, util.ServerResponse{
+				util.WriteResponse(w, util.ServerResponse{
 					Status:  http.StatusUnauthorized,
 					Message: "Sem autorização",
 				})
@@ -33,8 +31,7 @@ func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.Handler
 			token := parts[1]
 			payload, err := crypt.VerifyAuthToken(token)
 			if err != nil {
-				w.WriteHeader(http.StatusUnauthorized)
-				util.Write(w, util.ServerResponse{
+				util.WriteResponse(w, util.ServerResponse{
 					Status:  http.StatusUnauthorized,
 					Message: "Sem autorização",
 				})
@@ -42,9 +39,8 @@ func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.Handler
 			}
 
 			if adminOnly && !payload.IsAdmin {
-				w.WriteHeader(http.StatusUnauthorized)
-				util.Write(w, util.ServerResponse{
-					Status:  http.StatusForbidden,
+				util.WriteResponse(w, util.ServerResponse{
+					Status:  http.StatusUnauthorized,
 					Message: "Sem autorização",
 				})
 				return

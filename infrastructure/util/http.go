@@ -44,9 +44,9 @@ func ValidateRequestMethod(r *http.Request, allowedMethod string) *entities.Serv
 	return nil
 }
 
-func WriteResponse(w http.ResponseWriter, statusCode int, response interface{}) {
+func WriteResponse(w http.ResponseWriter, response ServerResponse) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
+	w.WriteHeader(response.Status)
 	bytes, err := json.Marshal(response)
 	if err != nil {
 		slog.Error("error writing response", "cause", err)
