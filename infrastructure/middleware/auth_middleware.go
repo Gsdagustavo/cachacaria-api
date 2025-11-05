@@ -8,8 +8,15 @@ import (
 )
 
 func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.HandlerFunc) http.HandlerFunc {
+	log.Printf("AuthMiddlewareWithAdmin")
+
 	return func(next http.HandlerFunc) http.HandlerFunc {
+
+		log.Printf("AuthMiddlewareWithAdmin 1st")
+
 		return func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("AuthMiddlewareWithAdmin 2nd")
+
 			authHeader := r.Header.Get("Authorization")
 
 			if authHeader == "" {
