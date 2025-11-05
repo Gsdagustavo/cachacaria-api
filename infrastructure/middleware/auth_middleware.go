@@ -20,6 +20,7 @@ func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.Handler
 			authHeader := r.Header.Get("Authorization")
 
 			if authHeader == "" {
+				log.Printf("no token found in request")
 				util.Write(w, util.ServerResponse{
 					Status:  http.StatusUnauthorized,
 					Message: "Token ausente no cabeçalho Authorization",
@@ -29,6 +30,7 @@ func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.Handler
 
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+				log.Printf("invalid token found in request")
 				util.Write(w, util.ServerResponse{
 					Status:  http.StatusUnauthorized,
 					Message: "Formato de token inválido. Use 'Bearer <token>'",
@@ -39,6 +41,7 @@ func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.Handler
 			token := parts[1]
 			payload, err := crypt.VerifyAuthToken(token)
 			if err != nil {
+				log.Printf("invalid/expired token found in request")
 				util.Write(w, util.ServerResponse{
 					Status:  http.StatusUnauthorized,
 					Message: "Token inválido ou expirado",
