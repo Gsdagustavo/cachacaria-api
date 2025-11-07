@@ -20,14 +20,14 @@ const (
 func LoginStatusCodeToString(code LoginStatusCode) string {
 	switch code {
 	case LoginSuccess:
-		return "SUCCESS"
+		return "Sucesso"
 	case LoginFailure:
-		return "FAILURE"
+		return "Erro"
 	case LoginInvalidCredentials:
-		return "INVALID_CREDENTIALS"
+		return "Credenciais inválidas"
 	case LoginUserNotFound:
-		return "USER_NOT_FOUND"
+		return "Usuário não encontrado"
 	default:
-		return "UNKNOWN_ERROR"
+		return "Erro desconhecido"
 	}
 }

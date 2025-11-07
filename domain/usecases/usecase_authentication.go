@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 )
@@ -60,6 +61,8 @@ func (a AuthUseCases) RegisterUser(
 	if err != nil {
 		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to check user"), err)
 	}
+
+	log.Printf("user already exists: %v", user)
 
 	if user != nil {
 		return status_codes.RegisterUserAlreadyExist, nil

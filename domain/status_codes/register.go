@@ -23,19 +23,19 @@ const (
 func RegisterStatusCodeToString(code RegisterStatusCode) string {
 	switch code {
 	case RegisterSuccess:
-		return "SUCCESS"
+		return "Sucesso!"
 	case RegisterFailure:
-		return "FAILURE"
+		return "Erro"
 	case RegisterUserAlreadyExist:
-		return "USER_ALREADY_EXIST"
+		return "Usuário já existente"
 	case RegisterInvalidEmail:
-		return "INVALID_EMAIL"
+		return "Email inválido"
 	case RegisterInvalidName:
-		return "INVALID_NAME"
+		return "Nome inválido"
 	case RegisterInvalidPassword:
-		return "INVALID_PASSWORD"
+		return "Senha inválida"
 	case RegisterInvalidCredentials:
-		return "INVALID_CREDENTIALS"
+		return "Credenciais inválidas"
 	default:
 		return "UNKNOWN"
 	}

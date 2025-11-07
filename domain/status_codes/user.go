@@ -21,16 +21,16 @@ const (
 func UserStatusCodeToString(code UserStatusCode) string {
 	switch code {
 	case UserUpdateSuccess:
-		return "SUCCESS"
+		return "Sucesso"
 	case UserDeleteSuccess:
-		return "SUCCESS"
+		return "Sucesso"
 	case UserInvalidCredentials:
-		return "INVALID_CREDENTIALS"
+		return "Credenciais inválidas"
 	case UserDeleteFailure:
-		return "DELETE_FAILURE"
+		return "Erro interno"
 	case UserUpdateFailure:
-		return "UPDATE_FAILURE"
+		return "Erro interno"
 	default:
-		return "UNKNOWN"
+		return "Erro desconhecido"
 	}
 }
