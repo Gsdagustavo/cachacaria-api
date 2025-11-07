@@ -154,7 +154,6 @@ func CORSMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Expose-Headers", "Authorization")
 
 		if r.Method == http.MethodOptions {
-			log.Printf("[CORS Middleware] allow options | no content")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
