@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -66,7 +65,7 @@ func (s Server) Run(cfg Config) error {
 	address := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	log.Printf("Starting HTTP server on %s", address)
 
-	s.Router.Use(LoggingMiddleware)
+	//s.Router.Use(LoggingMiddleware)
 	s.Router.Use(CORSMiddleware)
 
 	s.Router.PathPrefix("/images/").Handler(http.StripPrefix("/images/",
@@ -120,28 +119,28 @@ func Connect(cfg *Config) error {
 	return nil
 }
 
-func LoggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Info(
-			"Incoming request",
-			"method",
-			r.Method,
-			"url",
-			r.URL.Path,
-			"remote_addr",
-			r.RemoteAddr,
-			"user_agent",
-			r.UserAgent(),
-			"host",
-			r.Host,
-			"cookies",
-			r.Cookies(),
-			"body",
-			r.Body,
-		)
-		next.ServeHTTP(w, r)
-	})
-}
+//func LoggingMiddleware(next http.Handler) http.Handler {
+//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//		slog.Info(
+//			"Incoming request",
+//			"method",
+//			r.Method,
+//			"url",
+//			r.URL.Path,
+//			"remote_addr",
+//			r.RemoteAddr,
+//			"user_agent",
+//			r.UserAgent(),
+//			"host",
+//			r.Host,
+//			"cookies",
+//			r.Cookies(),
+//			"body",
+//			r.Body,
+//		)
+//		next.ServeHTTP(w, r)
+//	})
+//}
 
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
