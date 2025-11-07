@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/google/uuid"
 )
@@ -57,19 +56,26 @@ func (a AuthUseCases) RegisterUser(
 	ctx context.Context,
 	credentials entities.UserCredentials,
 ) (status_codes.RegisterStatusCode, error) {
+	credentials.Email = util.TrimSpace(credentials.Email)
+	credentials.Password = util.TrimSpace(credentials.Password)
+
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
 		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to check user"), err)
 	}
 
-	log.Printf("user already exists: %v", user)
-
 	if user != nil {
 		return status_codes.RegisterUserAlreadyExist, nil
 	}
 
-	credentials.Email = util.TrimSpace(credentials.Email)
-	credentials.Password = util.TrimSpace(credentials.Password)
+	user, err = a.repository.GetUserByPhone(ctx, credentials.Phone)
+	if err != nil {
+		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to check user"), err)
+	}
+
+	if user != nil {
+		return status_codes.RegisterUserAlreadyExist, nil
+	}
 
 	if !rules.IsValidEmail(credentials.Email) {
 		return status_codes.RegisterInvalidEmail, nil

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"cachacariaapi/domain/entities"
+	"cachacariaapi/domain/repositories"
 	"context"
 	"database/sql"
 	"errors"
@@ -14,7 +15,7 @@ type MySQLAuthRepository struct {
 	db *sql.DB
 }
 
-func NewMySQLAuthRepository(db *sql.DB) *MySQLAuthRepository {
+func NewMySQLAuthRepository(db *sql.DB) repositories.AuthRepository {
 	return &MySQLAuthRepository{
 		db: db,
 	}
@@ -51,6 +52,28 @@ func (r MySQLAuthRepository) GetUserByEmail(
 
 	var user entities.User
 	err := r.db.QueryRowContext(ctx, query, email).
+		Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.Phone, &user.IsAdm)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, errors.Join(fmt.Errorf("failed to query/scan user"), err)
+	}
+
+	return &user, nil
+}
+
+func (r MySQLAuthRepository) GetUserByPhone(
+	ctx context.Context,
+	phone string,
+) (*entities.User, error) {
+	const query = `
+		SELECT id, uuid, email, password, phone, is_adm FROM users WHERE phone = ?
+	`
+
+	var user entities.User
+	err := r.db.QueryRowContext(ctx, query, phone).
 		Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.Phone, &user.IsAdm)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
