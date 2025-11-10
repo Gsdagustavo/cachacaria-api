@@ -18,13 +18,9 @@ func NewMySQLCartRepository(db *sql.DB) repositories.CartRepository {
 }
 
 func (repo *MySQLCartRepository) AddToCart(ctx context.Context, userID, productID int64, quantity int) error {
-	if quantity <= 0 {
-		return fmt.Errorf("quantity must be greater than zero")
-	}
-
 	tx, err := repo.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+		return errors.Join(fmt.Errorf("failed to begin transaction"), err)
 	}
 	defer tx.Rollback()
 
@@ -41,7 +37,7 @@ func (repo *MySQLCartRepository) AddToCart(ctx context.Context, userID, productI
             VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
         `, userID, productID, quantity)
 		if err != nil {
-			return fmt.Errorf("failed to insert new product into cart: %w", err)
+			return errors.Join(fmt.Errorf("failed to insert new product into cart"), err)
 		}
 	case err == nil:
 		_, err = tx.ExecContext(ctx, `
@@ -50,10 +46,10 @@ func (repo *MySQLCartRepository) AddToCart(ctx context.Context, userID, productI
             WHERE user_id = ? AND product_id = ?;
         `, currentQty+quantity, userID, productID)
 		if err != nil {
-			return fmt.Errorf("failed to update product: %w", err)
+			return errors.Join(fmt.Errorf("failed to update product"), err)
 		}
 	default:
-		return fmt.Errorf("failed to query cart: %w", err)
+		return errors.Join(fmt.Errorf("failed to query for products"), err)
 	}
 
 	return tx.Commit()
@@ -68,7 +64,7 @@ func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64)
         WHERE cp.user_id = ?;
     `, userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch cart: %w", err)
+		return nil, errors.Join(fmt.Errorf("failed to query cart items"), err)
 	}
 	defer rows.Close()
 
@@ -80,7 +76,7 @@ func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64)
 			&item.ID, &item.UserID, &item.ProductID, &item.Quantity, &item.CreatedAt, &item.ModifiedAt,
 			&product.ID, &product.Name, &product.Description, &product.Price, &product.Stock,
 		); err != nil {
-			return nil, err
+			return nil, errors.Join(fmt.Errorf("failed to scan cart"), err)
 		}
 		item.Product = &product
 		items = append(items, &item)
@@ -95,7 +91,11 @@ func (repo *MySQLCartRepository) UpdateCartItem(ctx context.Context, userID, pro
         SET quantity = ?, modified_at = CURRENT_TIMESTAMP
         WHERE user_id = ? AND product_id = ?;
     `, quantity, userID, productID)
-	return err
+	if err != nil {
+		return errors.Join(fmt.Errorf("failed to execute cart item update"), err)
+	}
+
+	return nil
 }
 
 func (repo *MySQLCartRepository) DeleteCartItem(ctx context.Context, userID, productID int64) error {
@@ -103,10 +103,18 @@ func (repo *MySQLCartRepository) DeleteCartItem(ctx context.Context, userID, pro
         DELETE FROM carts_products
         WHERE user_id = ? AND product_id = ?;
     `, userID, productID)
-	return err
+	if err != nil {
+		return errors.Join(fmt.Errorf("failed to execute cart item deletion"), err)
+	}
+
+	return nil
 }
 
 func (repo *MySQLCartRepository) ClearCart(ctx context.Context, userID int64) error {
 	_, err := repo.DB.ExecContext(ctx, `DELETE FROM carts_products WHERE user_id = ?;`, userID)
-	return err
+	if err != nil {
+		return errors.Join(fmt.Errorf("failed to execute clear cart query"), err)
+	}
+
+	return nil
 }

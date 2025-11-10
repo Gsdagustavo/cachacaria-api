@@ -5,6 +5,7 @@ import (
 	"cachacariaapi/infrastructure/middleware"
 	"cachacariaapi/infrastructure/util"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -32,7 +33,7 @@ func (m CartModule) Name() string { return m.name }
 func (m CartModule) Path() string { return m.path }
 
 func (m CartModule) RegisterRoutes(router *mux.Router) {
-	auth := middleware.AuthMiddlewareWithAdmin(m.crypt, false) // use middleware function (we’ll define it below)
+	auth := middleware.AuthMiddlewareWithAdmin(m.crypt, false)
 
 	routes := []ModuleRoute{
 		{
@@ -94,6 +95,7 @@ func (m CartModule) addToCart(w http.ResponseWriter, r *http.Request) {
 
 	err := m.CartUseCases.AddToCart(r.Context(), int64(user.UserID), req.ProductID, req.Quantity)
 	if err != nil {
+		slog.Error("failed to add products to cart", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -113,6 +115,7 @@ func (m CartModule) getCart(w http.ResponseWriter, r *http.Request) {
 
 	items, err := m.CartUseCases.GetCartItems(r.Context(), int64(user.UserID))
 	if err != nil {
+		slog.Error("failed to get cart items", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -145,6 +148,7 @@ func (m CartModule) updateCartItem(w http.ResponseWriter, r *http.Request) {
 
 	err = m.CartUseCases.UpdateCartItem(r.Context(), int64(user.UserID), productID, req.Quantity)
 	if err != nil {
+		slog.Error("failed to update cart item", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -168,6 +172,7 @@ func (m CartModule) deleteCartItem(w http.ResponseWriter, r *http.Request) {
 
 	err = m.CartUseCases.DeleteCartItem(r.Context(), int64(user.UserID), productID)
 	if err != nil {
+		slog.Error("failed to delete cart item", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -184,6 +189,7 @@ func (m CartModule) clearCart(w http.ResponseWriter, r *http.Request) {
 
 	err := m.CartUseCases.ClearCart(r.Context(), int64(user.UserID))
 	if err != nil {
+		slog.Error("failed to clear cart", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
