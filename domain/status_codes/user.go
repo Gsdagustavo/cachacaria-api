@@ -1,36 +1,39 @@
 package status_codes
 
-type UserStatusCode int
+type UpdateUserStatus int
 
-func (u UserStatusCode) String() string {
-	return UserStatusCodeToString(u)
+func (u UpdateUserStatus) String() string {
+	return UpdateUserStatusToString(u)
 }
 
-func (u UserStatusCode) Int() int {
+func (u UpdateUserStatus) Int() int {
 	return int(u)
 }
 
 const (
-	UserUpdateSuccess UserStatusCode = iota
-	UserUpdateFailure
-	UserInvalidCredentials
-	UserDeleteSuccess
-	UserDeleteFailure
+	UpdateUserSuccess UpdateUserStatus = iota
+	UpdateUserInvalidUser
+	UpdateUserInvalidPassword
+	UpdateUserInvalidEmail
+	UpdateUserInvalidPhone
+	UpdateUserFailure
 )
 
-func UserStatusCodeToString(code UserStatusCode) string {
+func UpdateUserStatusToString(code UpdateUserStatus) string {
 	switch code {
-	case UserUpdateSuccess:
-		return "Sucesso"
-	case UserDeleteSuccess:
-		return "Sucesso"
-	case UserInvalidCredentials:
-		return "Credenciais inválidas"
-	case UserDeleteFailure:
-		return "Erro interno"
-	case UserUpdateFailure:
-		return "Erro interno"
+	case UpdateUserSuccess:
+		return "Usuário atualizado com sucesso!"
+	case UpdateUserInvalidUser:
+		return "Usuário inválido"
+	case UpdateUserInvalidPassword:
+		return "Senha inválida"
+	case UpdateUserInvalidEmail:
+		return "Email inválido"
+	case UpdateUserInvalidPhone:
+		return "Telefone inválido"
+	case UpdateUserFailure:
+		return "Erro ao atualizar usuário"
 	default:
-		return "Erro desconhecido"
+		return "UNKNOWN"
 	}
 }

@@ -19,5 +19,5 @@ POST http://192.168.0.120:8080/api/auth/login
 
 
 ###
-POST http://192.168.0.120:8080/api/auth/checkADM
+POST http://192.168.0.120:8080/api/auth/me
 Authorization: Bearer v2.local.d3bzutE8hwB-HoclbFK4ccluO5unTf8tP36_muXOpr5yGigRcJoKJ9BUa3N8XyMmaD3_NaoyR0jAfMH78dh7qnXDgOnhbWEqP1F3nFUGGYxZeTu_9qVXqCHtfxT0c3NTgg4aslSHBM5SYU2mny22rFtWD1zK22WJbDjuqpli3UZLVH6-Jz7MkehPwC4gwG9cZ9BV7MbHaxoc4FZABajiCXmnxsK2yWvlmsMMDpJg33H6Ljflo7Feuk-xWCcQVxl66M-KWYiVx0JSsBcn3L9qLmPvjwQv23hXwUXG3IX5YsCFJTonGo2Cy7CJ5CDnTBbcCsqO2gL9Wg.bnVsbA

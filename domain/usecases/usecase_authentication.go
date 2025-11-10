@@ -110,6 +110,7 @@ func (a AuthUseCases) RegisterUser(
 
 	return status_codes.RegisterSuccess, nil
 }
+
 func (a AuthUseCases) GetUserByAuthToken(token string) (*entities.User, error) {
 	payload, err := a.crypt.VerifyAuthToken(token)
 	if err != nil {

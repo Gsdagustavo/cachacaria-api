@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log/slog"
 	"net/http"
+	"strings"
 )
 
 type ContextKey string
@@ -28,6 +29,17 @@ func NewContextWithUser(ctx context.Context, userID int, isAdmin bool) context.C
 func GetUserFromContext(ctx context.Context) (*UserContext, bool) {
 	user, ok := ctx.Value(userContextKey).(*UserContext)
 	return user, ok
+}
+
+func GetAuthTokenFromRequest(r *http.Request) string {
+	token := ""
+	authHeader := r.Header.Get("Authorization")
+
+	if authHeader != "" {
+		token = strings.TrimPrefix(authHeader, "Bearer ")
+	}
+
+	return token
 }
 
 func ValidateRequestMethod(r *http.Request, allowedMethod string) *entities.ServerError {
@@ -79,6 +91,10 @@ func WriteInternalError(w http.ResponseWriter) {
 
 func WriteBadRequest(w http.ResponseWriter) {
 	http.Error(w, "Bad request", http.StatusBadRequest)
+}
+
+func WriteUnauthorized(w http.ResponseWriter) {
+	http.Error(w, "Unauthorized", http.StatusUnauthorized)
 }
 
 func Read(r *http.Request, v any) error {

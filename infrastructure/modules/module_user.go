@@ -13,13 +13,15 @@ import (
 
 type UserModule struct {
 	userUseCases *usecases.UserUseCases
+	authUseCases *usecases.AuthUseCases
 	name         string
 	path         string
 }
 
-func NewUserModule(userUseCases *usecases.UserUseCases) *UserModule {
+func NewUserModule(userUseCases *usecases.UserUseCases, authUseCases *usecases.AuthUseCases) *UserModule {
 	return &UserModule{
 		userUseCases: userUseCases,
+		authUseCases: authUseCases,
 		name:         "user",
 		path:         "/user",
 	}
@@ -49,7 +51,7 @@ func (m UserModule) RegisterRoutes(router *mux.Router) {
 		},
 		{
 			Name:    "UpdateUser",
-			Path:    "/{id}",
+			Path:    "/",
 			Handler: m.UpdateUser,
 			Methods: []string{http.MethodPut},
 		},
@@ -107,12 +109,17 @@ func (m UserModule) DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m UserModule) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	idStr := vars["id"]
+	token := util.GetAuthTokenFromRequest(r)
 
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	user, err := m.authUseCases.GetUserByAuthToken(token)
 	if err != nil {
-		util.WriteBadRequest(w)
+		slog.Error("failed to get user by auth token", "cause", err)
+		util.WriteInternalError(w)
+		return
+	}
+
+	if user == nil {
+		util.WriteUnauthorized(w)
 		return
 	}
 
@@ -123,12 +130,16 @@ func (m UserModule) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.userUseCases.Update(req, id)
+	status, err := m.userUseCases.Update(r.Context(), req, int64(user.ID))
 	if err != nil {
 		slog.Error("failed to update user", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	res := util.ServerResponse{
+		Status:  status.Int(),
+		Message: status.String(),
+	}
+	util.Write(w, res)
 }
