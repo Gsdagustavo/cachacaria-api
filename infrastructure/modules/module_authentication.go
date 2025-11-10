@@ -54,6 +54,12 @@ func (a AuthModule) RegisterRoutes(router *mux.Router) {
 			Handler: a.register,
 			Methods: []string{http.MethodPost},
 		},
+		{
+			Name:    "Check ADM",
+			Path:    "/checkADM",
+			Handler: a.CheckAdminHandler,
+			Methods: []string{http.MethodPost},
+		},
 	}
 
 	for _, route := range routes {
@@ -106,6 +112,26 @@ func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	util.Write(w, response)
+}
+
+func (a AuthModule) CheckAdminHandler(w http.ResponseWriter, r *http.Request) {
+	userCtx, ok := util.GetUserFromContext(r.Context())
+	if !ok {
+		util.WriteResponse(w, util.ServerResponse{
+			Status:  http.StatusUnauthorized,
+			Message: "Usuário não autenticado",
+		})
+		return
+	}
+
+	util.WriteResponse(w, util.ServerResponse{
+		Status:  http.StatusOK,
+		Message: "Consulta de privilégio bem-sucedida",
+	})
+	util.Write(w, map[string]any{
+		"user_id":  userCtx.UserID,
+		"is_admin": userCtx.IsAdmin,
+	})
 }
 
 func (a AuthModule) SessionMiddleware(next http.Handler) http.Handler {

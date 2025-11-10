@@ -9,8 +9,8 @@ GET http://localhost:8080/api/product?limit=5&page=1
 GET http://localhost:8080/api/product/{{get_id}}
 
 ###
-POST http://localhost:8080/api/product
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTkyMzg1ODcsInVzZXJfaWQiOjF9.khRtIkeW4oSgjKgI2Uj6lh-zvvOhVuIqeQ-7EgGI97Y
+POST http://192.168.0.120:8080/api/product
+Authorization: Bearer v2.local.R3hjxXcSPfz0QOtFF3hh5AUBhuWg9cULJGNQkhw9FcT_Tzz8DcJGf67GJvaHxfRsN_fwrzmWs7Cn2dVgSB4O2pqkrx8hXznuPKBBNa63Im7ZfGqmi7rHlXtrYDYB7KrgSKHJCCQBzfxkAMJ37M3dEHiJIaTHh1NIgEjGVkOEWBznAebOjGlVLHRcB__x2r_WZCxIvnTxc8m6j76fy9etk0ax0xAHsr0jQG1bQkpCjLGgnKJ4XPghUvuTxqXyGx1ZK-c2odxFNWyn2lBcdCD4u0yqfr-bPVmc50FTgMWNTFE5hWvWxxhbd_lutGVAarXQ2De4mB-h.bnVsbA
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
 --WebAppBoundary

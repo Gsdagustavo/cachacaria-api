@@ -39,31 +39,35 @@ func (m CartModule) RegisterRoutes(router *mux.Router) {
 		{
 			Name:    "AddToCart",
 			Path:    "",
-			Handler: auth(m.addToCart), // protected
+			Handler: auth(m.addToCart),
 			Methods: []string{http.MethodPost},
 		},
 		{
 			Name:    "GetCart",
 			Path:    "",
-			Handler: auth(m.getCart), // protected
+			Handler: auth(m.getCart),
+
 			Methods: []string{http.MethodGet},
 		},
 		{
 			Name:    "UpdateCartItem",
 			Path:    "/{product_id}",
-			Handler: auth(m.updateCartItem), // protected
+			Handler: auth(m.updateCartItem),
+
 			Methods: []string{http.MethodPatch},
 		},
 		{
 			Name:    "DeleteCartItem",
 			Path:    "/{product_id}",
-			Handler: auth(m.deleteCartItem), // protected
+			Handler: auth(m.deleteCartItem),
+
 			Methods: []string{http.MethodDelete},
 		},
 		{
 			Name:    "ClearCart",
 			Path:    "/clear",
-			Handler: auth(m.clearCart), // protected
+			Handler: auth(m.clearCart),
+
 			Methods: []string{http.MethodDelete},
 		},
 	}
