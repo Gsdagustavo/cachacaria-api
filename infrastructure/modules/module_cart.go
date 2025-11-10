@@ -93,7 +93,7 @@ func (m CartModule) addToCart(w http.ResponseWriter, r *http.Request) {
 		req.Quantity = 1
 	}
 
-	err := m.CartUseCases.AddToCart(r.Context(), int64(user.UserID), req.ProductID, req.Quantity)
+	status, err := m.CartUseCases.AddToCart(r.Context(), int64(user.UserID), req.ProductID, req.Quantity)
 	if err != nil {
 		slog.Error("failed to add products to cart", "cause", err)
 		util.WriteInternalError(w)
@@ -101,8 +101,8 @@ func (m CartModule) addToCart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	util.Write(w, util.ServerResponse{
-		Status:  http.StatusOK,
-		Message: "Produto adicionado ao carrinho com sucesso",
+		Status:  status.Int(),
+		Message: status.String(),
 	})
 }
 
