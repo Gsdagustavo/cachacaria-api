@@ -57,7 +57,7 @@ func (a AuthModule) RegisterRoutes(router *mux.Router) {
 		{
 			Name:    "Return user info",
 			Path:    "/me",
-			Handler: a.checkAdminHandler,
+			Handler: a.getData,
 			Methods: []string{http.MethodPost},
 		},
 	}
@@ -114,26 +114,8 @@ func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
 	util.Write(w, response)
 }
 
-func (a AuthModule) checkAdminHandler(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		util.WriteResponse(w, util.ServerResponse{
-			Status:  http.StatusUnauthorized,
-			Message: "Sem autorização",
-		})
-		return
-	}
-
-	parts := strings.SplitN(authHeader, " ", 2)
-	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-		util.WriteResponse(w, util.ServerResponse{
-			Status:  http.StatusUnauthorized,
-			Message: "Token inválido",
-		})
-		return
-	}
-
-	token := parts[1]
+func (a AuthModule) getData(w http.ResponseWriter, r *http.Request) {
+	token := util.GetAuthTokenFromRequest(r)
 
 	user, err := a.authUseCases.GetUserByAuthToken(token)
 	if err != nil {
@@ -144,10 +126,15 @@ func (a AuthModule) checkAdminHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	util.Write(w, map[string]any{
-		"user_id":  user.ID,
-		"is_admin": user.IsAdm,
-	})
+	if user == nil {
+		util.WriteResponse(w, util.ServerResponse{
+			Status:  http.StatusUnauthorized,
+			Message: "Token inválido ou expirado",
+		})
+		return
+	}
+
+	util.Write(w, user)
 }
 
 func (a AuthModule) SessionMiddleware(next http.Handler) http.Handler {
