@@ -51,7 +51,7 @@ func Init() {
 	healthModule := modules.NewHealthModule()
 	authModule := modules.NewAuthModule(authUseCases)
 	userModule := modules.NewUserModule(userUseCases)
-	productModule := modules.NewProductModule(productUseCases)
+	productModule := modules.NewProductModule(productUseCases, crypt)
 	cartModule := modules.NewCartModule(cartUseCases, crypt)
 
 	// Assign a router to the server

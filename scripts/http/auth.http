@@ -13,6 +13,6 @@ POST http://192.168.0.120:8080/api/auth/login
 
 {
 
-    "email": "test@gmail.com",
-    "password": "Rg547571856g$"
+    "email": "gustavo.dsa12@aluno.ifsc.edu.br",
+    "password": "Rg547571856g#"
 }

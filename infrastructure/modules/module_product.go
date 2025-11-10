@@ -26,9 +26,10 @@ type ProductModule struct {
 	path            string
 }
 
-func NewProductModule(productUseCases *usecases.ProductUseCases) *ProductModule {
+func NewProductModule(productUseCases *usecases.ProductUseCases, crypt util.Crypt) *ProductModule {
 	return &ProductModule{
 		ProductUseCases: productUseCases,
+		crypt:           crypt,
 		name:            "product",
 		path:            "/product",
 	}

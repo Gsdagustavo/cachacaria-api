@@ -46,7 +46,6 @@ func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.Handler
 				return
 			}
 
-			// Armazena o ID do usuário no contexto
 			ctx := util.NewContextWithUser(r.Context(), payload.UserID, payload.IsAdmin)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
