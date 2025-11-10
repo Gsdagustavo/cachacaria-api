@@ -2,8 +2,8 @@ package usecases
 
 import (
 	"cachacariaapi/domain/entities"
-	"cachacariaapi/domain/repositories"
 	"cachacariaapi/domain/status_codes"
+	repositories "cachacariaapi/infrastructure/datastore"
 	"context"
 	"errors"
 	"fmt"
@@ -15,8 +15,8 @@ type CartUseCases struct {
 	productRepository repositories.ProductRepository
 }
 
-func NewCartUseCases(repo repositories.CartRepository, userRepository repositories.UserRepository, productRepository repositories.ProductRepository) *CartUseCases {
-	return &CartUseCases{cartRepository: repo, productRepository: productRepository, userRepository: userRepository}
+func NewCartUseCases(repo repositories.CartRepository, userRepository repositories.UserRepository, productRepository repositories.ProductRepository) CartUseCases {
+	return CartUseCases{cartRepository: repo, productRepository: productRepository, userRepository: userRepository}
 }
 
 func (uc *CartUseCases) AddToCart(ctx context.Context, userID, productID int64, quantity int) (status_codes.AddProductItemStatus, error) {

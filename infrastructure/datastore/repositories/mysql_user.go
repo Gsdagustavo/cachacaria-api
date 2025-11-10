@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"cachacariaapi/domain/entities"
+	"cachacariaapi/infrastructure/datastore"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -11,7 +12,7 @@ type MySQLUserRepository struct {
 	DB *sql.DB
 }
 
-func NewMySQLUserRepository(db *sql.DB) *MySQLUserRepository {
+func NewMySQLUserRepository(db *sql.DB) repositories.UserRepository {
 	return &MySQLUserRepository{DB: db}
 }
 

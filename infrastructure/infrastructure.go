@@ -30,8 +30,7 @@ func Init() {
 	}
 
 	// Config utils
-	maker := util.NewPasetoMaker(cfg.SymmetricKey)
-	crypt := util.NewCrypt(maker)
+	authManager := util.NewAuthManager(cfg.SymmetricKey)
 
 	conn := cfg.Database.Conn
 
@@ -42,8 +41,8 @@ func Init() {
 	cartRepository := repositories.NewMySQLCartRepository(conn)
 
 	// Use Cases
-	authUseCases := usecases.NewAuthUseCases(authRepository, userRepository, crypt)
-	userUseCases := usecases.NewUserUseCases(userRepository, authRepository, crypt)
+	authUseCases := usecases.NewAuthUseCases(authRepository, userRepository, authManager)
+	userUseCases := usecases.NewUserUseCases(userRepository, authRepository, authManager)
 	productUseCases := usecases.NewProductUseCases(productRepository, cfg.Server.BaseURL)
 	cartUseCases := usecases.NewCartUseCases(cartRepository, userRepository, productRepository)
 
@@ -51,8 +50,8 @@ func Init() {
 	healthModule := modules.NewHealthModule()
 	authModule := modules.NewAuthModule(authUseCases)
 	userModule := modules.NewUserModule(userUseCases, authUseCases)
-	productModule := modules.NewProductModule(productUseCases, crypt)
-	cartModule := modules.NewCartModule(cartUseCases, crypt)
+	productModule := modules.NewProductModule(productUseCases, authManager)
+	cartModule := modules.NewCartModule(cartUseCases, authManager)
 
 	// Assign a router to the server
 	router := mux.NewRouter()

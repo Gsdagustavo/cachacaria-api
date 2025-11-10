@@ -14,16 +14,16 @@ import (
 
 // CartModule handles cart endpoints
 type CartModule struct {
-	CartUseCases *usecases.CartUseCases
-	crypt        util.Crypt
+	cartUseCases usecases.CartUseCases
+	authManager  util.AuthManager
 	name         string
 	path         string
 }
 
-func NewCartModule(cartUseCases *usecases.CartUseCases, crypt util.Crypt) *CartModule {
-	return &CartModule{
-		CartUseCases: cartUseCases,
-		crypt:        crypt,
+func NewCartModule(cartUseCases usecases.CartUseCases, authManager util.AuthManager) Module {
+	return CartModule{
+		cartUseCases: cartUseCases,
+		authManager:  authManager,
 		name:         "cart",
 		path:         "/cart",
 	}
@@ -33,7 +33,7 @@ func (m CartModule) Name() string { return m.name }
 func (m CartModule) Path() string { return m.path }
 
 func (m CartModule) RegisterRoutes(router *mux.Router) {
-	auth := middleware.AuthMiddlewareWithAdmin(m.crypt, false)
+	auth := middleware.AuthMiddlewareWithAdmin(m.authManager, false)
 
 	routes := []ModuleRoute{
 		{
@@ -97,7 +97,7 @@ func (m CartModule) addToCart(w http.ResponseWriter, r *http.Request) {
 		req.Quantity = 1
 	}
 
-	status, err := m.CartUseCases.AddToCart(r.Context(), int64(user.UserID), req.ProductID, req.Quantity)
+	status, err := m.cartUseCases.AddToCart(r.Context(), int64(user.UserID), req.ProductID, req.Quantity)
 	if err != nil {
 		slog.Error("failed to add products to cart", "cause", err)
 		util.WriteInternalError(w)
@@ -117,7 +117,7 @@ func (m CartModule) getCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items, err := m.CartUseCases.GetCartItems(r.Context(), int64(user.UserID))
+	items, err := m.cartUseCases.GetCartItems(r.Context(), int64(user.UserID))
 	if err != nil {
 		slog.Error("failed to get cart items", "cause", err)
 		util.WriteInternalError(w)
@@ -150,7 +150,7 @@ func (m CartModule) updateCartItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.CartUseCases.UpdateCartItem(r.Context(), int64(user.UserID), productID, req.Quantity)
+	err = m.cartUseCases.UpdateCartItem(r.Context(), int64(user.UserID), productID, req.Quantity)
 	if err != nil {
 		slog.Error("failed to update cart item", "cause", err)
 		util.WriteInternalError(w)
@@ -174,7 +174,7 @@ func (m CartModule) deleteCartItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.CartUseCases.DeleteCartItem(r.Context(), int64(user.UserID), productID)
+	err = m.cartUseCases.DeleteCartItem(r.Context(), int64(user.UserID), productID)
 	if err != nil {
 		slog.Error("failed to delete cart item", "cause", err)
 		util.WriteInternalError(w)
@@ -191,7 +191,7 @@ func (m CartModule) clearCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := m.CartUseCases.ClearCart(r.Context(), int64(user.UserID))
+	err := m.cartUseCases.ClearCart(r.Context(), int64(user.UserID))
 	if err != nil {
 		slog.Error("failed to clear cart", "cause", err)
 		util.WriteInternalError(w)

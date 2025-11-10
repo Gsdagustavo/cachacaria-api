@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"cachacariaapi/domain/entities"
+	"cachacariaapi/infrastructure/datastore"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -11,13 +12,11 @@ type MySQLProductRepository struct {
 	DB *sql.DB
 }
 
-func NewMySQLProductRepository(db *sql.DB) *MySQLProductRepository {
+func NewMySQLProductRepository(db *sql.DB) repositories.ProductRepository {
 	return &MySQLProductRepository{DB: db}
 }
 
-func (r *MySQLProductRepository) AddProduct(
-	product entities.AddProductRequest,
-) (int64, error) {
+func (r *MySQLProductRepository) AddProduct(product entities.AddProductRequest) (int64, error) {
 	query := "INSERT INTO products (name, description, price, stock) VALUES (?, ?, ?, ?)"
 
 	res, err := r.DB.Exec(query, product.Name, product.Description, product.Price, product.Stock)
@@ -32,11 +31,7 @@ func (r *MySQLProductRepository) AddProduct(
 
 func (r *MySQLProductRepository) AddProductPhotos(productID int64, filenames []string) error {
 	for _, f := range filenames {
-		_, err := r.DB.Exec(
-			"INSERT INTO products_photos (product_id, filename) VALUES (?, ?)",
-			productID,
-			f,
-		)
+		_, err := r.DB.Exec("INSERT INTO products_photos (product_id, filename) VALUES (?, ?)", productID, f)
 		if err != nil {
 			return errors.Join(fmt.Errorf("failed to insert product"), err)
 		}
@@ -163,19 +158,9 @@ func (r *MySQLProductRepository) DeleteProduct(id int64) error {
 	return nil
 }
 
-func (r *MySQLProductRepository) UpdateProduct(
-	id int64,
-	product entities.UpdateProductRequest,
-) error {
+func (r *MySQLProductRepository) UpdateProduct(id int64, product entities.UpdateProductRequest) error {
 	const query = "UPDATE products SET name = ?, description = ?, price = ?, stock = ? WHERE id = ?"
-	res, err := r.DB.Exec(
-		query,
-		product.Name,
-		product.Description,
-		product.Price,
-		product.Stock,
-		id,
-	)
+	res, err := r.DB.Exec(query, product.Name, product.Description, product.Price, product.Stock, id)
 	if err != nil {
 		return errors.Join(fmt.Errorf("failed to update product"), err)
 	}

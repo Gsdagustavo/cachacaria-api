@@ -2,9 +2,9 @@ package usecases
 
 import (
 	"cachacariaapi/domain/entities"
-	"cachacariaapi/domain/repositories"
 	"cachacariaapi/domain/rules"
 	"cachacariaapi/domain/status_codes"
+	repositories "cachacariaapi/infrastructure/datastore"
 	"cachacariaapi/infrastructure/util"
 	"context"
 	"errors"
@@ -16,14 +16,14 @@ import (
 type AuthUseCases struct {
 	repository     repositories.AuthRepository
 	userRepository repositories.UserRepository
-	crypt          util.Crypt
+	authManager    util.AuthManager
 }
 
-func NewAuthUseCases(repository repositories.AuthRepository, userRepository repositories.UserRepository, crypt util.Crypt) *AuthUseCases {
-	return &AuthUseCases{
+func NewAuthUseCases(repository repositories.AuthRepository, userRepository repositories.UserRepository, authManager util.AuthManager) AuthUseCases {
+	return AuthUseCases{
 		repository:     repository,
 		userRepository: userRepository,
-		crypt:          crypt,
+		authManager:    authManager,
 	}
 }
 
@@ -40,11 +40,11 @@ func (a AuthUseCases) AttemptLogin(
 		return "", status_codes.LoginUserNotFound, nil
 	}
 
-	if !a.crypt.CheckPasswordHash(credentials.Password, user.Password) {
+	if !a.authManager.CheckPasswordHash(credentials.Password, user.Password) {
 		return "", status_codes.LoginInvalidCredentials, nil
 	}
 
-	token, err := a.crypt.GenerateAuthToken(credentials.Email, user.ID, user.IsAdm)
+	token, err := a.authManager.CreateToken(credentials.Email, user.ID, user.IsAdm)
 	if err != nil {
 		return "", status_codes.LoginFailure, errors.Join(fmt.Errorf("failed to generate auth token"), err)
 	}
@@ -85,7 +85,7 @@ func (a AuthUseCases) RegisterUser(
 		return status_codes.RegisterInvalidPassword, nil
 	}
 
-	credentials.Password, err = a.crypt.HashPassword(credentials.Password)
+	credentials.Password, err = a.authManager.HashPassword(credentials.Password)
 	if err != nil {
 		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to hash password"), err)
 	}
@@ -112,7 +112,7 @@ func (a AuthUseCases) RegisterUser(
 }
 
 func (a AuthUseCases) GetUserByAuthToken(token string) (*entities.User, error) {
-	payload, err := a.crypt.VerifyAuthToken(token)
+	payload, err := a.authManager.VerifyToken(token)
 	if err != nil {
 		return nil, err
 	}

@@ -19,13 +19,13 @@ type AuthResponse struct {
 }
 
 type AuthModule struct {
-	authUseCases *usecases.AuthUseCases
+	authUseCases usecases.AuthUseCases
 	name         string
 	path         string
 }
 
-func NewAuthModule(authUseCases *usecases.AuthUseCases) *AuthModule {
-	return &AuthModule{
+func NewAuthModule(authUseCases usecases.AuthUseCases) Module {
+	return AuthModule{
 		authUseCases: authUseCases,
 		name:         "auth",
 		path:         "/auth",

@@ -19,32 +19,32 @@ const maxImagesMemory = 20 << 20
 const defaultPagePagination = 1
 const defaultLimitPagination = 20
 
-type ProductModule struct {
-	ProductUseCases *usecases.ProductUseCases
-	crypt           util.Crypt
+type productModule struct {
+	productUseCases usecases.ProductUseCases
+	authManager     util.AuthManager
 	name            string
 	path            string
 }
 
-func NewProductModule(productUseCases *usecases.ProductUseCases, crypt util.Crypt) *ProductModule {
-	return &ProductModule{
-		ProductUseCases: productUseCases,
-		crypt:           crypt,
+func NewProductModule(productUseCases usecases.ProductUseCases, authManager util.AuthManager) Module {
+	return productModule{
+		productUseCases: productUseCases,
+		authManager:     authManager,
 		name:            "product",
 		path:            "/product",
 	}
 }
 
-func (m ProductModule) Name() string {
+func (m productModule) Name() string {
 	return m.name
 }
 
-func (m ProductModule) Path() string {
+func (m productModule) Path() string {
 	return m.path
 }
 
-func (m ProductModule) RegisterRoutes(router *mux.Router) {
-	auth := middleware.AuthMiddlewareWithAdmin(m.crypt, true)
+func (m productModule) RegisterRoutes(router *mux.Router) {
+	auth := middleware.AuthMiddlewareWithAdmin(m.authManager, true)
 
 	routes := []ModuleRoute{
 		{
@@ -84,7 +84,7 @@ func (m ProductModule) RegisterRoutes(router *mux.Router) {
 	}
 }
 
-func (m ProductModule) add(w http.ResponseWriter, r *http.Request) {
+func (m productModule) add(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(maxImagesMemory); err != nil {
 		res := entities.ServerResponse{
 			Code:    http.StatusBadRequest,
@@ -108,7 +108,7 @@ func (m ProductModule) add(w http.ResponseWriter, r *http.Request) {
 		Photos:      photos,
 	}
 
-	status, err := m.ProductUseCases.AddProduct(request)
+	status, err := m.productUseCases.AddProduct(request)
 	if err != nil {
 		util.WriteInternalError(w)
 		return
@@ -122,7 +122,7 @@ func (m ProductModule) add(w http.ResponseWriter, r *http.Request) {
 	util.Write(w, res)
 }
 
-func (m ProductModule) getAll(w http.ResponseWriter, r *http.Request) {
+func (m productModule) getAll(w http.ResponseWriter, r *http.Request) {
 	var limit, page int
 
 	query := r.URL.Query()
@@ -159,7 +159,7 @@ func (m ProductModule) getAll(w http.ResponseWriter, r *http.Request) {
 		page = int(parsed)
 	}
 
-	products, err := m.ProductUseCases.GetAll(limit, page)
+	products, err := m.productUseCases.GetAll(limit, page)
 	if err != nil {
 		slog.Error("failed to get all products", slog.String("err", err.Error()))
 		util.WriteInternalError(w)
@@ -170,7 +170,7 @@ func (m ProductModule) getAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(products)
 }
 
-func (m ProductModule) get(w http.ResponseWriter, r *http.Request) {
+func (m productModule) get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -194,7 +194,7 @@ func (m ProductModule) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	prod, err := m.ProductUseCases.GetProduct(id)
+	prod, err := m.productUseCases.GetProduct(id)
 	if err != nil {
 		if errors.Is(err, entities.ErrNotFound) {
 			res = entities.ServerResponse{
@@ -215,7 +215,7 @@ func (m ProductModule) get(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(prod)
 }
 
-func (m ProductModule) delete(w http.ResponseWriter, r *http.Request) {
+func (m productModule) delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -239,7 +239,7 @@ func (m ProductModule) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	delRes, err := m.ProductUseCases.DeleteProduct(id)
+	delRes, err := m.productUseCases.DeleteProduct(id)
 	if err != nil {
 		if errors.Is(err, entities.ErrNotFound) {
 			res = entities.ServerResponse{
@@ -260,7 +260,7 @@ func (m ProductModule) delete(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(delRes)
 }
 
-func (m ProductModule) update(w http.ResponseWriter, r *http.Request) {
+func (m productModule) update(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -294,7 +294,7 @@ func (m ProductModule) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.ProductUseCases.UpdateProduct(id, request)
+	err = m.productUseCases.UpdateProduct(id, request)
 	if err != nil {
 		util.WriteInternalError(w)
 		return

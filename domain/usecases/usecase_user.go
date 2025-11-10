@@ -2,9 +2,9 @@ package usecases
 
 import (
 	"cachacariaapi/domain/entities"
-	"cachacariaapi/domain/repositories"
 	"cachacariaapi/domain/rules"
 	"cachacariaapi/domain/status_codes"
+	repositories "cachacariaapi/infrastructure/datastore"
 	"cachacariaapi/infrastructure/util"
 	"context"
 	"errors"
@@ -14,14 +14,14 @@ import (
 type UserUseCases struct {
 	userRepository repositories.UserRepository
 	authRepository repositories.AuthRepository
-	crypt          util.Crypt
+	authManager    util.AuthManager
 }
 
-func NewUserUseCases(userRepository repositories.UserRepository, authRepository repositories.AuthRepository, crypt util.Crypt) *UserUseCases {
-	return &UserUseCases{
+func NewUserUseCases(userRepository repositories.UserRepository, authRepository repositories.AuthRepository, authManager util.AuthManager) UserUseCases {
+	return UserUseCases{
 		authRepository: authRepository,
 		userRepository: userRepository,
-		crypt:          crypt,
+		authManager:    authManager,
 	}
 }
 
@@ -88,7 +88,7 @@ func (u *UserUseCases) Update(ctx context.Context, user entities.User, userId in
 		return status_codes.UpdateUserInvalidPassword, nil
 	}
 
-	user.Password, err = u.crypt.HashPassword(user.Password)
+	user.Password, err = u.authManager.HashPassword(user.Password)
 	if err != nil {
 		return status_codes.UpdateUserFailure, errors.Join(fmt.Errorf("failed to hash password"), err)
 	}

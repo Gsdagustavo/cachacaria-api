@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.HandlerFunc) http.HandlerFunc {
+func AuthMiddlewareWithAdmin(authManager util.AuthManager, adminOnly bool) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -29,7 +29,7 @@ func AuthMiddlewareWithAdmin(crypt util.Crypt, adminOnly bool) func(http.Handler
 			}
 
 			token := parts[1]
-			payload, err := crypt.VerifyAuthToken(token)
+			payload, err := authManager.VerifyToken(token)
 			if err != nil {
 				util.WriteResponse(w, util.ServerResponse{
 					Status:  http.StatusUnauthorized,

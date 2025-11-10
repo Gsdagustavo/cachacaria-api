@@ -12,8 +12,8 @@ type HealthModule struct {
 	path string
 }
 
-func NewHealthModule() *HealthModule {
-	return &HealthModule{
+func NewHealthModule() Module {
+	return HealthModule{
 		name: "health",
 		path: "/health",
 	}

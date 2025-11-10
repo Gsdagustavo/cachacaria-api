@@ -2,8 +2,8 @@ package usecases
 
 import (
 	"cachacariaapi/domain/entities"
-	"cachacariaapi/domain/repositories"
 	"cachacariaapi/domain/status_codes"
+	repositories "cachacariaapi/infrastructure/datastore"
 	"errors"
 	"fmt"
 	"io"
@@ -16,12 +16,12 @@ import (
 )
 
 type ProductUseCases struct {
-	r       repositories.ProductRepository
-	baseURL string
+	productRepository repositories.ProductRepository
+	baseURL           string
 }
 
-func NewProductUseCases(r repositories.ProductRepository, baseURL string) *ProductUseCases {
-	return &ProductUseCases{r, baseURL}
+func NewProductUseCases(productRepository repositories.ProductRepository, baseURL string) ProductUseCases {
+	return ProductUseCases{productRepository, baseURL}
 }
 
 func (u *ProductUseCases) AddProduct(
@@ -47,7 +47,7 @@ func (u *ProductUseCases) AddProduct(
 		}
 	}
 
-	id, err := u.r.AddProduct(req)
+	id, err := u.productRepository.AddProduct(req)
 	if err != nil {
 		return status_codes.AddProductStatusError, errors.Join(fmt.Errorf("failed to add product"), err)
 	}
@@ -86,7 +86,7 @@ func (u *ProductUseCases) AddProduct(
 	}
 
 	if len(filenames) > 0 {
-		if err = u.r.AddProductPhotos(id, filenames); err != nil {
+		if err = u.productRepository.AddProductPhotos(id, filenames); err != nil {
 			return status_codes.AddProductStatusError, err
 		}
 	}
@@ -101,7 +101,7 @@ func (u *ProductUseCases) GetAll(limit, page int) ([]entities.Product, error) {
 
 	offset := (page - 1) * limit
 
-	products, err := u.r.GetAll(limit, offset)
+	products, err := u.productRepository.GetAll(limit, offset)
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("failed to get products"), err)
 	}
@@ -116,7 +116,7 @@ func (u *ProductUseCases) GetAll(limit, page int) ([]entities.Product, error) {
 }
 
 func (u *ProductUseCases) GetProduct(id int64) (*entities.Product, error) {
-	product, err := u.r.GetProduct(id)
+	product, err := u.productRepository.GetProduct(id)
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("failed to get product"), err)
 	}
@@ -129,7 +129,7 @@ func (u *ProductUseCases) GetProduct(id int64) (*entities.Product, error) {
 }
 
 func (u *ProductUseCases) DeleteProduct(id int64) (status_codes.DeleteProductStatus, error) {
-	prod, err := u.r.GetProduct(id)
+	prod, err := u.productRepository.GetProduct(id)
 	if err != nil {
 		return status_codes.DeleteProductStatusError, errors.Join(fmt.Errorf("failed to get product"), err)
 	}
@@ -146,7 +146,7 @@ func (u *ProductUseCases) DeleteProduct(id int64) (status_codes.DeleteProductSta
 		}
 	}
 
-	err = u.r.DeleteProduct(id)
+	err = u.productRepository.DeleteProduct(id)
 	if err != nil {
 		return status_codes.DeleteProductStatusError, errors.Join(fmt.Errorf("failed to delete product"), err)
 	}
@@ -167,7 +167,7 @@ func (u *ProductUseCases) UpdateProduct(
 		return entities.ErrNotFound
 	}
 
-	err = u.r.UpdateProduct(id, product)
+	err = u.productRepository.UpdateProduct(id, product)
 	if err != nil {
 		return errors.Join(fmt.Errorf("failed to update product"), err)
 	}

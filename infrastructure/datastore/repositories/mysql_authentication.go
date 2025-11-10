@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"cachacariaapi/domain/entities"
-	"cachacariaapi/domain/repositories"
+	"cachacariaapi/infrastructure/datastore"
 	"context"
 	"database/sql"
 	"errors"

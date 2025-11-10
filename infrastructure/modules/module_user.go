@@ -11,15 +11,15 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type UserModule struct {
-	userUseCases *usecases.UserUseCases
-	authUseCases *usecases.AuthUseCases
+type moduleUser struct {
+	userUseCases usecases.UserUseCases
+	authUseCases usecases.AuthUseCases
 	name         string
 	path         string
 }
 
-func NewUserModule(userUseCases *usecases.UserUseCases, authUseCases *usecases.AuthUseCases) *UserModule {
-	return &UserModule{
+func NewUserModule(userUseCases usecases.UserUseCases, authUseCases usecases.AuthUseCases) Module {
+	return moduleUser{
 		userUseCases: userUseCases,
 		authUseCases: authUseCases,
 		name:         "user",
@@ -27,15 +27,15 @@ func NewUserModule(userUseCases *usecases.UserUseCases, authUseCases *usecases.A
 	}
 }
 
-func (m UserModule) Name() string {
+func (m moduleUser) Name() string {
 	return m.name
 }
 
-func (m UserModule) Path() string {
+func (m moduleUser) Path() string {
 	return m.path
 }
 
-func (m UserModule) RegisterRoutes(router *mux.Router) {
+func (m moduleUser) RegisterRoutes(router *mux.Router) {
 	routes := []ModuleRoute{
 		{
 			Name:    "GetAll",
@@ -68,11 +68,11 @@ func (m UserModule) RegisterRoutes(router *mux.Router) {
 	}
 }
 
-func (m UserModule) GetData(w http.ResponseWriter, r *http.Request) {
+func (m moduleUser) GetData(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (m UserModule) GetAll(w http.ResponseWriter, _ *http.Request) {
+func (m moduleUser) GetAll(w http.ResponseWriter, _ *http.Request) {
 	users, err := m.userUseCases.GetAll()
 
 	if err != nil {
@@ -84,7 +84,7 @@ func (m UserModule) GetAll(w http.ResponseWriter, _ *http.Request) {
 	util.Write(w, users)
 }
 
-func (m UserModule) DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (m moduleUser) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -108,7 +108,7 @@ func (m UserModule) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (m UserModule) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (m moduleUser) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	token := util.GetAuthTokenFromRequest(r)
 
 	user, err := m.authUseCases.GetUserByAuthToken(token)
