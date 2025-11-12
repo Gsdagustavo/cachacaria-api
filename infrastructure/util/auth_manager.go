@@ -95,7 +95,7 @@ func (a *AuthManager) VerifyToken(token string) (*Payload, error) {
 	var payload Payload
 	err := a.paseto.Decrypt(token, []byte(a.symmetricKey), &payload, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrInvalidToken, err)
+		return nil, errors.Join(fmt.Errorf("error decrypting token"), err)
 	}
 
 	if err = payload.Valid(); err != nil {

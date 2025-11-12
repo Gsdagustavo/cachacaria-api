@@ -114,7 +114,7 @@ func (a AuthUseCases) RegisterUser(
 func (a AuthUseCases) GetUserByAuthToken(token string) (*entities.User, error) {
 	payload, err := a.authManager.VerifyToken(token)
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(fmt.Errorf("failed to verify token"), err)
 	}
 
 	return a.userRepository.FindById(int64(payload.UserID))

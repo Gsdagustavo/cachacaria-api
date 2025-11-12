@@ -119,6 +119,7 @@ func (a AuthModule) getData(w http.ResponseWriter, r *http.Request) {
 
 	user, err := a.authUseCases.GetUserByAuthToken(token)
 	if err != nil {
+		slog.Error("failed to get user by auth token", "cause", err)
 		util.WriteResponse(w, util.ServerResponse{
 			Status:  http.StatusUnauthorized,
 			Message: "Token inválido ou expirado",
@@ -127,6 +128,7 @@ func (a AuthModule) getData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if user == nil {
+		slog.Info("invalid token", "token", token)
 		util.WriteResponse(w, util.ServerResponse{
 			Status:  http.StatusUnauthorized,
 			Message: "Token inválido ou expirado",
