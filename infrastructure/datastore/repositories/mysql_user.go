@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type MySQLUserRepository struct {
@@ -20,7 +22,7 @@ func NewMySQLUserRepository(db *sql.DB) repositories.UserRepository {
 func (r *MySQLUserRepository) GetAll() ([]entities.User, error) {
 	var users []entities.User
 
-	rows, err := r.DB.Query("SELECT id, email, password, phone, is_adm FROM users")
+	rows, err := r.DB.Query("SELECT id, uuid, email, password, phone, is_adm FROM users")
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return users, nil
@@ -33,7 +35,7 @@ func (r *MySQLUserRepository) GetAll() ([]entities.User, error) {
 
 	for rows.Next() {
 		var user entities.User
-		if err = rows.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
+		if err = rows.Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
 			return nil, errors.Join(fmt.Errorf("failed to scan users row"), err)
 		}
 		users = append(users, user)
@@ -52,9 +54,12 @@ func (r *MySQLUserRepository) GetAll() ([]entities.User, error) {
 
 // Add a user to the database. Returns a UserResponse or an error if any occurs
 func (r *MySQLUserRepository) Add(user entities.User) error {
-	const query = "INSERT INTO users (uuid, email, password, phone, is_adm) VALUES (?, ?, ?, ?)"
+	if user.UUID == uuid.Nil {
+		user.UUID = uuid.New()
+	}
 
-	_, err := r.DB.Exec(query, user.Email, user.Password, user.Phone, user.IsAdm)
+	const query = "INSERT INTO users (uuid, email, password, phone, is_adm) VALUES (?, ?, ?, ?, ?)"
+	_, err := r.DB.Exec(query, user.UUID, user.Email, user.Password, user.Phone, user.IsAdm)
 	if err != nil {
 		return errors.Join(fmt.Errorf("failed to insert user"), err)
 	}
@@ -76,12 +81,12 @@ func (r *MySQLUserRepository) Delete(userId int64) error {
 
 // FindByEmail returns the user with the given email, or an error if any occurs
 func (r *MySQLUserRepository) FindByEmail(email string) (*entities.User, error) {
-	const query = "SELECT id, email, password, phone, is_adm FROM users WHERE email = ?"
+	const query = "SELECT id, uuid, email, password, phone, is_adm FROM users WHERE email = ?"
 
 	row := r.DB.QueryRow(query, email)
 
 	var user entities.User
-	if err := row.Scan(&user.ID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
+	if err := row.Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
@@ -99,7 +104,7 @@ func (r *MySQLUserRepository) FindById(userId int64) (*entities.User, error) {
 	row := r.DB.QueryRow(query, userId)
 
 	var user entities.User
-	if err := row.Scan(&user.ID, &user.Email, &user.UUID, &user.Password, &user.Phone, &user.IsAdm); err != nil {
+	if err := row.Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
@@ -112,13 +117,12 @@ func (r *MySQLUserRepository) FindById(userId int64) (*entities.User, error) {
 
 func (r *MySQLUserRepository) Update(user entities.User, userId int64) error {
 	existing, err := r.FindById(userId)
-
 	if err != nil {
-		return nil
+		return errors.Join(fmt.Errorf("failed to find user for update"), err)
 	}
 
 	if existing == nil {
-		return nil
+		return fmt.Errorf("user with id %d not found", userId)
 	}
 
 	if user.Email != "" {
@@ -129,9 +133,13 @@ func (r *MySQLUserRepository) Update(user entities.User, userId int64) error {
 		existing.Phone = user.Phone
 	}
 
+	if user.Password != "" {
+		existing.Password = user.Password
+	}
+
 	existing.IsAdm = user.IsAdm
 
-	const query = "UPDATE users SET email = ?, password = ?, phone = ?, id_adm = ? WHERE id = ?"
+	const query = "UPDATE users SET email = ?, password = ?, phone = ?, is_adm = ? WHERE id = ?"
 	_, err = r.DB.Exec(
 		query,
 		existing.Email,

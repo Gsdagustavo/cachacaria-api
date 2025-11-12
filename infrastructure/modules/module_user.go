@@ -44,12 +44,6 @@ func (m moduleUser) RegisterRoutes(router *mux.Router) {
 			Methods: []string{http.MethodGet},
 		},
 		{
-			Name:    "GetUser",
-			Path:    "/getData",
-			Handler: m.GetData,
-			Methods: []string{http.MethodGet},
-		},
-		{
 			Name:    "UpdateUser",
 			Path:    "/",
 			Handler: m.UpdateUser,
@@ -66,10 +60,6 @@ func (m moduleUser) RegisterRoutes(router *mux.Router) {
 	for _, route := range routes {
 		router.HandleFunc(m.path+route.Path, route.Handler).Methods(route.Methods...)
 	}
-}
-
-func (m moduleUser) GetData(w http.ResponseWriter, r *http.Request) {
-
 }
 
 func (m moduleUser) GetAll(w http.ResponseWriter, _ *http.Request) {
