@@ -11,3 +11,14 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTg3NDYyM
 @delete_id = 1
 DELETE http://localhost:8080/api/user/{{delete_id}}
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTg3NDYyMzAsInVzZXJfaWQiOjF9.TindUSodERTk0bPAbRwBjk1h2Vu1Rnyh7px-s_QXDoc
+
+###
+PUT http://192.168.0.120:8080/api/user/
+Authorization: Bearer v2.local.KxVUr0wkQKQv_aO0ztHZQyC8GItaNTu0le3TVxnCviDtb8SYAVeM-5tQLUi1DIQh4pqAl32WNN_CsXSpFqSy9oJd1u6qnEzVZH1dDBoItauX8cP-ZM86LDdFqrd4EIl9t2ibtgsoWTgYk4Fk0NMyoB-sr-zBaLHUaFUQQXaNPNeGnEWlOFftOIQdmhnTFEOboSkfz1WKfLHOJzGij_8IJi1S302ZaRPK7B3bP35bmrvaB86q1frz-hBMaJXiugUahtCn9QjPHCHrOc1Qmljwbu5715E_HXtoR5JDD0UcE_YEz9Tgqe4RWLe9mdnro0iJmmeIRv27.bnVsbA
+
+{
+    "email": "gustavo.dsa12@aluno.ifsc.edu.br",
+    "password": "Rg547571856g#",
+    "phone": "123123",
+    "is_adm": false
+}

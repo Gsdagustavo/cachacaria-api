@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/google/uuid"
 )
@@ -117,12 +116,7 @@ func (r *MySQLUserRepository) FindById(userId int64) (*entities.User, error) {
 }
 
 func (r *MySQLUserRepository) Update(user entities.User) error {
-	slog.Info("update user repo called")
-
 	const query = "UPDATE users SET email = ?, password = ?, phone = ?, is_adm = ? WHERE id = ?"
-
-	slog.Info("query", query)
-
 	_, err := r.DB.Exec(
 		query,
 		user.Email,
