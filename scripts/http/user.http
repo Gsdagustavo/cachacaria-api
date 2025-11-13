@@ -4,7 +4,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTg3NDYyM
 
 ###
 @get_id = 1
-GET http://localhost:8080/api/user/{{get_id}}
+GET http://192.168.0.120:8080/api/user/{{get_id}}
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTg3NDYyMzAsInVzZXJfaWQiOjF9.TindUSodERTk0bPAbRwBjk1h2Vu1Rnyh7px-s_QXDoc
 
 ###

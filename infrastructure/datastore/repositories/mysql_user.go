@@ -115,38 +115,15 @@ func (r *MySQLUserRepository) FindById(userId int64) (*entities.User, error) {
 	return &user, nil
 }
 
-func (r *MySQLUserRepository) Update(user entities.User, userId int64) error {
-	existing, err := r.FindById(userId)
-	if err != nil {
-		return errors.Join(fmt.Errorf("failed to find user for update"), err)
-	}
-
-	if existing == nil {
-		return fmt.Errorf("user with id %d not found", userId)
-	}
-
-	if user.Email != "" {
-		existing.Email = user.Email
-	}
-
-	if user.Phone != "" {
-		existing.Phone = user.Phone
-	}
-
-	if user.Password != "" {
-		existing.Password = user.Password
-	}
-
-	existing.IsAdm = user.IsAdm
-
+func (r *MySQLUserRepository) Update(user entities.User) error {
 	const query = "UPDATE users SET email = ?, password = ?, phone = ?, is_adm = ? WHERE id = ?"
-	_, err = r.DB.Exec(
+	_, err := r.DB.Exec(
 		query,
-		existing.Email,
-		existing.Password,
-		existing.Phone,
-		existing.IsAdm,
-		userId,
+		user.Email,
+		user.Password,
+		user.Phone,
+		user.IsAdm,
+		user.ID,
 	)
 	if err != nil {
 		return errors.Join(fmt.Errorf("failed to update user"), err)

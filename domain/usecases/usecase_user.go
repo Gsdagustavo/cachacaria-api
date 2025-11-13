@@ -93,7 +93,9 @@ func (u *UserUseCases) Update(ctx context.Context, user entities.User, userId in
 		return status_codes.UpdateUserFailure, errors.Join(fmt.Errorf("failed to hash password"), err)
 	}
 
-	err = u.userRepository.Update(user, userId)
+	user.ID = existingUser.ID
+
+	err = u.userRepository.Update(user)
 	if err != nil {
 		return status_codes.UpdateUserFailure, errors.Join(fmt.Errorf("failed to update user"), err)
 	}
