@@ -120,7 +120,7 @@ func (m moduleUser) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := m.userUseCases.Update(r.Context(), req, int64(user.ID))
+	status, err := m.userUseCases.Update(req)
 	if err != nil {
 		slog.Error("failed to update user", "cause", err)
 		util.WriteInternalError(w)

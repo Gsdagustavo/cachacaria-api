@@ -6,7 +6,6 @@ import (
 	"cachacariaapi/domain/status_codes"
 	repositories "cachacariaapi/infrastructure/datastore"
 	"cachacariaapi/infrastructure/util"
-	"context"
 	"errors"
 	"fmt"
 )
@@ -67,7 +66,7 @@ func (u *UserUseCases) FindById(userid int64) (*entities.User, error) {
 
 // Update a user from the database from the given UserRequest and userId
 // Returns a UserResponse oran error if any occurs
-func (u *UserUseCases) Update(ctx context.Context, user entities.User, userId int64) (status_codes.UpdateUserStatus, error) {
+func (u *UserUseCases) Update(user entities.User) (status_codes.UpdateUserStatus, error) {
 	user.Email = util.TrimSpace(user.Email)
 	user.Password = util.TrimSpace(user.Password)
 
