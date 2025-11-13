@@ -8,6 +8,7 @@ import (
 	"cachacariaapi/infrastructure/util"
 	"errors"
 	"fmt"
+	"log/slog"
 )
 
 type UserUseCases struct {
@@ -70,6 +71,8 @@ func (u *UserUseCases) Update(user entities.User) (status_codes.UpdateUserStatus
 	user.Email = util.TrimSpace(user.Email)
 	user.Password = util.TrimSpace(user.Password)
 
+	slog.Info("update user usecase called")
+
 	existingUser, err := u.userRepository.FindByEmail(user.Email)
 	if err != nil {
 		return status_codes.UpdateUserFailure, errors.Join(fmt.Errorf("failed to check user"), err)
@@ -93,6 +96,12 @@ func (u *UserUseCases) Update(user entities.User) (status_codes.UpdateUserStatus
 	}
 
 	user.ID = existingUser.ID
+
+	slog.Info("previous email: ", existingUser.Email)
+	slog.Info("previous password: ", existingUser.Password)
+
+	slog.Info("new email: ", user.Email)
+	slog.Info("new password: ", user.Password)
 
 	err = u.userRepository.Update(user)
 	if err != nil {
