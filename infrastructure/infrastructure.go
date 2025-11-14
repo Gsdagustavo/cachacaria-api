@@ -44,7 +44,7 @@ func Init() {
 	authUseCases := usecases.NewAuthUseCases(authRepository, userRepository, authManager)
 	userUseCases := usecases.NewUserUseCases(userRepository, authRepository, authManager)
 	productUseCases := usecases.NewProductUseCases(productRepository, cfg.Server.BaseURL)
-	cartUseCases := usecases.NewCartUseCases(cartRepository, userRepository, productRepository)
+	cartUseCases := usecases.NewCartUseCases(cartRepository, userRepository, productRepository, cfg.Server.BaseURL)
 
 	// Modules
 	healthModule := modules.NewHealthModule()
