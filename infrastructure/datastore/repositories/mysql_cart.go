@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"cachacariaapi/domain/entities"
+	"cachacariaapi/domain/util"
 	"cachacariaapi/infrastructure/datastore"
 	"context"
 	"database/sql"
@@ -56,18 +57,19 @@ func (repo *MySQLCartRepository) AddToCart(ctx context.Context, userID, productI
 	return tx.Commit()
 }
 
-func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64) ([]*entities.CartItem, error) {
+func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64, baseURL string) ([]*entities.CartItem, error) {
 	rows, err := repo.DB.QueryContext(ctx, `
         SELECT 
             cp.id, cp.user_id, cp.product_id, cp.quantity, cp.created_at, cp.modified_at,
             p.id, p.name, p.description, p.price, p.stock,
-            GROUP_CONCAT(pp.url) AS photos
+            GROUP_CONCAT(pp.filename) AS photos
         FROM carts_products cp
         JOIN products p ON cp.product_id = p.id
-        LEFT JOIN product_photos pp ON pp.product_id = p.id
+        LEFT JOIN products_photos pp ON pp.product_id = p.id
         WHERE cp.user_id = ?
         GROUP BY cp.id, p.id;
     `, userID)
+
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("failed to query cart items"), err)
 	}
@@ -80,7 +82,7 @@ func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64)
 		var product entities.Product
 		var photosStr sql.NullString
 
-		err = rows.Scan(
+		err := rows.Scan(
 			&item.ID, &item.UserID, &item.ProductID, &item.Quantity,
 			&item.CreatedAt, &item.ModifiedAt,
 			&product.ID, &product.Name, &product.Description,
@@ -92,8 +94,14 @@ func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64)
 			return nil, errors.Join(fmt.Errorf("failed to scan cart"), err)
 		}
 
+		// Converter GROUP_CONCAT -> []string
 		if photosStr.Valid {
-			product.Photos = strings.Split(photosStr.String, ",")
+			filenames := strings.Split(photosStr.String, ",")
+
+			product.Photos = make([]string, len(filenames))
+			for i, filename := range filenames {
+				product.Photos[i] = util.GetProductImageURL(filename, baseURL)
+			}
 		} else {
 			product.Photos = []string{}
 		}
