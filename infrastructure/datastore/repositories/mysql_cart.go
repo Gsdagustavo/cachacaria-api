@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type MySQLCartRepository struct {
@@ -57,11 +58,15 @@ func (repo *MySQLCartRepository) AddToCart(ctx context.Context, userID, productI
 
 func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64) ([]*entities.CartItem, error) {
 	rows, err := repo.DB.QueryContext(ctx, `
-        SELECT cp.id, cp.user_id, cp.product_id, cp.quantity, cp.created_at, cp.modified_at,
-               p.id, p.name, p.description, p.price, p.stock
+        SELECT 
+            cp.id, cp.user_id, cp.product_id, cp.quantity, cp.created_at, cp.modified_at,
+            p.id, p.name, p.description, p.price, p.stock,
+            GROUP_CONCAT(pp.url) AS photos
         FROM carts_products cp
         JOIN products p ON cp.product_id = p.id
-        WHERE cp.user_id = ?;
+        LEFT JOIN product_photos pp ON pp.product_id = p.id
+        WHERE cp.user_id = ?
+        GROUP BY cp.id, p.id;
     `, userID)
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("failed to query cart items"), err)
@@ -69,15 +74,30 @@ func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64)
 	defer rows.Close()
 
 	var items []*entities.CartItem
+
 	for rows.Next() {
 		var item entities.CartItem
 		var product entities.Product
-		if err := rows.Scan(
-			&item.ID, &item.UserID, &item.ProductID, &item.Quantity, &item.CreatedAt, &item.ModifiedAt,
-			&product.ID, &product.Name, &product.Description, &product.Price, &product.Stock,
-		); err != nil {
+		var photosStr sql.NullString
+
+		err = rows.Scan(
+			&item.ID, &item.UserID, &item.ProductID, &item.Quantity,
+			&item.CreatedAt, &item.ModifiedAt,
+			&product.ID, &product.Name, &product.Description,
+			&product.Price, &product.Stock,
+			&photosStr,
+		)
+
+		if err != nil {
 			return nil, errors.Join(fmt.Errorf("failed to scan cart"), err)
 		}
+
+		if photosStr.Valid {
+			product.Photos = strings.Split(photosStr.String, ",")
+		} else {
+			product.Photos = []string{}
+		}
+
 		item.Product = &product
 		items = append(items, &item)
 	}

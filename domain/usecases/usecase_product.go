@@ -3,6 +3,7 @@ package usecases
 import (
 	"cachacariaapi/domain/entities"
 	"cachacariaapi/domain/status_codes"
+	"cachacariaapi/domain/util"
 	repositories "cachacariaapi/infrastructure/datastore"
 	"errors"
 	"fmt"
@@ -108,7 +109,7 @@ func (u *ProductUseCases) GetAll(limit, page int) ([]entities.Product, error) {
 
 	for _, product := range products {
 		for i := range product.Photos {
-			product.Photos[i] = u.buildProductImageURL(product.Photos[i])
+			product.Photos[i] = util.GetProductImageURL(product.Photos[i], u.baseURL)
 		}
 	}
 
@@ -122,7 +123,7 @@ func (u *ProductUseCases) GetProduct(id int64) (*entities.Product, error) {
 	}
 
 	for i := range product.Photos {
-		product.Photos[i] = u.buildProductImageURL(product.Photos[i])
+		product.Photos[i] = util.GetProductImageURL(product.Photos[i], u.baseURL)
 	}
 
 	return product, nil
@@ -195,8 +196,4 @@ func validateImageType(header *multipart.FileHeader) error {
 	}
 
 	return nil
-}
-
-func (u *ProductUseCases) buildProductImageURL(filename string) string {
-	return fmt.Sprintf("%s/images/%s", u.baseURL, filename)
 }
