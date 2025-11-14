@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"cachacariaapi/domain/entities"
-	"cachacariaapi/domain/util"
 	"cachacariaapi/infrastructure/datastore"
 	"context"
 	"database/sql"
@@ -57,7 +56,7 @@ func (repo *MySQLCartRepository) AddToCart(ctx context.Context, userID, productI
 	return tx.Commit()
 }
 
-func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64, baseURL string) ([]*entities.CartItem, error) {
+func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64) ([]*entities.CartItem, error) {
 	rows, err := repo.DB.QueryContext(ctx, `
         SELECT 
             cp.id, cp.user_id, cp.product_id, cp.quantity, cp.created_at, cp.modified_at,
@@ -94,14 +93,8 @@ func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64,
 			return nil, errors.Join(fmt.Errorf("failed to scan cart"), err)
 		}
 
-		// Converter GROUP_CONCAT -> []string
 		if photosStr.Valid {
-			filenames := strings.Split(photosStr.String, ",")
-
-			product.Photos = make([]string, len(filenames))
-			for i, filename := range filenames {
-				product.Photos[i] = util.GetProductImageURL(filename, baseURL)
-			}
+			product.Photos = strings.Split(photosStr.String, ",")
 		} else {
 			product.Photos = []string{}
 		}
