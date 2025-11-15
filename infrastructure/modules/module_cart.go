@@ -46,28 +46,24 @@ func (m CartModule) RegisterRoutes(router *mux.Router) {
 			Name:    "GetCart",
 			Path:    "",
 			Handler: auth(m.getCart),
-
 			Methods: []string{http.MethodGet},
 		},
 		{
 			Name:    "UpdateCartItem",
 			Path:    "/{product_id}",
 			Handler: auth(m.updateCartItem),
-
 			Methods: []string{http.MethodPatch},
 		},
 		{
 			Name:    "DeleteCartItem",
 			Path:    "/{product_id}",
 			Handler: auth(m.deleteCartItem),
-
 			Methods: []string{http.MethodDelete},
 		},
 		{
 			Name:    "ClearCart",
 			Path:    "/clear",
 			Handler: auth(m.clearCart),
-
 			Methods: []string{http.MethodDelete},
 		},
 	}
@@ -145,7 +141,7 @@ func (m CartModule) updateCartItem(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Quantity int `json:"quantity"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		util.WriteBadRequest(w)
 		return
 	}

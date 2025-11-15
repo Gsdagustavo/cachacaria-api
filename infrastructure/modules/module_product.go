@@ -110,6 +110,7 @@ func (m productModule) add(w http.ResponseWriter, r *http.Request) {
 
 	status, err := m.productUseCases.AddProduct(request)
 	if err != nil {
+		slog.Error("failed to add product", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}

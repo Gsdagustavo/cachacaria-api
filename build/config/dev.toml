@@ -6,9 +6,9 @@ address = "0.0.0.0"
 base_url = "http://localhost:8080"
 
 [Database]
-port = 3308
+port = 3306
 driver = "mysql"
-host = "127.0.0.1"
+host = "localhost"
 user = "root"
 password = "root"
 name = "cachacadb"

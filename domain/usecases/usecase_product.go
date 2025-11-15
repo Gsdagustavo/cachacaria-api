@@ -70,7 +70,7 @@ func (u *ProductUseCases) AddProduct(
 			time.Now().UnixNano(),
 			filepath.Ext(fileHeader.Filename),
 		)
-		filePath := filepath.Join("/app/images", filename)
+		filePath := filepath.Join("C:/dev/teste/", filename)
 
 		dst, err := os.Create(filePath)
 		if err != nil {
@@ -88,7 +88,7 @@ func (u *ProductUseCases) AddProduct(
 
 	if len(filenames) > 0 {
 		if err = u.productRepository.AddProductPhotos(id, filenames); err != nil {
-			return status_codes.AddProductStatusError, err
+			return status_codes.AddProductStatusError, errors.Join(fmt.Errorf("faield to add product photos"), err)
 		}
 	}
 
