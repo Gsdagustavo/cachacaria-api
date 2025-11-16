@@ -17,3 +17,10 @@ type UserCredentials struct {
 	Phone    string `json:"phone,omitempty"`
 	IsAdm    bool   `json:"is_adm,omitempty"`
 }
+
+type ChangePasswordRequest struct {
+	UserID                  int64  `json:"user_id"`
+	CurrentPassword         string `json:"password"`
+	NewPassword             string `json:"new_password"`
+	NewPasswordConfirmation string `json:"new_password_confirmation"`
+}

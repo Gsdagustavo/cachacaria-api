@@ -119,3 +119,34 @@ func (a AuthUseCases) GetUserByAuthToken(token string) (*entities.User, error) {
 
 	return a.userRepository.FindById(int64(payload.UserID))
 }
+
+func (a AuthUseCases) ChangePassword(ctx context.Context, request entities.ChangePasswordRequest) (status_codes.ChangePasswordStatus, error) {
+	request.CurrentPassword = util.TrimSpace(request.CurrentPassword)
+	request.NewPassword = util.TrimSpace(request.NewPassword)
+	request.NewPasswordConfirmation = util.TrimSpace(request.NewPasswordConfirmation)
+
+	user, err := a.repository.GetUserByID(ctx, request.UserID)
+	if err != nil {
+		return status_codes.ChangePasswordError, errors.Join(fmt.Errorf("failed to check user"), err)
+	}
+
+	if user == nil {
+		return status_codes.ChangePasswordInvalidUser, nil
+	}
+
+	isValidPreviousPassword := a.authManager.CheckPasswordHash(request.CurrentPassword, user.Password)
+	if !isValidPreviousPassword {
+		return status_codes.ChangePasswordInvalidPassword, nil
+	}
+
+	if request.NewPassword != request.NewPasswordConfirmation {
+		return status_codes.ChangePasswordPasswordsDontMatch, nil
+	}
+
+	err = a.repository.UpdateUserPassword(ctx, int64(user.ID), request.NewPassword)
+	if err != nil {
+		return status_codes.ChangePasswordError, errors.Join(fmt.Errorf("failed to update password"), err)
+	}
+
+	return status_codes.ChangePasswordSuccess, nil
+}

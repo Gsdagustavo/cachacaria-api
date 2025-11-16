@@ -86,7 +86,7 @@ func (r MySQLAuthRepository) GetUserByPhone(
 	return &user, nil
 }
 
-func (r MySQLAuthRepository) GetUserByID(ctx context.Context, id int) (*entities.User, error) {
+func (r MySQLAuthRepository) GetUserByID(ctx context.Context, id int64) (*entities.User, error) {
 	const query = `
 		SELECT id, uuid, email, password, phone, is_adm FROM users WHERE id = ?
 	`
@@ -135,6 +135,19 @@ func (r MySQLAuthRepository) DeleteUser(ctx context.Context, id int) error {
 	_, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return errors.Join(fmt.Errorf("failed to delete user"), err)
+	}
+
+	return nil
+}
+
+func (r MySQLAuthRepository) UpdateUserPassword(ctx context.Context, userID int64, newPassword string) error {
+	const query = `
+		UPDATE users SET password = ? WHERE id = ?
+	`
+
+	_, err := r.db.ExecContext(ctx, query, userID, newPassword)
+	if err != nil {
+		return errors.Join(fmt.Errorf("failed to execute udpate user password query"), err)
 	}
 
 	return nil

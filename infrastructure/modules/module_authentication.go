@@ -49,9 +49,9 @@ func (a AuthModule) RegisterRoutes(router *mux.Router) {
 			Methods: []string{http.MethodPost},
 		},
 		{
-			Name:    "Register",
-			Path:    "/register",
-			Handler: a.register,
+			Name:    "Change pasword",
+			Path:    "/changePassword",
+			Handler: a.changePassword,
 			Methods: []string{http.MethodPost},
 		},
 		{
@@ -85,6 +85,43 @@ func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
 	response := AuthResponse{
 		Status:  statusCode.Int(),
 		Message: statusCode.String(),
+		Token:   token,
+	}
+
+	util.Write(w, response)
+}
+
+func (a AuthModule) changePassword(w http.ResponseWriter, r *http.Request) {
+	token := util.GetAuthTokenFromRequest(r)
+	user, err := a.authUseCases.GetUserByAuthToken(token)
+	if err != nil {
+		slog.Error("failed to get user by auth token", "cause", err)
+		util.WriteInternalError(w)
+		return
+	}
+
+	if user == nil {
+		util.WriteUnauthorized(w)
+		return
+	}
+
+	var request entities.ChangePasswordRequest
+	err = json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		util.WriteBadRequest(w)
+		return
+	}
+
+	status, err := a.authUseCases.ChangePassword(r.Context(), request)
+	if err != nil {
+		slog.Error("failed to change user password", "cause", err)
+		util.WriteInternalError(w)
+		return
+	}
+
+	response := AuthResponse{
+		Status:  status.Int(),
+		Message: status.String(),
 		Token:   token,
 	}
 
