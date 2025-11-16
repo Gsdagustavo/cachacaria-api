@@ -2,88 +2,63 @@ package repositories
 
 import (
 	"cachacariaapi/domain/entities"
+	"cachacariaapi/infrastructure/datastore"
 	"database/sql"
 	"errors"
-	"log/slog"
+	"fmt"
 )
 
 type MySQLProductRepository struct {
 	DB *sql.DB
 }
 
-func NewMySQLProductRepository(db *sql.DB) *MySQLProductRepository {
+func NewMySQLProductRepository(db *sql.DB) repositories.ProductRepository {
 	return &MySQLProductRepository{DB: db}
 }
 
-func (r *MySQLProductRepository) AddProduct(
-	product entities.AddProductRequest,
-) (*entities.AddProductResponse, error) {
+func (r *MySQLProductRepository) AddProduct(product entities.AddProductRequest) (int64, error) {
 	query := "INSERT INTO products (name, description, price, stock) VALUES (?, ?, ?, ?)"
 
 	res, err := r.DB.Exec(query, product.Name, product.Description, product.Price, product.Stock)
 	if err != nil {
-		slog.Error(
-			"[MySQLProductsRepository.AddProduct] error adding product",
-			"error",
-			err.Error(),
-		)
-		return nil, err
+		return -1, errors.Join(fmt.Errorf("failed to insert product"), err)
 	}
 
 	id, _ := res.LastInsertId()
 
-	return &entities.AddProductResponse{ID: id}, nil
+	return id, nil
 }
 
 func (r *MySQLProductRepository) AddProductPhotos(productID int64, filenames []string) error {
 	for _, f := range filenames {
-		_, err := r.DB.Exec(
-			"INSERT INTO products_photos (product_id, filename) VALUES (?, ?)",
-			productID,
-			f,
-		)
+		_, err := r.DB.Exec("INSERT INTO products_photos (product_id, filename) VALUES (?, ?)", productID, f)
 		if err != nil {
-			slog.Error(
-				"[MySQLProductRepository.AddProductPhotos] error adding product photos",
-				"error",
-				err.Error(),
-			)
-			return err
+			return errors.Join(fmt.Errorf("failed to insert product"), err)
 		}
 	}
 	return nil
 }
 
 func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, error) {
-	var products []entities.Product
+	products := make([]entities.Product, 0)
 
 	/// Products
 	const query = "SELECT id, name, description, price, stock FROM products ORDER BY id LIMIT ? OFFSET ?"
 	rows, err := r.DB.Query(query, limit, offset)
 	if err != nil {
-		slog.Error(
-			"[MySQLProductRepository.getAll] error getting all products",
-			"error",
-			err.Error(),
-		)
-
 		if errors.Is(err, sql.ErrNoRows) {
 			return products, nil
 		}
-		return nil, entities.ErrInternal
+
+		return nil, errors.Join(fmt.Errorf("failed to query products"), err)
 	}
 
 	defer rows.Close()
 
 	for rows.Next() {
 		var product entities.Product
-		if err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Stock); err != nil {
-			slog.Error(
-				"[MySQLProductRepository.getAll] error scanning products rows",
-				"error",
-				err.Error(),
-			)
-			return nil, entities.ErrInternal
+		if err = rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Stock); err != nil {
+			return nil, errors.Join(fmt.Errorf("failed to scan product"), err)
 		}
 
 		// Photos
@@ -91,26 +66,14 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 		const query = "SELECT id, filename FROM products_photos WHERE product_id = ?"
 		photoRows, err := r.DB.Query(query, product.ID)
 		if err != nil {
-			slog.Warn(
-				"[MySQLProductRepository.getAll] warning on get product select",
-				"warning",
-				err.Error(),
-				"query",
-				query,
-			)
-			continue
+			return nil, errors.Join(fmt.Errorf("failed to query products images"), err)
 		}
 
 		for photoRows.Next() {
 			var photoID int64
 			var filename string
-			if err := photoRows.Scan(&photoID, &filename); err != nil {
-				slog.Error(
-					"[MySQLProductRepository.getAll] error scanning photo rows",
-					"error",
-					err.Error(),
-				)
-				return nil, entities.ErrInternal
+			if err = photoRows.Scan(&photoID, &filename); err != nil {
+				return nil, errors.Join(fmt.Errorf("failed to scan product"), err)
 			}
 
 			photos = append(photos, filename)
@@ -120,17 +83,8 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 		products = append(products, product)
 	}
 
-	if err := rows.Err(); err != nil {
-		slog.Error(
-			"[MySQLProductRepository.getAll] error on get product photos",
-			"error",
-			err.Error(),
-		)
-		return nil, entities.ErrInternal
-	}
-
-	if products == nil {
-		products = []entities.Product{}
+	if err = rows.Err(); err != nil {
+		return nil, errors.Join(fmt.Errorf("failed to scan products"), err)
 	}
 
 	return products, nil
@@ -143,42 +97,30 @@ func (r *MySQLProductRepository) GetProduct(id int64) (*entities.Product, error)
 	var product entities.Product
 
 	if err := row.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Stock); err != nil {
-		slog.Error(
-			"[MySQLProductRepository.get] error on scanning proudcts",
-			"error",
-			err.Error(),
-			"query",
-			query,
-		)
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, entities.ErrNotFound
+			return nil, nil
 		}
 
-		return nil, entities.ErrInternal
+		return nil, errors.Join(errors.New("failed to scan product"), err)
 	}
 
 	const photoQuery = "SELECT id, filename FROM products_photos WHERE product_id = ?"
 	photoRows, err := r.DB.Query(photoQuery, product.ID)
 	if err != nil {
-		slog.Error(
-			"[MySQLProductRepository.get] error on deleting product",
-			"error",
-			err.Error(),
-			"query",
-			query,
-		)
+		return nil, errors.Join(fmt.Errorf("failed to query product photos"), err)
 	} else {
 		defer photoRows.Close()
 		photos := make([]string, 0)
 		for photoRows.Next() {
 			var photoID int64
 			var filename string
-			if err := photoRows.Scan(&photoID, &filename); err != nil {
-				slog.Error("[MySQLProductRepository.get] error on scanning product photos row", "error", err.Error(), "query", query)
-				return nil, entities.ErrInternal
+			if err = photoRows.Scan(&photoID, &filename); err != nil {
+				return nil, errors.Join(fmt.Errorf("failed to scan product photo"), err)
 			}
+
 			photos = append(photos, filename)
 		}
+
 		product.Photos = photos
 	}
 
@@ -189,95 +131,43 @@ func (r *MySQLProductRepository) GetProduct(id int64) (*entities.Product, error)
 	return &product, nil
 }
 
-func (r *MySQLProductRepository) DeleteProduct(id int64) (*entities.DeleteProductResponse, error) {
+func (r *MySQLProductRepository) DeleteProduct(id int64) error {
 	const query = "DELETE FROM products WHERE id = ?"
 
 	txn, err := r.DB.Begin()
 	if err != nil {
-		slog.Error(
-			"[MySQLProductRepository.delete] error on deleting product",
-			"error",
-			err.Error(),
-			"query",
-			query,
-		)
-		return nil, err
+		return errors.Join(fmt.Errorf("failed to begin transaction"), err)
 	}
 
 	res, err := txn.Exec(query, id)
 	if err != nil {
-		slog.Error(
-			"[MySQLProductRepository.delete] error on deleting product",
-			"error",
-			err.Error(),
-			"query",
-			query,
-		)
 		txn.Rollback()
-		return nil, err
+		return errors.Join(fmt.Errorf("failed to delete product"), err)
 	}
 
 	if rows, err := res.RowsAffected(); err != nil || rows != 1 {
-		slog.Error(
-			"[MySQLProductRepository.delete] error on deleting product",
-			"error",
-			err.Error(),
-			"query",
-			query,
-		)
 		txn.Rollback()
-		return nil, err
+		return errors.Join(fmt.Errorf("failed to delete product"), err)
 	}
 
-	if err := txn.Commit(); err != nil {
-		slog.Error(
-			"[MySQLProductRepository.delete] error on deleting product",
-			"error",
-			err.Error(),
-			"query",
-			query,
-		)
+	if err = txn.Commit(); err != nil {
 		txn.Rollback()
-		return nil, err
+		return errors.Join(fmt.Errorf("failed to commit transaction"), err)
 	}
 
-	return &entities.DeleteProductResponse{ID: id}, nil
+	return nil
 }
 
-func (r *MySQLProductRepository) UpdateProduct(
-	id int64,
-	product entities.UpdateProductRequest,
-) (*entities.UpdateProductResponse, error) {
+func (r *MySQLProductRepository) UpdateProduct(id int64, product entities.UpdateProductRequest) error {
 	const query = "UPDATE products SET name = ?, description = ?, price = ?, stock = ? WHERE id = ?"
-	res, err := r.DB.Exec(
-		query,
-		product.Name,
-		product.Description,
-		product.Price,
-		product.Stock,
-		id,
-	)
+	res, err := r.DB.Exec(query, product.Name, product.Description, product.Price, product.Stock, id)
 	if err != nil {
-		slog.Error(
-			"[MySQLProductRepository.update] error on update product",
-			"error",
-			err.Error(),
-			"query",
-			query,
-		)
-		return nil, err
+		return errors.Join(fmt.Errorf("failed to update product"), err)
 	}
 
 	if rows, err := res.RowsAffected(); err != nil || rows != 1 {
-		slog.Error(
-			"[MySQLProductRepository.update] no rows affected on update product",
-			"error",
-			err.Error(),
-			"query",
-			query,
-		)
-		return nil, err
+		return errors.Join(fmt.Errorf("failed to update product"), err)
 	}
 
-	return &entities.UpdateProductResponse{ID: id}, nil
+	return nil
 }

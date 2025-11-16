@@ -1,0 +1,8 @@
+###
+POST http://192.168.0.120:8080/api/cart
+Authorization: Bearer v2.local.xKHLPNLIbCq0c5VKOmpeVQ16zcMK_7EyPxJc9Y8Xt1tP3KgF_Yk3qCSWj52cnuRsRgjwdPuOQkbn4HQG0pkgSIgO9ynWicOe_o15HQ6phanrWuUJxvMeT4bln2KCVnBsd40frg9llx5uqyOxmZX6OQKC8mSiECxmZ15veZLQ3Rvq8wZphAxT1HVX0dUl4IW-CMnTaVC16gNoD3i5LZjNaZAu9bHbLfP8gWHGKs5RqVGfM8F-xwwnqECIF-fHfG0jy_Wv8pixX4PcXejexNVBNLmKzI9-KRS-mkKoQBtehv7hHyzM0g.bnVsbA
+
+{
+    "product_id": 1,
+    "quantity": 1
+}

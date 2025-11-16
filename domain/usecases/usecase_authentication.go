@@ -2,26 +2,28 @@ package usecases
 
 import (
 	"cachacariaapi/domain/entities"
-	"cachacariaapi/domain/repositories"
 	"cachacariaapi/domain/rules"
 	"cachacariaapi/domain/status_codes"
+	repositories "cachacariaapi/infrastructure/datastore"
 	"cachacariaapi/infrastructure/util"
 	"context"
+	"errors"
 	"fmt"
-	"log"
 
 	"github.com/google/uuid"
 )
 
 type AuthUseCases struct {
-	repository repositories.AuthRepository
-	crypt      util.Crypt
+	repository     repositories.AuthRepository
+	userRepository repositories.UserRepository
+	authManager    util.AuthManager
 }
 
-func NewAuthUseCases(repository repositories.AuthRepository, crypt util.Crypt) *AuthUseCases {
-	return &AuthUseCases{
-		repository: repository,
-		crypt:      crypt,
+func NewAuthUseCases(repository repositories.AuthRepository, userRepository repositories.UserRepository, authManager util.AuthManager) AuthUseCases {
+	return AuthUseCases{
+		repository:     repository,
+		userRepository: userRepository,
+		authManager:    authManager,
 	}
 }
 
@@ -29,31 +31,22 @@ func (a AuthUseCases) AttemptLogin(
 	ctx context.Context,
 	credentials entities.UserCredentials,
 ) (string, status_codes.LoginStatusCode, error) {
-	// Check if the user exists
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
-		return "", status_codes.LoginFailure, fmt.Errorf(
-			"[AttemptLogin] error checking user: %s",
-			err,
-		)
+		return "", status_codes.LoginFailure, errors.Join(fmt.Errorf("failed to get user by email"), err)
 	}
 
 	if user == nil {
 		return "", status_codes.LoginUserNotFound, nil
 	}
 
-	if !a.crypt.CheckPasswordHash(credentials.Password, user.Password) {
-
+	if !a.authManager.CheckPasswordHash(credentials.Password, user.Password) {
 		return "", status_codes.LoginInvalidCredentials, nil
 	}
 
-	// Generate token
-	token, err := a.crypt.GenerateAuthToken(credentials.Email)
+	token, err := a.authManager.CreateToken(credentials.Email, user.ID, user.IsAdm)
 	if err != nil {
-		return "", status_codes.LoginFailure, fmt.Errorf(
-			"[AttemptLogin] error generating token: %s",
-			err,
-		)
+		return "", status_codes.LoginFailure, errors.Join(fmt.Errorf("failed to generate auth token"), err)
 	}
 
 	return token, status_codes.LoginSuccess, nil
@@ -63,48 +56,43 @@ func (a AuthUseCases) RegisterUser(
 	ctx context.Context,
 	credentials entities.UserCredentials,
 ) (status_codes.RegisterStatusCode, error) {
-	// Check if the user exists
+	credentials.Email = util.TrimSpace(credentials.Email)
+	credentials.Password = util.TrimSpace(credentials.Password)
+
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf(
-			"[RegisterUser] error checking user: %s",
-			err,
-		)
+		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to check user"), err)
 	}
 
 	if user != nil {
 		return status_codes.RegisterUserAlreadyExist, nil
 	}
 
-	// Validate credentials
-	credentials.Email = util.TrimSpace(credentials.Email)
-	credentials.Password = util.TrimSpace(credentials.Password)
+	user, err = a.repository.GetUserByPhone(ctx, credentials.Phone)
+	if err != nil {
+		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to check user"), err)
+	}
+
+	if user != nil {
+		return status_codes.RegisterUserAlreadyExist, nil
+	}
 
 	if !rules.IsValidEmail(credentials.Email) {
-		log.Printf("[RegisterUser] invalid email: %s", credentials.Email)
 		return status_codes.RegisterInvalidEmail, nil
 	}
 
 	if !rules.IsValidPassword(credentials.Password) {
-		log.Printf("[RegisterUser] invalid password: %s", credentials.Password)
 		return status_codes.RegisterInvalidPassword, nil
 	}
 
-	// Hash user password before saving
-	credentials.Password, err = a.crypt.HashPassword(credentials.Password)
+	credentials.Password, err = a.authManager.HashPassword(credentials.Password)
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf(
-			"[RegisterUser] error hashing password: %s",
-			err,
-		)
+		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to hash password"), err)
 	}
 
 	userUUID, err := uuid.NewRandom()
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf(
-			"[RegisterUser] error generating user uuid: %s",
-			err,
-		)
+		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to generate uuid"), err)
 	}
 
 	user = &entities.User{
@@ -115,11 +103,50 @@ func (a AuthUseCases) RegisterUser(
 		IsAdm:    credentials.IsAdm,
 	}
 
-	// Save user
 	err = a.repository.AddUser(ctx, user)
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf("[RegisterUser] error saving user: %s", err)
+		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to add user"), err)
 	}
 
 	return status_codes.RegisterSuccess, nil
+}
+
+func (a AuthUseCases) GetUserByAuthToken(token string) (*entities.User, error) {
+	payload, err := a.authManager.VerifyToken(token)
+	if err != nil {
+		return nil, errors.Join(fmt.Errorf("failed to verify token"), err)
+	}
+
+	return a.userRepository.FindById(int64(payload.UserID))
+}
+
+func (a AuthUseCases) ChangePassword(ctx context.Context, request entities.ChangePasswordRequest) (status_codes.ChangePasswordStatus, error) {
+	request.CurrentPassword = util.TrimSpace(request.CurrentPassword)
+	request.NewPassword = util.TrimSpace(request.NewPassword)
+	request.NewPasswordConfirmation = util.TrimSpace(request.NewPasswordConfirmation)
+
+	user, err := a.repository.GetUserByID(ctx, request.UserID)
+	if err != nil {
+		return status_codes.ChangePasswordError, errors.Join(fmt.Errorf("failed to check user"), err)
+	}
+
+	if user == nil {
+		return status_codes.ChangePasswordInvalidUser, nil
+	}
+
+	isValidPreviousPassword := a.authManager.CheckPasswordHash(request.CurrentPassword, user.Password)
+	if !isValidPreviousPassword {
+		return status_codes.ChangePasswordInvalidPassword, nil
+	}
+
+	if request.NewPassword != request.NewPasswordConfirmation {
+		return status_codes.ChangePasswordPasswordsDontMatch, nil
+	}
+
+	err = a.repository.UpdateUserPassword(ctx, int64(user.ID), request.NewPassword)
+	if err != nil {
+		return status_codes.ChangePasswordError, errors.Join(fmt.Errorf("failed to update password"), err)
+	}
+
+	return status_codes.ChangePasswordSuccess, nil
 }

@@ -3,9 +3,11 @@ package modules
 import (
 	"cachacariaapi/domain/entities"
 	"cachacariaapi/domain/usecases"
+	"cachacariaapi/infrastructure/middleware"
+	"cachacariaapi/infrastructure/util"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -17,58 +19,62 @@ const maxImagesMemory = 20 << 20
 const defaultPagePagination = 1
 const defaultLimitPagination = 20
 
-type ProductModule struct {
-	ProductUseCases *usecases.ProductUseCases
+type productModule struct {
+	productUseCases usecases.ProductUseCases
+	authManager     util.AuthManager
 	name            string
 	path            string
 }
 
-func NewProductModule(productUseCases *usecases.ProductUseCases) *ProductModule {
-	return &ProductModule{
-		ProductUseCases: productUseCases,
+func NewProductModule(productUseCases usecases.ProductUseCases, authManager util.AuthManager) Module {
+	return productModule{
+		productUseCases: productUseCases,
+		authManager:     authManager,
 		name:            "product",
 		path:            "/product",
 	}
 }
 
-func (m ProductModule) Name() string {
+func (m productModule) Name() string {
 	return m.name
 }
 
-func (m ProductModule) Path() string {
+func (m productModule) Path() string {
 	return m.path
 }
 
-func (m ProductModule) RegisterRoutes(router *mux.Router) {
+func (m productModule) RegisterRoutes(router *mux.Router) {
+	auth := middleware.AuthMiddlewareWithAdmin(m.authManager, true)
+
 	routes := []ModuleRoute{
 		{
 			Name:    "Add",
 			Path:    "",
-			Handler: m.add,
+			Handler: auth(m.add),
 			Methods: []string{http.MethodPost},
 		},
 		{
 			Name:    "GetAll",
 			Path:    "",
-			Handler: m.getAll,
+			Handler: m.getAll, // Public
 			Methods: []string{http.MethodGet},
 		},
 		{
 			Name:    "Get",
 			Path:    "/{id}",
-			Handler: m.get,
+			Handler: m.get, // Public
 			Methods: []string{http.MethodGet},
 		},
 		{
 			Name:    "Update",
 			Path:    "/{id}",
-			Handler: m.update,
-			Methods: []string{http.MethodPatch},
+			Handler: auth(m.update),
+			Methods: []string{http.MethodPut},
 		},
 		{
 			Name:    "Delete",
 			Path:    "/{id}",
-			Handler: m.delete,
+			Handler: auth(m.delete),
 			Methods: []string{http.MethodDelete},
 		},
 	}
@@ -78,13 +84,13 @@ func (m ProductModule) RegisterRoutes(router *mux.Router) {
 	}
 }
 
-func (m ProductModule) add(w http.ResponseWriter, r *http.Request) {
+func (m productModule) add(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(maxImagesMemory); err != nil {
 		res := entities.ServerResponse{
 			Code:    http.StatusBadRequest,
 			Message: "Imagens excedem o máximo de memória permitido",
 		}
-		res.WriteHTTP(w)
+		util.Write(w, res)
 		return
 	}
 
@@ -102,37 +108,22 @@ func (m ProductModule) add(w http.ResponseWriter, r *http.Request) {
 		Photos:      photos,
 	}
 
-	response, err := m.ProductUseCases.AddProduct(request)
+	status, err := m.productUseCases.AddProduct(request)
 	if err != nil {
-		log.Printf("error adding product: %v", err)
-
-		var res entities.ServerResponse
-		if errors.Is(err, entities.ErrConflict) {
-			res = entities.ServerResponse{
-				Code:    http.StatusConflict,
-				Message: "Este produto já existe",
-			}
-		} else if errors.Is(err, entities.ErrBadRequest) {
-			res = entities.ServerResponse{
-				Code:    http.StatusBadRequest,
-				Message: "Requisição inválida",
-			}
-		} else {
-			res = entities.ServerResponse{
-				Code:    http.StatusInternalServerError,
-				Message: "Erro interno no servidor",
-			}
-		}
-		res.WriteHTTP(w)
+		slog.Error("failed to add product", "cause", err)
+		util.WriteInternalError(w)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	res := util.ServerResponse{
+		Status:  status.Int(),
+		Message: status.String(),
+	}
+
+	util.Write(w, res)
 }
 
-func (m ProductModule) getAll(w http.ResponseWriter, r *http.Request) {
+func (m productModule) getAll(w http.ResponseWriter, r *http.Request) {
 	var limit, page int
 
 	query := r.URL.Query()
@@ -169,21 +160,10 @@ func (m ProductModule) getAll(w http.ResponseWriter, r *http.Request) {
 		page = int(parsed)
 	}
 
-	products, err := m.ProductUseCases.GetAll(limit, page)
+	products, err := m.productUseCases.GetAll(limit, page)
 	if err != nil {
-		var res entities.ServerResponse
-		if errors.Is(err, entities.ErrNotFound) {
-			res = entities.ServerResponse{
-				Code:    http.StatusNotFound,
-				Message: "Nenhum produto encontrado",
-			}
-		} else {
-			res = entities.ServerResponse{
-				Code:    http.StatusInternalServerError,
-				Message: "Erro interno no servidor",
-			}
-		}
-		res.WriteHTTP(w)
+		slog.Error("failed to get all products", slog.String("err", err.Error()))
+		util.WriteInternalError(w)
 		return
 	}
 
@@ -191,7 +171,7 @@ func (m ProductModule) getAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(products)
 }
 
-func (m ProductModule) get(w http.ResponseWriter, r *http.Request) {
+func (m productModule) get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -215,7 +195,7 @@ func (m ProductModule) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	prod, err := m.ProductUseCases.GetProduct(id)
+	prod, err := m.productUseCases.GetProduct(id)
 	if err != nil {
 		if errors.Is(err, entities.ErrNotFound) {
 			res = entities.ServerResponse{
@@ -236,7 +216,7 @@ func (m ProductModule) get(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(prod)
 }
 
-func (m ProductModule) delete(w http.ResponseWriter, r *http.Request) {
+func (m productModule) delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -260,7 +240,7 @@ func (m ProductModule) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	delRes, err := m.ProductUseCases.DeleteProduct(id)
+	delRes, err := m.productUseCases.DeleteProduct(id)
 	if err != nil {
 		if errors.Is(err, entities.ErrNotFound) {
 			res = entities.ServerResponse{
@@ -281,7 +261,7 @@ func (m ProductModule) delete(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(delRes)
 }
 
-func (m ProductModule) update(w http.ResponseWriter, r *http.Request) {
+func (m productModule) update(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -315,23 +295,9 @@ func (m ProductModule) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateRes, err := m.ProductUseCases.UpdateProduct(id, request)
+	err = m.productUseCases.UpdateProduct(id, request)
 	if err != nil {
-		if errors.Is(err, entities.ErrNotFound) {
-			res = entities.ServerResponse{
-				Code:    http.StatusNotFound,
-				Message: "Produto não encontrado",
-			}
-		} else {
-			res = entities.ServerResponse{
-				Code:    http.StatusInternalServerError,
-				Message: "Erro interno no servidor",
-			}
-		}
-		res.WriteHTTP(w)
+		util.WriteInternalError(w)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(updateRes)
 }

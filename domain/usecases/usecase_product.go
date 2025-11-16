@@ -2,10 +2,12 @@ package usecases
 
 import (
 	"cachacariaapi/domain/entities"
-	"cachacariaapi/domain/repositories"
+	"cachacariaapi/domain/status_codes"
+	"cachacariaapi/domain/util"
+	repositories "cachacariaapi/infrastructure/datastore"
+	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -15,77 +17,82 @@ import (
 )
 
 type ProductUseCases struct {
-	r       repositories.ProductRepository
-	baseURL string
+	productRepository repositories.ProductRepository
+	baseURL           string
 }
 
-func NewProductUseCases(r repositories.ProductRepository, baseURL string) *ProductUseCases {
-	return &ProductUseCases{r, baseURL}
+func NewProductUseCases(productRepository repositories.ProductRepository, baseURL string) ProductUseCases {
+	return ProductUseCases{productRepository, baseURL}
 }
 
 func (u *ProductUseCases) AddProduct(
 	req entities.AddProductRequest,
-) (*entities.AddProductResponse, error) {
-	if req.Price <= 0 || len(strings.TrimSpace(req.Name)) == 0 || req.Stock < 0 {
-		return nil, entities.ErrBadRequest
+) (status_codes.AddProductStatus, error) {
+	req.Name = strings.TrimSpace(req.Name)
+
+	if req.Name == "" {
+		return status_codes.AddProductStatusInvalidName, nil
+	}
+
+	if req.Price <= 0 || req.Stock < 0 {
+		return status_codes.AddProductStatusInvalidPrice, nil
+	}
+
+	if req.Stock < 0 {
+		return status_codes.AddProductStatusInvalidStock, nil
 	}
 
 	for _, fileHeader := range req.Photos {
 		if err := validateImageType(fileHeader); err != nil {
-			slog.Error("error validating image type", "error", err.Error())
-			return nil, err
+			return status_codes.AddProductStatusError, errors.Join(fmt.Errorf("failed to validate image type"), err)
 		}
 	}
 
-	res, err := u.r.AddProduct(req)
+	id, err := u.productRepository.AddProduct(req)
 	if err != nil {
-		slog.Error("error adding product", "error", err.Error())
-		return nil, err
+		return status_codes.AddProductStatusError, errors.Join(fmt.Errorf("failed to add product"), err)
 	}
-	productID := res.ID
 
 	var filenames []string
 	for _, fileHeader := range req.Photos {
-		if err := validateImageType(fileHeader); err != nil {
-			slog.Error("error validating image type", "error", err.Error())
+		if err = validateImageType(fileHeader); err != nil {
+			return status_codes.AddProductStatusError, errors.Join(fmt.Errorf("failed to validate image type"), err)
 		}
 
 		src, err := fileHeader.Open()
 		if err != nil {
-			slog.Error("error opening file header", "error", err.Error())
+			return status_codes.AddProductStatusError, errors.Join(fmt.Errorf("failed to open image file"), err)
 		}
 
 		filename := fmt.Sprintf(
 			"product_%d_%d%s",
-			productID,
+			id,
 			time.Now().UnixNano(),
 			filepath.Ext(fileHeader.Filename),
 		)
-		filePath := filepath.Join("/app/images", filename)
+		filePath := filepath.Join("C:/dev/teste/", filename)
 
 		dst, err := os.Create(filePath)
 		if err != nil {
-			slog.Error("error creating", "error", err.Error())
-			return nil, err
+			return status_codes.AddProductStatusError, errors.Join(fmt.Errorf("failed to create file"), err)
 		}
 
 		_, err = io.Copy(dst, src)
 		src.Close()
 		if err != nil {
-			slog.Error("error copying file", "error", err.Error())
-			return nil, err
+			return status_codes.AddProductStatusError, errors.Join(fmt.Errorf("failed to copy file"), err)
 		}
 
 		filenames = append(filenames, filename)
 	}
 
 	if len(filenames) > 0 {
-		if err = u.r.AddProductPhotos(productID, filenames); err != nil {
-			return nil, err
+		if err = u.productRepository.AddProductPhotos(id, filenames); err != nil {
+			return status_codes.AddProductStatusError, errors.Join(fmt.Errorf("faield to add product photos"), err)
 		}
 	}
 
-	return &entities.AddProductResponse{ID: productID}, nil
+	return status_codes.AddProductStatusSuccess, nil
 }
 
 func (u *ProductUseCases) GetAll(limit, page int) ([]entities.Product, error) {
@@ -95,15 +102,14 @@ func (u *ProductUseCases) GetAll(limit, page int) ([]entities.Product, error) {
 
 	offset := (page - 1) * limit
 
-	products, err := u.r.GetAll(limit, offset)
+	products, err := u.productRepository.GetAll(limit, offset)
 	if err != nil {
-		slog.Error("error getting all products", "error", err.Error())
-		return nil, err
+		return nil, errors.Join(fmt.Errorf("failed to get products"), err)
 	}
 
 	for _, product := range products {
 		for i := range product.Photos {
-			product.Photos[i] = u.buildProductImageURL(product.Photos[i])
+			product.Photos[i] = util.GetProductImageURL(product.Photos[i], u.baseURL)
 		}
 	}
 
@@ -111,88 +117,76 @@ func (u *ProductUseCases) GetAll(limit, page int) ([]entities.Product, error) {
 }
 
 func (u *ProductUseCases) GetProduct(id int64) (*entities.Product, error) {
-	product, err := u.r.GetProduct(id)
+	product, err := u.productRepository.GetProduct(id)
 	if err != nil {
-		slog.Error("error getting product", "error", err.Error())
-		return nil, err
+		return nil, errors.Join(fmt.Errorf("failed to get product"), err)
 	}
 
 	for i := range product.Photos {
-		product.Photos[i] = u.buildProductImageURL(product.Photos[i])
+		product.Photos[i] = util.GetProductImageURL(product.Photos[i], u.baseURL)
 	}
 
 	return product, nil
 }
 
-func (u *ProductUseCases) DeleteProduct(id int64) (*entities.DeleteProductResponse, error) {
-	prod, err := u.r.GetProduct(id)
+func (u *ProductUseCases) DeleteProduct(id int64) (status_codes.DeleteProductStatus, error) {
+	prod, err := u.productRepository.GetProduct(id)
 	if err != nil {
-		slog.Error("error getting product for deletion check", "error", err.Error())
-		return nil, err
+		return status_codes.DeleteProductStatusError, errors.Join(fmt.Errorf("failed to get product"), err)
 	}
 
 	if prod == nil {
-		return nil, entities.ErrNotFound
+		return status_codes.DeleteProductStatusNotFound, nil
 	}
 
 	for _, filename := range prod.Photos {
 		filePath := filepath.Join("/app/images", filename)
 
-		if err := os.Remove(filePath); err != nil {
-			slog.Error(
-				"error deleting product photo file",
-				"filePath",
-				filePath,
-				"error",
-				err.Error(),
-			)
+		if err = os.Remove(filePath); err != nil {
+			return status_codes.DeleteProductStatusError, entities.ErrNotFound
 		}
 	}
 
-	res, err := u.r.DeleteProduct(id)
+	err = u.productRepository.DeleteProduct(id)
 	if err != nil {
-		slog.Error("error deleting product from database", "error", err.Error())
-		return nil, err
+		return status_codes.DeleteProductStatusError, errors.Join(fmt.Errorf("failed to delete product"), err)
 	}
 
-	return res, nil
+	return status_codes.DeleteProductStatusSuccess, nil
 }
 
 func (u *ProductUseCases) UpdateProduct(
 	id int64,
 	product entities.UpdateProductRequest,
-) (*entities.UpdateProductResponse, error) {
+) error {
 	prod, err := u.GetProduct(id)
 	if err != nil {
-		slog.Error("error getting product", "error", err.Error())
-		return nil, err
+		return errors.Join(fmt.Errorf("failed to get product"), err)
 	}
 
 	if prod == nil {
-		return nil, entities.ErrNotFound
+		return entities.ErrNotFound
 	}
 
-	res, err := u.r.UpdateProduct(id, product)
+	err = u.productRepository.UpdateProduct(id, product)
 	if err != nil {
-		slog.Error("error updating product", "error", err.Error())
-		return nil, err
+		return errors.Join(fmt.Errorf("failed to update product"), err)
 	}
 
-	return res, nil
+	return nil
 }
 
 func validateImageType(header *multipart.FileHeader) error {
 	src, err := header.Open()
 	if err != nil {
-		slog.Error("error opening file", "error", err.Error())
-		return err
+		return errors.Join(fmt.Errorf("failed to open image file"), err)
 	}
 
 	defer src.Close()
 
 	buf := make([]byte, 512)
 	if _, err := src.Read(buf); err != nil {
-		slog.Error("error reading image bytes", "error", err.Error())
+		return errors.Join(fmt.Errorf("failed to read image bytes"), err)
 	}
 
 	contentType := http.DetectContentType(buf)
@@ -202,8 +196,4 @@ func validateImageType(header *multipart.FileHeader) error {
 	}
 
 	return nil
-}
-
-func (u *ProductUseCases) buildProductImageURL(filename string) string {
-	return fmt.Sprintf("%s/images/%s", u.baseURL, filename)
 }

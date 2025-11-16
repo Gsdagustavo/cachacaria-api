@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="DataSourcePerFileMappings">
-    <file url="file://$PROJECT_DIR$/infrastructure/datastore/repositories/mysql_authentication.go" value="5ba6a923-d327-4cc3-a5dc-bdf5e58f01d9" />
-  </component>
-</project>

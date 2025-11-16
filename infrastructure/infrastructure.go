@@ -31,8 +31,7 @@ func Init() {
 	}
 
 	// Config utils
-	maker := util.NewPasetoMaker(cfg.SymmetricKey)
-	crypt := util.NewCrypt(maker)
+	authManager := util.NewAuthManager(cfg.SymmetricKey)
 
 	conn := cfg.Database.Conn
 
@@ -40,17 +39,20 @@ func Init() {
 	authRepository := repositories.NewMySQLAuthRepository(conn)
 	userRepository := repositories.NewMySQLUserRepository(conn)
 	productRepository := repositories.NewMySQLProductRepository(conn)
+	cartRepository := repositories.NewMySQLCartRepository(conn)
 
 	// Use Cases
-	authUseCases := usecases.NewAuthUseCases(authRepository, crypt)
-	userUseCases := usecases.NewUserUseCases(userRepository)
+	authUseCases := usecases.NewAuthUseCases(authRepository, userRepository, authManager)
+	userUseCases := usecases.NewUserUseCases(userRepository, authRepository, authManager)
 	productUseCases := usecases.NewProductUseCases(productRepository, cfg.Server.BaseURL)
+	cartUseCases := usecases.NewCartUseCases(cartRepository, userRepository, productRepository, cfg.Server.BaseURL)
 
 	// Modules
 	healthModule := modules.NewHealthModule()
 	authModule := modules.NewAuthModule(authUseCases)
-	userModule := modules.NewUserModule(userUseCases)
-	productModule := modules.NewProductModule(productUseCases)
+	userModule := modules.NewUserModule(userUseCases, authUseCases)
+	productModule := modules.NewProductModule(productUseCases, authManager)
+	cartModule := modules.NewCartModule(cartUseCases, authManager)
 
 	// Assign a router to the server
 	router := mux.NewRouter()
@@ -63,11 +65,12 @@ func Init() {
 	cfg.Server.RegisterModules(server.Router, healthModule)
 
 	// Register modules
-	cfg.Server.RegisterModules(apiSubrouter, authModule, userModule, productModule)
+	cfg.Server.RegisterModules(apiSubrouter, authModule, userModule, productModule, cartModule)
 
 	slog.Info(fmt.Sprintf("server running on port %d", cfg.Server.Port))
 
 	err = cfg.Server.Run(*cfg)
+
 	if err != nil {
 		panic(err)
 	}

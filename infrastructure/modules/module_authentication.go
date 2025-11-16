@@ -2,10 +2,12 @@ package modules
 
 import (
 	"cachacariaapi/domain/entities"
-	"cachacariaapi/domain/status_codes"
 	"cachacariaapi/domain/usecases"
+	"cachacariaapi/infrastructure/util"
 	"encoding/json"
+	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -17,13 +19,13 @@ type AuthResponse struct {
 }
 
 type AuthModule struct {
-	authUseCases *usecases.AuthUseCases
+	authUseCases usecases.AuthUseCases
 	name         string
 	path         string
 }
 
-func NewAuthModule(authUseCases *usecases.AuthUseCases) *AuthModule {
-	return &AuthModule{
+func NewAuthModule(authUseCases usecases.AuthUseCases) Module {
+	return AuthModule{
 		authUseCases: authUseCases,
 		name:         "auth",
 		path:         "/auth",
@@ -47,9 +49,15 @@ func (a AuthModule) RegisterRoutes(router *mux.Router) {
 			Methods: []string{http.MethodPost},
 		},
 		{
-			Name:    "Register",
-			Path:    "/register",
-			Handler: a.register,
+			Name:    "Change pasword",
+			Path:    "/changePassword",
+			Handler: a.changePassword,
+			Methods: []string{http.MethodPost},
+		},
+		{
+			Name:    "Return user info",
+			Path:    "/me",
+			Handler: a.getData,
 			Methods: []string{http.MethodPost},
 		},
 	}
@@ -63,13 +71,14 @@ func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
 	var credentials entities.UserCredentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteBadRequest(w)
 		return
 	}
 
 	token, statusCode, err := a.authUseCases.AttemptLogin(r.Context(), credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		slog.Error("failed to login", "cause", err)
+		util.WriteInternalError(w)
 		return
 	}
 
@@ -79,43 +88,112 @@ func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
 		Token:   token,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	util.Write(w, response)
+}
 
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+func (a AuthModule) changePassword(w http.ResponseWriter, r *http.Request) {
+	token := util.GetAuthTokenFromRequest(r)
+	user, err := a.authUseCases.GetUserByAuthToken(token)
+	if err != nil {
+		slog.Error("failed to get user by auth token", "cause", err)
+		util.WriteInternalError(w)
+		return
 	}
+
+	if user == nil {
+		util.WriteUnauthorized(w)
+		return
+	}
+
+	var request entities.ChangePasswordRequest
+	err = json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		util.WriteBadRequest(w)
+		return
+	}
+
+	status, err := a.authUseCases.ChangePassword(r.Context(), request)
+	if err != nil {
+		slog.Error("failed to change user password", "cause", err)
+		util.WriteInternalError(w)
+		return
+	}
+
+	response := AuthResponse{
+		Status:  status.Int(),
+		Message: status.String(),
+		Token:   token,
+	}
+
+	util.Write(w, response)
 }
 
 func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
 	var credentials entities.UserCredentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteBadRequest(w)
 		return
-	}
-
-	type Response struct {
-		Status  status_codes.RegisterStatusCode `json:"status"`
-		Message string                          `json:"message"`
 	}
 
 	statusCode, err := a.authUseCases.RegisterUser(r.Context(), credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		slog.Error("failed to register user", "cause", err)
+		util.WriteInternalError(w)
 		return
 	}
 
-	response := Response{
-		Status:  statusCode,
+	response := util.ServerResponse{
+		Status:  statusCode.Int(),
 		Message: statusCode.String(),
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	util.Write(w, response)
+}
 
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		// At this point headers are already sent, log the error
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+func (a AuthModule) getData(w http.ResponseWriter, r *http.Request) {
+	token := util.GetAuthTokenFromRequest(r)
+
+	user, err := a.authUseCases.GetUserByAuthToken(token)
+	if err != nil {
+		slog.Error("failed to get user by auth token", "cause", err)
+		util.WriteResponse(w, util.ServerResponse{
+			Status:  http.StatusUnauthorized,
+			Message: "Token inválido ou expirado",
+		})
+		return
 	}
+
+	if user == nil {
+		slog.Info("invalid token", "token", token)
+		util.WriteResponse(w, util.ServerResponse{
+			Status:  http.StatusUnauthorized,
+			Message: "Token inválido ou expirado",
+		})
+		return
+	}
+
+	util.Write(w, user)
+}
+
+func (a AuthModule) SessionMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+
+		if authHeader != "" {
+			token := strings.TrimPrefix(authHeader, "Bearer ")
+			user, err := a.authUseCases.GetUserByAuthToken(token)
+
+			if err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			ctx := util.NewContextWithUser(r.Context(), user.ID, user.IsAdm)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	})
 }

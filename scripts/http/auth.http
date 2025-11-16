@@ -1,18 +1,22 @@
 ###
-POST http://localhost:8080/api/auth/register
+POST http://192.168.0.120:8080/api/auth/register
 
 {
-    "email": "test@gmail.com",
-    "password": "Rg547571856g$",
-    "phone": "123123123123",
+    "email": "das@123",
+    "password": "Rg547571856g#",
+    "phone": "1231231dad231233",
     "is_adm": true
 }
 
 ###
-POST http://localhost:8080/api/auth/login
+POST http://192.168.0.120:8080/api/auth/login
 
 {
-    "email": "test@gmail.com",
-    "password": "Rg547571856g$"
+
+    "email": "gustavo.dsa12@aluno.ifsc.edu.br",
+    "password": "Rg547571856g#"
 }
 
+###
+POST http://192.168.0.120:8080/api/auth/me
+Authorization: Bearer v2.local.I7k32wqrN-OjwuIvThnZ2tgO4T4dBuwBQm1DrQSK5OBgyMJPKxxKYmVF8kNdGjLw3rhqkqOAQwz9NyrgHfE6v3ypzxy1AoAhQWPKmeXM2zXE3CGqfkuVwS4zROkq-hWbIvH9yG9vCpuv9oUV23ASTm1xj3ThC9HcmqTs2gaprgKD8u12lQtAy1yN0jr1WOjpyux61dHgfSOSKXCzB7b47tGE2_ZKCYbJT3_gHWcR4dVgHarZtZAP3z4eplZsbAJS3qOm3gvvwQtX_tGwCZychskMUc9hWAh9TsBnBrdgYLDBTcNc5d9G6IvtnJ91CXl756DTi_TV8g.bnVsbA

@@ -26,6 +26,7 @@
         <method importPath="net/http" receiver="ResponseWriter" name="Write" />
         <method importPath="database/sql" receiver="*Rows" name="Close" />
         <method importPath="encoding/json" receiver="*Decoder" name="Decode" />
+        <method importPath="mime/multipart" receiver="File" name="Close" />
       </methods>
     </inspection_tool>
   </profile>

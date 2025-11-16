@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"cachacariaapi/domain/entities"
+	"cachacariaapi/infrastructure/datastore"
 	"context"
 	"database/sql"
 	"errors"
@@ -14,7 +15,7 @@ type MySQLAuthRepository struct {
 	db *sql.DB
 }
 
-func NewMySQLAuthRepository(db *sql.DB) *MySQLAuthRepository {
+func NewMySQLAuthRepository(db *sql.DB) repositories.AuthRepository {
 	return &MySQLAuthRepository{
 		db: db,
 	}
@@ -35,7 +36,7 @@ func (r MySQLAuthRepository) AddUser(ctx context.Context, user *entities.User) e
 		user.IsAdm,
 	)
 	if err != nil {
-		return fmt.Errorf("error adding user: %s", err)
+		return errors.Join(fmt.Errorf("failed to add user"), err)
 	}
 
 	return nil
@@ -57,13 +58,35 @@ func (r MySQLAuthRepository) GetUserByEmail(
 			return nil, nil
 		}
 
-		return nil, fmt.Errorf("error getting user by email: %s", err)
+		return nil, errors.Join(fmt.Errorf("failed to query/scan user"), err)
 	}
 
 	return &user, nil
 }
 
-func (r MySQLAuthRepository) GetUserByID(ctx context.Context, id int) (*entities.User, error) {
+func (r MySQLAuthRepository) GetUserByPhone(
+	ctx context.Context,
+	phone string,
+) (*entities.User, error) {
+	const query = `
+		SELECT id, uuid, email, password, phone, is_adm FROM users WHERE phone = ?
+	`
+
+	var user entities.User
+	err := r.db.QueryRowContext(ctx, query, phone).
+		Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.Phone, &user.IsAdm)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, errors.Join(fmt.Errorf("failed to query/scan user"), err)
+	}
+
+	return &user, nil
+}
+
+func (r MySQLAuthRepository) GetUserByID(ctx context.Context, id int64) (*entities.User, error) {
 	const query = `
 		SELECT id, uuid, email, password, phone, is_adm FROM users WHERE id = ?
 	`
@@ -76,7 +99,7 @@ func (r MySQLAuthRepository) GetUserByID(ctx context.Context, id int) (*entities
 			return nil, nil
 		}
 
-		return nil, fmt.Errorf("error getting user by email: %s", err)
+		return nil, errors.Join(fmt.Errorf("failed to query/scan user"), err)
 	}
 
 	return &user, nil
@@ -98,7 +121,7 @@ func (r MySQLAuthRepository) GetUserByUUID(
 			return nil, nil
 		}
 
-		return nil, errors.Join(errors.New("error in [QueryRowContext]"), err)
+		return nil, errors.Join(fmt.Errorf("failed to query/scan user"), err)
 	}
 
 	return &user, nil
@@ -111,7 +134,20 @@ func (r MySQLAuthRepository) DeleteUser(ctx context.Context, id int) error {
 
 	_, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("error deleting user: %s", err)
+		return errors.Join(fmt.Errorf("failed to delete user"), err)
+	}
+
+	return nil
+}
+
+func (r MySQLAuthRepository) UpdateUserPassword(ctx context.Context, userID int64, newPassword string) error {
+	const query = `
+		UPDATE users SET password = ? WHERE id = ?
+	`
+
+	_, err := r.db.ExecContext(ctx, query, userID, newPassword)
+	if err != nil {
+		return errors.Join(fmt.Errorf("failed to execute udpate user password query"), err)
 	}
 
 	return nil
