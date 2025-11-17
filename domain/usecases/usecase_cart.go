@@ -82,3 +82,46 @@ func (uc *CartUseCases) DeleteCartItem(ctx context.Context, userID, productID in
 func (uc *CartUseCases) ClearCart(ctx context.Context, userID int64) error {
 	return uc.cartRepository.ClearCart(ctx, userID)
 }
+
+func (uc *CartUseCases) BuyItems(ctx context.Context, userID int64) (status_codes.BuyProductsStatus, error) {
+	items, err := uc.cartRepository.GetCartItems(ctx, userID)
+	if err != nil {
+		return status_codes.BuyProductsStatusError, err
+	}
+
+	if len(items) == 0 {
+		return status_codes.BuyProductsStatusCartEmpty, nil
+	}
+
+	for _, item := range items {
+		product, err := uc.productRepository.GetProduct(item.ProductID)
+		if err != nil {
+			return status_codes.BuyProductsStatusError, err
+		}
+
+		if product == nil {
+			return status_codes.BuyProductsStatusInvalidProduct, nil
+		}
+
+		if product.Stock < item.Quantity {
+			return status_codes.BuyProductsStatusOutOfStock, fmt.Errorf(
+				"produto %s sem estoque suficiente",
+				product.Name,
+			)
+		}
+	}
+
+	for _, item := range items {
+		err = uc.productRepository.DecrementStock(item.ProductID, item.Quantity)
+		if err != nil {
+			return status_codes.BuyProductsStatusError, err
+		}
+	}
+
+	err = uc.cartRepository.ClearCart(ctx, userID)
+	if err != nil {
+		return status_codes.BuyProductsStatusError, err
+	}
+
+	return status_codes.BuyProductsStatusSuccess, nil
+}

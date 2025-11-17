@@ -171,3 +171,14 @@ func (r *MySQLProductRepository) UpdateProduct(id int64, product entities.Update
 
 	return nil
 }
+
+func (r *MySQLProductRepository) DecrementStock(id int64, quantity int) error {
+	const query = "UPDATE products SET stock = stock - ? WHERE id = ?"
+
+	_, err := r.DB.Exec(query, quantity, id)
+	if err != nil {
+		return errors.Join(fmt.Errorf("failed to update product"), err)
+	}
+
+	return nil
+}

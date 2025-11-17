@@ -34,6 +34,7 @@ type ProductRepository interface {
 	GetProduct(id int64) (*entities.Product, error)
 	DeleteProduct(id int64) error
 	UpdateProduct(id int64, product entities.UpdateProductRequest) error
+	DecrementStock(id int64, quantity int) error
 }
 
 type CartRepository interface {

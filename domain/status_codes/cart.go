@@ -1,6 +1,7 @@
 package status_codes
 
 type AddProductItemStatus int
+type BuyProductsStatus int
 
 const (
 	AddProductItemStatusSuccess AddProductItemStatus = iota
@@ -8,6 +9,14 @@ const (
 	AddProductItemStatusInvalidProduct
 	AddProductItemStatusInvalidUser
 	AddProductItemStatusError
+)
+
+const (
+	BuyProductsStatusSuccess BuyProductsStatus = iota
+	BuyProductsStatusCartEmpty
+	BuyProductsStatusInvalidProduct
+	BuyProductsStatusOutOfStock
+	BuyProductsStatusError
 )
 
 func (s AddProductItemStatus) String() string {
@@ -28,5 +37,26 @@ func (s AddProductItemStatus) String() string {
 }
 
 func (s AddProductItemStatus) Int() int {
+	return int(s)
+}
+
+func (s BuyProductsStatus) String() string {
+	switch s {
+	case BuyProductsStatusSuccess:
+		return "Produtos comprados com sucesso!"
+	case BuyProductsStatusCartEmpty:
+		return "Carrinho vazio"
+	case BuyProductsStatusInvalidProduct:
+		return "Carrinho contém produtos inválidos"
+	case BuyProductsStatusOutOfStock:
+		return "Produtos sem estoque"
+	case BuyProductsStatusError:
+		return "Erro interno no servidor"
+	default:
+		return "Erro desconhecido"
+	}
+}
+
+func (s BuyProductsStatus) Int() int {
 	return int(s)
 }

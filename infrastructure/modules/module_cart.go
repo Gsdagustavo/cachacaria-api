@@ -61,6 +61,12 @@ func (m CartModule) RegisterRoutes(router *mux.Router) {
 			Methods: []string{http.MethodDelete},
 		},
 		{
+			Name:    "Buy",
+			Path:    "/buy",
+			Handler: auth(m.buy),
+			Methods: []string{http.MethodPost},
+		},
+		{
 			Name:    "ClearCart",
 			Path:    "/clear",
 			Handler: auth(m.clearCart),
@@ -178,6 +184,26 @@ func (m CartModule) deleteCartItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	util.Write(w, util.ServerResponse{Status: http.StatusOK, Message: "Produto removido do carrinho"})
+}
+
+func (m CartModule) buy(w http.ResponseWriter, r *http.Request) {
+	user, ok := util.GetUserFromContext(r.Context())
+	if !ok {
+		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
+		return
+	}
+
+	status, err := m.cartUseCases.BuyItems(r.Context(), int64(user.UserID))
+	if err != nil {
+		slog.Error("failed to clear cart", "cause", err)
+		util.WriteInternalError(w)
+		return
+	}
+
+	util.Write(w, util.ServerResponse{
+		Status:  status.Int(),
+		Message: status.String(),
+	})
 }
 
 func (m CartModule) clearCart(w http.ResponseWriter, r *http.Request) {
