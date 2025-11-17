@@ -49,6 +49,12 @@ func (a AuthModule) RegisterRoutes(router *mux.Router) {
 			Methods: []string{http.MethodPost},
 		},
 		{
+			Name:    "Register",
+			Path:    "/register",
+			Handler: a.register,
+			Methods: []string{http.MethodPost},
+		},
+		{
 			Name:    "Change pasword",
 			Path:    "/changePassword",
 			Handler: a.changePassword,
@@ -58,7 +64,7 @@ func (a AuthModule) RegisterRoutes(router *mux.Router) {
 			Name:    "Return user info",
 			Path:    "/me",
 			Handler: a.getData,
-			Methods: []string{http.MethodPost},
+			Methods: []string{http.MethodGet},
 		},
 	}
 
@@ -112,6 +118,8 @@ func (a AuthModule) changePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	request.UserID = int64(user.ID)
+
 	status, err := a.authUseCases.ChangePassword(r.Context(), request)
 	if err != nil {
 		slog.Error("failed to change user password", "cause", err)
@@ -136,16 +144,17 @@ func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	statusCode, err := a.authUseCases.RegisterUser(r.Context(), credentials)
+	token, status, err := a.authUseCases.RegisterUser(r.Context(), credentials)
 	if err != nil {
 		slog.Error("failed to register user", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
 
-	response := util.ServerResponse{
-		Status:  statusCode.Int(),
-		Message: statusCode.String(),
+	response := AuthResponse{
+		Status:  status.Int(),
+		Message: status.String(),
+		Token:   token,
 	}
 
 	util.Write(w, response)

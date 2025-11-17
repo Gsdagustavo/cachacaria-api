@@ -8,7 +8,7 @@ import (
 )
 
 type AuthRepository interface {
-	AddUser(ctx context.Context, user *entities.User) error
+	AddUser(ctx context.Context, user *entities.User) (int64, error)
 	GetUserByEmail(ctx context.Context, email string) (*entities.User, error)
 	GetUserByPhone(ctx context.Context, phone string) (*entities.User, error)
 	GetUserByID(ctx context.Context, id int64) (*entities.User, error)

@@ -55,44 +55,44 @@ func (a AuthUseCases) AttemptLogin(
 func (a AuthUseCases) RegisterUser(
 	ctx context.Context,
 	credentials entities.UserCredentials,
-) (status_codes.RegisterStatusCode, error) {
+) (string, status_codes.RegisterStatusCode, error) {
 	credentials.Email = util.TrimSpace(credentials.Email)
 	credentials.Password = util.TrimSpace(credentials.Password)
 
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
-		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to check user"), err)
+		return "", status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to check user"), err)
 	}
 
 	if user != nil {
-		return status_codes.RegisterUserAlreadyExist, nil
+		return "", status_codes.RegisterUserAlreadyExist, nil
 	}
 
 	user, err = a.repository.GetUserByPhone(ctx, credentials.Phone)
 	if err != nil {
-		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to check user"), err)
+		return "", status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to check user"), err)
 	}
 
 	if user != nil {
-		return status_codes.RegisterUserAlreadyExist, nil
+		return "", status_codes.RegisterUserAlreadyExist, nil
 	}
 
 	if !rules.IsValidEmail(credentials.Email) {
-		return status_codes.RegisterInvalidEmail, nil
+		return "", status_codes.RegisterInvalidEmail, nil
 	}
 
 	if !rules.IsValidPassword(credentials.Password) {
-		return status_codes.RegisterInvalidPassword, nil
+		return "", status_codes.RegisterInvalidPassword, nil
 	}
 
 	credentials.Password, err = a.authManager.HashPassword(credentials.Password)
 	if err != nil {
-		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to hash password"), err)
+		return "", status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to hash password"), err)
 	}
 
 	userUUID, err := uuid.NewRandom()
 	if err != nil {
-		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to generate uuid"), err)
+		return "", status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to generate uuid"), err)
 	}
 
 	user = &entities.User{
@@ -103,12 +103,19 @@ func (a AuthUseCases) RegisterUser(
 		IsAdm:    credentials.IsAdm,
 	}
 
-	err = a.repository.AddUser(ctx, user)
+	id, err := a.repository.AddUser(ctx, user)
 	if err != nil {
-		return status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to add user"), err)
+		return "", status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to add user"), err)
 	}
 
-	return status_codes.RegisterSuccess, nil
+	user.ID = int(id)
+
+	token, err := a.authManager.CreateToken(credentials.Email, user.ID, user.IsAdm)
+	if err != nil {
+		return "", status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to generate auth token"), err)
+	}
+
+	return token, status_codes.RegisterSuccess, nil
 }
 
 func (a AuthUseCases) GetUserByAuthToken(token string) (*entities.User, error) {
@@ -134,6 +141,18 @@ func (a AuthUseCases) ChangePassword(ctx context.Context, request entities.Chang
 		return status_codes.ChangePasswordInvalidUser, nil
 	}
 
+	if request.CurrentPassword == "" {
+		return status_codes.ChangePasswordIncomplete, nil
+	}
+
+	if request.NewPassword == "" {
+		return status_codes.ChangePasswordIncomplete, nil
+	}
+
+	if request.NewPasswordConfirmation == "" {
+		return status_codes.ChangePasswordIncomplete, nil
+	}
+
 	isValidPreviousPassword := a.authManager.CheckPasswordHash(request.CurrentPassword, user.Password)
 	if !isValidPreviousPassword {
 		return status_codes.ChangePasswordInvalidPassword, nil
@@ -143,7 +162,17 @@ func (a AuthUseCases) ChangePassword(ctx context.Context, request entities.Chang
 		return status_codes.ChangePasswordPasswordsDontMatch, nil
 	}
 
-	err = a.repository.UpdateUserPassword(ctx, int64(user.ID), request.NewPassword)
+	isNewPasswordEqual := a.authManager.CheckPasswordHash(request.NewPassword, user.Password)
+	if isNewPasswordEqual {
+		return status_codes.ChangePasswordAlreadyUsedPassword, nil
+	}
+
+	hashedNewPassword, err := a.authManager.HashPassword(request.NewPassword)
+	if err != nil {
+		return status_codes.ChangePasswordError, errors.Join(fmt.Errorf("failed to hash password"), err)
+	}
+
+	err = a.repository.UpdateUserPassword(ctx, int64(user.ID), hashedNewPassword)
 	if err != nil {
 		return status_codes.ChangePasswordError, errors.Join(fmt.Errorf("failed to update password"), err)
 	}

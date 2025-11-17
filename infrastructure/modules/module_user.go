@@ -45,9 +45,9 @@ func (m moduleUser) RegisterRoutes(router *mux.Router) {
 		},
 		{
 			Name:    "UpdateUser",
-			Path:    "/",
+			Path:    "/update",
 			Handler: m.UpdateUser,
-			Methods: []string{http.MethodPut},
+			Methods: []string{http.MethodPost},
 		},
 		{
 			Name:    "DeleteUser",

@@ -21,12 +21,12 @@ func NewMySQLAuthRepository(db *sql.DB) repositories.AuthRepository {
 	}
 }
 
-func (r MySQLAuthRepository) AddUser(ctx context.Context, user *entities.User) error {
+func (r MySQLAuthRepository) AddUser(ctx context.Context, user *entities.User) (int64, error) {
 	const query = `
 		INSERT INTO users (uuid, email, password, phone, is_adm) VALUES (?, ?, ?, ?, ?)
 	`
 
-	_, err := r.db.ExecContext(
+	result, err := r.db.ExecContext(
 		ctx,
 		query,
 		user.UUID,
@@ -36,10 +36,10 @@ func (r MySQLAuthRepository) AddUser(ctx context.Context, user *entities.User) e
 		user.IsAdm,
 	)
 	if err != nil {
-		return errors.Join(fmt.Errorf("failed to add user"), err)
+		return -1, errors.Join(fmt.Errorf("failed to add user"), err)
 	}
 
-	return nil
+	return result.LastInsertId()
 }
 
 func (r MySQLAuthRepository) GetUserByEmail(
@@ -145,7 +145,7 @@ func (r MySQLAuthRepository) UpdateUserPassword(ctx context.Context, userID int6
 		UPDATE users SET password = ? WHERE id = ?
 	`
 
-	_, err := r.db.ExecContext(ctx, query, userID, newPassword)
+	_, err := r.db.ExecContext(ctx, query, newPassword, userID)
 	if err != nil {
 		return errors.Join(fmt.Errorf("failed to execute udpate user password query"), err)
 	}

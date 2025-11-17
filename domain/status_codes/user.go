@@ -33,6 +33,7 @@ const (
 	ChangePasswordSuccess ChangePasswordStatus = iota
 	ChangePasswordInvalidUser
 	ChangePasswordInvalidPassword
+	ChangePasswordIncomplete
 	ChangePasswordInvalidNewPassword
 	ChangePasswordPasswordsDontMatch
 	ChangePasswordAlreadyUsedPassword
@@ -66,6 +67,8 @@ func ChangePasswordStatusToString(code ChangePasswordStatus) string {
 		return "Usuário inválido"
 	case ChangePasswordInvalidPassword:
 		return "Senha atual inválida"
+	case ChangePasswordIncomplete:
+		return "Dados incompletos"
 	case ChangePasswordInvalidNewPassword:
 		return "Nova senha inválida"
 	case ChangePasswordPasswordsDontMatch:
