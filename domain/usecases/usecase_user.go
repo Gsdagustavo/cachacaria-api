@@ -75,8 +75,8 @@ func (u *UserUseCases) Update(user entities.User) (status_codes.UpdateUserStatus
 		return status_codes.UpdateUserFailure, errors.Join(fmt.Errorf("failed to check user"), err)
 	}
 
-	if existingUser == nil {
-		return status_codes.UpdateUserInvalidUser, nil
+	if existingUser != nil {
+		return status_codes.UpdateUserEmailAlreadyExists, nil
 	}
 
 	if !rules.IsValidEmail(user.Email) {
