@@ -98,7 +98,7 @@ func (u *UserUseCases) Update(user entities.User) (status_codes.UpdateUserStatus
 			return status_codes.UpdateUserInvalidPhone, nil
 		}
 
-		existingUser, err := u.userRepository.FindByEmail(user.Phone)
+		existingUser, err := u.userRepository.FindByPhone(user.Phone)
 		if err != nil {
 			return status_codes.UpdateUserFailure, errors.Join(fmt.Errorf("failed to check phone"), err)
 		}
