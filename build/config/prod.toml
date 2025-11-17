@@ -16,6 +16,6 @@ name = "cachacadb"
 [EmailConfig]
 host = "smtp.gmail.com"
 port = "587"
-username = "Cachaçaria Wilbert"
+username = "cachacariawilbert@gmail.com"
 password = "sdyo tzvq jcap gyjv"
 from = "cachacariawilbert@gmail.com"

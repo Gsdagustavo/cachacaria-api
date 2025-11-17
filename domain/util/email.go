@@ -1,7 +1,11 @@
 package util
 
 import (
+	"bytes"
+	"cachacariaapi/domain/entities"
+	"html/template"
 	"net/smtp"
+	"time"
 )
 
 type EmailConfig struct {
@@ -32,7 +36,7 @@ func SendEmail(cfg EmailConfig, to []string, subject, body string) error {
 	msg := []byte(
 		"Subject: " + subject + "\n" +
 			"MIME-Version: 1.0;\n" +
-			"Content-Type: text/plain; charset=\"UTF-8\";\n\n" +
+			"Content-Type: text/html; charset=\"UTF-8\";\n\n" +
 			body,
 	)
 
@@ -45,4 +49,44 @@ func SendEmail(cfg EmailConfig, to []string, subject, body string) error {
 		to,
 		msg,
 	)
+}
+
+func RenderTemplate(path string, data any) (string, error) {
+	t, err := template.ParseFiles(path)
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, data); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+func SendAccountCreatedEmail(cfg EmailConfig, to []string, user entities.User) error {
+	html, err := RenderTemplate("templates/account_created.gohtml", map[string]any{
+		"Name":  user.Email,
+		"Email": user.Email,
+		"Year":  time.Now().Year(),
+	})
+	if err != nil {
+		return err
+	}
+
+	return SendEmail(cfg, to, "Conta criada com sucesso", html)
+}
+
+func SendPasswordChangedEmail(cfg EmailConfig, to []string, user entities.User) error {
+	html, err := RenderTemplate("templates/password_changed.gohtml", map[string]any{
+		"Name":  user.Email,
+		"Email": user.Email,
+		"Year":  time.Now().Year(),
+	})
+	if err != nil {
+		return err
+	}
+
+	return SendEmail(cfg, to, "Senha alterada com sucesso", html)
 }
