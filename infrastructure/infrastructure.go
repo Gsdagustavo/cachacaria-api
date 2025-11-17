@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"cachacariaapi/domain/usecases"
+	util2 "cachacariaapi/domain/util"
 	"cachacariaapi/infrastructure/config"
 	"cachacariaapi/infrastructure/datastore/repositories"
 	"cachacariaapi/infrastructure/modules"
@@ -68,6 +69,12 @@ func Init() {
 	cfg.Server.RegisterModules(apiSubrouter, authModule, userModule, productModule, cartModule)
 
 	slog.Info(fmt.Sprintf("server running on port %d", cfg.Server.Port))
+
+	err = util2.SendEmail(cfg.Email, []string{"gugadanielalvez@gmail.com"}, "Welcome!", "Your account has been created!")
+	if err != nil {
+		slog.Error("failed to send email", "error", err)
+		os.Exit(1)
+	}
 
 	err = cfg.Server.Run(*cfg)
 

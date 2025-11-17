@@ -12,3 +12,10 @@ host = "localhost"
 user = "root"
 password = "root"
 name = "cachacadb"
+
+[EmailConfig]
+host = "smtp.gmail.com"
+port = "587"
+username = "Cachaçaria Wilbert"
+password = "Rg547571856g#"
+from = "cachacariawilbert@gmail.com"

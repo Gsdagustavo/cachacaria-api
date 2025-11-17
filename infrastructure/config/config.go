@@ -1,6 +1,7 @@
 package config
 
 import (
+	"cachacariaapi/domain/util"
 	"cachacariaapi/infrastructure/modules"
 	"database/sql"
 	"flag"
@@ -16,9 +17,10 @@ import (
 )
 
 type Config struct {
-	Database     Database `toml:"Database"`
-	Server       Server   `toml:"Server"`
-	SymmetricKey string   `toml:"symmetric_key"`
+	Database     Database         `toml:"Database"`
+	Server       Server           `toml:"Server"`
+	SymmetricKey string           `toml:"symmetric_key"`
+	Email        util.EmailConfig `toml:"EmailConfig"`
 }
 
 func LoadConfig() (*Config, error) {
