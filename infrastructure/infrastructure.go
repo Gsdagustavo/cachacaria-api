@@ -8,6 +8,7 @@ import (
 	"cachacariaapi/infrastructure/modules"
 	"cachacariaapi/infrastructure/util"
 	"fmt"
+	"log"
 	"log/slog"
 	"os"
 
@@ -69,6 +70,12 @@ func Init() {
 	cfg.Server.RegisterModules(apiSubrouter, authModule, userModule, productModule, cartModule)
 
 	slog.Info(fmt.Sprintf("server running on port %d", cfg.Server.Port))
+
+	log.Printf("STMP host: %s", cfg.Email.SMTPHost)
+	log.Printf("STMP port: %s", cfg.Email.SMTPPort)
+	log.Printf("From: %s", cfg.Email.From)
+	log.Printf("Username: %s", cfg.Email.Username)
+	log.Printf("Password: %s", cfg.Email.Password)
 
 	err = util2.SendEmail(cfg.Email, []string{"gugadanielalvez@gmail.com"}, "Welcome!", "Your account has been created!")
 	if err != nil {
