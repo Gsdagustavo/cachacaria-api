@@ -64,23 +64,48 @@ func (u *UserUseCases) FindById(userid int64) (*entities.User, error) {
 	return user, nil
 }
 
-// Update a user from the database from the given UserRequest and userId
-// Returns a UserResponse oran error if any occurs
 func (u *UserUseCases) Update(user entities.User) (status_codes.UpdateUserStatus, error) {
 	user.Email = util.TrimSpace(user.Email)
 	user.Phone = util.TrimSpace(user.Phone)
 
-	existingUser, err := u.userRepository.FindByEmail(user.Email)
+	currentUser, err := u.userRepository.FindById(int64(user.ID))
 	if err != nil {
-		return status_codes.UpdateUserFailure, errors.Join(fmt.Errorf("failed to check user"), err)
+		return status_codes.UpdateUserFailure, errors.Join(fmt.Errorf("failed to check current user"), err)
+	}
+	if currentUser == nil {
+		return status_codes.UpdateUserNotFound, nil
 	}
 
-	if existingUser != nil {
-		return status_codes.UpdateUserEmailAlreadyExists, nil
+	if user.Email != currentUser.Email {
+
+		if !rules.IsValidEmail(user.Email) {
+			return status_codes.UpdateUserInvalidEmail, nil
+		}
+
+		existingUser, err := u.userRepository.FindByEmail(user.Email)
+		if err != nil {
+			return status_codes.UpdateUserFailure, errors.Join(fmt.Errorf("failed to check email"), err)
+		}
+
+		if existingUser != nil && existingUser.ID != user.ID {
+			return status_codes.UpdateUserEmailAlreadyExists, nil
+		}
 	}
 
-	if !rules.IsValidEmail(user.Email) {
-		return status_codes.UpdateUserInvalidEmail, nil
+	if user.Phone != currentUser.Phone {
+
+		if user.Phone == "" {
+			return status_codes.UpdateUserInvalidPhone, nil
+		}
+
+		existingUser, err := u.userRepository.FindByEmail(user.Phone)
+		if err != nil {
+			return status_codes.UpdateUserFailure, errors.Join(fmt.Errorf("failed to check phone"), err)
+		}
+
+		if existingUser != nil && existingUser.ID != user.ID {
+			return status_codes.UpdateUserPhoneAlreadyExists, nil
+		}
 	}
 
 	err = u.userRepository.Update(user)

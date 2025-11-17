@@ -97,6 +97,23 @@ func (r *MySQLUserRepository) FindByEmail(email string) (*entities.User, error) 
 	return &user, nil
 }
 
+func (r *MySQLUserRepository) FindByPhone(phone string) (*entities.User, error) {
+	const query = "SELECT id, uuid, email, password, phone, is_adm FROM users WHERE phone = ?"
+
+	row := r.DB.QueryRow(query, phone)
+
+	var user entities.User
+	if err := row.Scan(&user.ID, &user.UUID, &user.Email, &user.Password, &user.Phone, &user.IsAdm); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, errors.Join(fmt.Errorf("failed to query user"), err)
+	}
+
+	return &user, nil
+}
+
 // FindById returns the user with the given userId in the database, or an error if any occur
 func (r *MySQLUserRepository) FindById(userId int64) (*entities.User, error) {
 	const query = "SELECT id, uuid, email, password, phone, is_adm FROM users WHERE id = ?"

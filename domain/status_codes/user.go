@@ -22,7 +22,9 @@ func (u ChangePasswordStatus) Int() int {
 
 const (
 	UpdateUserSuccess UpdateUserStatus = iota
+	UpdateUserNotFound
 	UpdateUserEmailAlreadyExists
+	UpdateUserPhoneAlreadyExists
 	UpdateUserInvalidPassword
 	UpdateUserInvalidEmail
 	UpdateUserInvalidPhone
@@ -44,8 +46,12 @@ func UpdateUserStatusToString(code UpdateUserStatus) string {
 	switch code {
 	case UpdateUserSuccess:
 		return "Usuário atualizado com sucesso!"
+	case UpdateUserNotFound:
+		return "Usuário não encontrado"
 	case UpdateUserEmailAlreadyExists:
 		return "Usuário com esse email já existe"
+	case UpdateUserPhoneAlreadyExists:
+		return "Usuário com esse telefone já existe"
 	case UpdateUserInvalidPassword:
 		return "Senha inválida"
 	case UpdateUserInvalidEmail:

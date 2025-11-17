@@ -142,10 +142,6 @@ func (a AuthUseCases) ChangePassword(ctx context.Context, request entities.Chang
 		return status_codes.ChangePasswordError, errors.Join(fmt.Errorf("failed to check user"), err)
 	}
 
-	if user == nil {
-		return status_codes.ChangePasswordInvalidUser, nil
-	}
-
 	if request.CurrentPassword == "" {
 		return status_codes.ChangePasswordIncomplete, nil
 	}
