@@ -116,11 +116,10 @@ func (r *MySQLUserRepository) FindById(userId int64) (*entities.User, error) {
 }
 
 func (r *MySQLUserRepository) Update(user entities.User) error {
-	const query = "UPDATE users SET email = ?, password = ?, phone = ?, is_adm = ? WHERE id = ?"
+	const query = "UPDATE users SET email = ?, phone = ?, is_adm = ? WHERE id = ?"
 	_, err := r.DB.Exec(
 		query,
 		user.Email,
-		user.Password,
 		user.Phone,
 		user.IsAdm,
 		user.ID,
