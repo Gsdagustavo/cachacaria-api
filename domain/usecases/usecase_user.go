@@ -68,7 +68,7 @@ func (u *UserUseCases) FindById(userid int64) (*entities.User, error) {
 // Returns a UserResponse oran error if any occurs
 func (u *UserUseCases) Update(user entities.User) (status_codes.UpdateUserStatus, error) {
 	user.Email = util.TrimSpace(user.Email)
-	user.Password = util.TrimSpace(user.Password)
+	user.Phone = util.TrimSpace(user.Phone)
 
 	existingUser, err := u.userRepository.FindByEmail(user.Email)
 	if err != nil {
@@ -82,17 +82,6 @@ func (u *UserUseCases) Update(user entities.User) (status_codes.UpdateUserStatus
 	if !rules.IsValidEmail(user.Email) {
 		return status_codes.UpdateUserInvalidEmail, nil
 	}
-
-	if !rules.IsValidPassword(user.Password) {
-		return status_codes.UpdateUserInvalidPassword, nil
-	}
-
-	user.Password, err = u.authManager.HashPassword(user.Password)
-	if err != nil {
-		return status_codes.UpdateUserFailure, errors.Join(fmt.Errorf("failed to hash password"), err)
-	}
-
-	user.ID = existingUser.ID
 
 	err = u.userRepository.Update(user)
 	if err != nil {

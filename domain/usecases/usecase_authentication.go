@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/google/uuid"
 )
@@ -124,8 +123,6 @@ func (a AuthUseCases) GetUserByAuthToken(token string) (*entities.User, error) {
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("failed to verify token"), err)
 	}
-
-	log.Printf("[payload.UserID]: %v", payload)
 
 	return a.userRepository.FindById(int64(payload.UserID))
 }
