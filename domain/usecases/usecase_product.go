@@ -70,7 +70,7 @@ func (u *ProductUseCases) AddProduct(
 			time.Now().UnixNano(),
 			filepath.Ext(fileHeader.Filename),
 		)
-		filePath := filepath.Join("C:/dev/teste/", filename)
+		filePath := filepath.Join("/app/images", filename)
 
 		dst, err := os.Create(filePath)
 		if err != nil {

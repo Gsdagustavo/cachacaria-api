@@ -69,7 +69,7 @@ func (s Server) Run(cfg Config) error {
 	s.Router.Use(CORSMiddleware)
 
 	s.Router.PathPrefix("/images/").Handler(http.StripPrefix("/images/",
-		http.FileServer(http.Dir("C:/dev/teste/")),
+		http.FileServer(http.Dir("/app/images")),
 	))
 
 	s.Router.PathPrefix("/").Handler(http.FileServer(http.Dir("./public")))
