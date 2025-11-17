@@ -118,7 +118,7 @@ func (a AuthUseCases) RegisterUser(
 		return "", status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to generate auth token"), err)
 	}
 
-	go util2.SendAccountCreatedEmail(a.emailConfig, []string{user.Email}, *user)
+	util2.SendAccountCreatedEmail(a.emailConfig, []string{user.Email}, *user)
 
 	return token, status_codes.RegisterSuccess, nil
 }
@@ -178,7 +178,7 @@ func (a AuthUseCases) ChangePassword(ctx context.Context, request entities.Chang
 		return status_codes.ChangePasswordError, errors.Join(fmt.Errorf("failed to update password"), err)
 	}
 
-	go util2.SendPasswordChangedEmail(a.emailConfig, []string{user.Email}, *user)
+	util2.SendPasswordChangedEmail(a.emailConfig, []string{user.Email}, *user)
 
 	return status_codes.ChangePasswordSuccess, nil
 }
