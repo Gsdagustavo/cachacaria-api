@@ -44,3 +44,8 @@ type CartRepository interface {
 	DeleteCartItem(ctx context.Context, userID, productID int64) error
 	ClearCart(ctx context.Context, userID int64) error
 }
+
+type OrderRepository interface {
+	AddOrder(ctx context.Context, order entities.Order) error
+	GetOrders(ctx context.Context, userID int64) ([]entities.Order, error)
+}

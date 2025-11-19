@@ -28,13 +28,13 @@ type CartItem struct {
 
 // Order represents a completed purchase made by a user.
 type Order struct {
-	ID          int64        `json:"id"`
-	UserID      int64        `json:"user_id"`
-	TotalAmount float64      `json:"total_amount"`
-	Status      string       `json:"status"`
-	CreatedAt   time.Time    `json:"created_at"`
-	ModifiedAt  time.Time    `json:"modified_at"`
-	Items       []*OrderItem `json:"items,omitempty"`
+	ID          int64       `json:"id"`
+	UserID      int64       `json:"user_id"`
+	TotalAmount float64     `json:"total_amount"`
+	Status      string      `json:"status"`
+	CreatedAt   time.Time   `json:"created_at"`
+	ModifiedAt  time.Time   `json:"modified_at"`
+	Items       []OrderItem `json:"items,omitempty"`
 }
 
 // OrderItem represents a single product inside an order.

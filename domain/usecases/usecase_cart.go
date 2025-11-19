@@ -109,9 +109,7 @@ func (uc *CartUseCases) BuyItems(ctx context.Context, userID int64) (status_code
 				product.Name,
 			)
 		}
-	}
 
-	for _, item := range items {
 		err = uc.productRepository.DecrementStock(item.ProductID, item.Quantity)
 		if err != nil {
 			return status_codes.BuyProductsStatusError, err
