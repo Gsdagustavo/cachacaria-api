@@ -285,19 +285,44 @@ func (m productModule) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request entities.UpdateProductRequest
-	if err = json.NewDecoder(r.Body).Decode(&request); err != nil {
+	if err = r.ParseMultipartForm(maxImagesMemory); err != nil {
 		res = entities.ServerResponse{
 			Code:    http.StatusBadRequest,
-			Message: "Requisição inválida. Certifique-se de usar application/json.",
+			Message: "Imagens excedem o máximo de memória permitido",
 		}
-		res.WriteHTTP(w)
+		util.Write(w, res)
 		return
 	}
 
-	err = m.productUseCases.UpdateProduct(id, request)
+	name := r.FormValue("name")
+	description := r.FormValue("description")
+	price, _ := strconv.ParseFloat(r.FormValue("price"), 64)
+	stock, _ := strconv.Atoi(r.FormValue("stock"))
+	photos := r.MultipartForm.File["photos"]
+
+	request := entities.UpdateProductRequest{
+		Name:        name,
+		Description: description,
+		Price:       float32(price),
+		Stock:       stock,
+		Photos:      photos,
+	}
+
+	status, err := m.productUseCases.UpdateProduct(id, request)
 	if err != nil {
+		slog.Error("failed to update product", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
+
+	type Resp struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+	}
+	resp := Resp{
+		Status:  status.Int(),
+		Message: status.String(),
+	}
+
+	util.Write(w, resp)
 }

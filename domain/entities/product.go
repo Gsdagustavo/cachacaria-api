@@ -69,11 +69,11 @@ type DeleteProductResponse struct {
 }
 
 type UpdateProductRequest struct {
-	Name        *string   `json:"name"`
-	Description *string   `json:"description"`
-	Price       *float32  `json:"price"`
-	Stock       *int      `json:"stock"`
-	Photos      *[]string `json:"photos"`
+	Name        string                  `json:"name"`
+	Description string                  `json:"description"`
+	Price       float32                 `json:"price"`
+	Stock       int                     `json:"stock"`
+	Photos      []*multipart.FileHeader `json:"photos"`
 }
 
 type UpdateProductResponse struct {

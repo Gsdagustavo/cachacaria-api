@@ -158,22 +158,41 @@ func (u *ProductUseCases) DeleteProduct(id int64) (status_codes.DeleteProductSta
 func (u *ProductUseCases) UpdateProduct(
 	id int64,
 	product entities.UpdateProductRequest,
-) error {
+) (status_codes.UpdateProductStatus, error) {
+	product.Name = strings.TrimSpace(product.Name)
+	product.Description = strings.TrimSpace(product.Description)
+
 	prod, err := u.GetProduct(id)
 	if err != nil {
-		return errors.Join(fmt.Errorf("failed to get product"), err)
+		return status_codes.UpdateProductStatusError, errors.Join(fmt.Errorf("failed to get product"), err)
 	}
 
 	if prod == nil {
-		return entities.ErrNotFound
+		return status_codes.UpdateProductStatusNotFound, nil
+	}
+
+	if product.Name == "" {
+		return status_codes.UpdateProductStatusInvalidName, nil
+	}
+
+	if product.Description == "" {
+		return status_codes.UpdateProductStatusInvalidDescription, nil
+	}
+
+	if product.Stock < 0 || product.Stock > 999 {
+		return status_codes.UpdateProductStatusInvalidStock, nil
+	}
+
+	if product.Price < 0 || product.Stock > 999 {
+		return status_codes.UpdateProductStatusInvalidStock, nil
 	}
 
 	err = u.productRepository.UpdateProduct(id, product)
 	if err != nil {
-		return errors.Join(fmt.Errorf("failed to update product"), err)
+		return status_codes.UpdateProductStatusError, errors.Join(fmt.Errorf("failed to update product"), err)
 	}
 
-	return nil
+	return status_codes.UpdateProductStatusSuccess, nil
 }
 
 func validateImageType(header *multipart.FileHeader) error {

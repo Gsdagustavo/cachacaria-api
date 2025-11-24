@@ -55,3 +55,40 @@ func (s DeleteProductStatus) String() string {
 func (s DeleteProductStatus) Int() int {
 	return int(s)
 }
+
+type UpdateProductStatus int
+
+const (
+	UpdateProductStatusSuccess UpdateProductStatus = iota
+	UpdateProductStatusNotFound
+	UpdateProductStatusInvalidName
+	UpdateProductStatusInvalidPrice
+	UpdateProductStatusInvalidDescription
+	UpdateProductStatusInvalidStock
+	UpdateProductStatusError
+)
+
+func (s UpdateProductStatus) String() string {
+	switch s {
+	case UpdateProductStatusSuccess:
+		return "Successo"
+	case UpdateProductStatusNotFound:
+		return "Produto não encontrado"
+	case UpdateProductStatusInvalidName:
+		return "Nome inválido"
+	case UpdateProductStatusInvalidPrice:
+		return "Preço inválido"
+	case UpdateProductStatusInvalidStock:
+		return "Estoque inválido"
+	case UpdateProductStatusInvalidDescription:
+		return "Descrição inválida"
+	case UpdateProductStatusError:
+		return "Erro interno no servidor"
+	default:
+		return "Erro desconhecido"
+	}
+}
+
+func (s UpdateProductStatus) Int() int {
+	return int(s)
+}
