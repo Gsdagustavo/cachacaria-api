@@ -160,12 +160,8 @@ func (r *MySQLProductRepository) DeleteProduct(id int64) error {
 
 func (r *MySQLProductRepository) UpdateProduct(id int64, product entities.UpdateProductRequest) error {
 	const query = "UPDATE products SET name = ?, description = ?, price = ?, stock = ? WHERE id = ?"
-	res, err := r.DB.Exec(query, product.Name, product.Description, product.Price, product.Stock, id)
+	_, err := r.DB.Exec(query, product.Name, product.Description, product.Price, product.Stock, id)
 	if err != nil {
-		return errors.Join(fmt.Errorf("failed to update product"), err)
-	}
-
-	if rows, err := res.RowsAffected(); err != nil || rows != 1 {
 		return errors.Join(fmt.Errorf("failed to update product"), err)
 	}
 
