@@ -49,12 +49,49 @@ CREATE TABLE carts_products
 
 CREATE TABLE orders
 (
-    id         INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    product_id INT            NOT NULL,
-    quantity   INT            NOT NULL,
-    created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_order_user FOREIGN KEY (product_id) REFERENCES products (id),
-    CONSTRAINT fk_order_product FOREIGN KEY (product_id) REFERENCES products (id)
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES users (id)
 );
+
+
+CREATE TABLE order_items
+(
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    order_id    INT NOT NULL,
+    product_id  INT NOT NULL,
+    quantity    INT NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_order_item_order FOREIGN KEY (order_id) REFERENCES orders (id),
+    CONSTRAINT fk_order_item_product FOREIGN KEY (product_id) REFERENCES products (id)
+);
+
+
+
+SELECT o.id                         AS order_id,
+       o.user_id,
+       o.created_at                 AS order_created_at,
+       o.modified_at                AS order_modified_at,
+
+       oi.id                        AS order_item_id,
+       oi.product_id,
+       oi.quantity,
+       oi.created_at                AS item_created_at,
+       oi.modified_at               AS item_modified_at,
+
+       p.id                         AS product_id,
+       p.name                       AS product_name,
+       p.description                AS product_description,
+       p.price                      AS product_price,
+       p.stock                      AS product_stock,
+       (SELECT GROUP_CONCAT(pp.filename)
+        FROM products_photos pp
+        WHERE pp.product_id = p.id) AS photos
+FROM orders o
+         JOIN order_items oi ON oi.order_id = o.id
+         JOIN products p ON p.id = oi.product_id
+WHERE o.user_id = ?
+ORDER BY o.created_at DESC, oi.id;

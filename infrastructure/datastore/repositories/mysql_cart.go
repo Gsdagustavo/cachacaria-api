@@ -7,7 +7,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
+	"time"
 )
 
 type MySQLCartRepository struct {
@@ -162,11 +164,24 @@ func (repo *MySQLCartRepository) ClearCart(ctx context.Context, userID int64) er
 		return rows.Err()
 	}
 
+	res, err := tx.ExecContext(ctx, `
+		INSERT INTO orders (user_id)
+		VALUES (?);
+	`, userID)
+	if err != nil {
+		return errors.Join(fmt.Errorf("failed to create order"), err)
+	}
+
+	orderID, err := res.LastInsertId()
+	if err != nil {
+		return errors.Join(fmt.Errorf("failed to retrieve order ID"), err)
+	}
+
 	for _, it := range items {
 		_, err = tx.ExecContext(ctx, `
-            INSERT INTO orders (user_id, product_id, quantity, created_at)
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP);
-        `, userID, it.ProductID, it.Quantity)
+			INSERT INTO order_items (order_id, product_id, quantity)
+			VALUES (?, ?, ?);
+		`, orderID, it.ProductID, it.Quantity)
 		if err != nil {
 			return errors.Join(fmt.Errorf("failed to insert order item"), err)
 		}
@@ -181,4 +196,153 @@ func (repo *MySQLCartRepository) ClearCart(ctx context.Context, userID int64) er
 	}
 
 	return tx.Commit()
+}
+
+func (repo *MySQLCartRepository) GetOrdersByUserID(ctx context.Context, userID int64) ([]*entities.Order, error) {
+	rows, err := repo.DB.QueryContext(ctx, `
+        SELECT
+            o.id AS order_id,
+            o.user_id,
+            o.created_at AS order_created_at,
+            o.modified_at AS order_modified_at,
+
+            oi.id AS order_item_id,
+            oi.product_id,
+            oi.quantity,
+            oi.created_at AS item_created_at,
+            oi.modified_at AS item_modified_at,
+
+            p.id        AS product_id,
+            p.name      AS product_name,
+            p.description AS product_description,
+            p.price     AS product_price,
+            p.stock     AS product_stock,
+            (
+                SELECT GROUP_CONCAT(pp.filename)
+                FROM products_photos pp
+                WHERE pp.product_id = p.id
+            ) AS photos
+        FROM orders o
+        JOIN order_items oi ON oi.order_id = o.id
+        JOIN products p ON p.id = oi.product_id
+        WHERE o.user_id = ?
+        ORDER BY o.created_at DESC, oi.id ASC;
+    `, userID)
+	if err != nil {
+		return nil, errors.Join(fmt.Errorf("failed to query orders"), err)
+	}
+	defer rows.Close()
+
+	ordersMap := make(map[int64]*entities.Order)
+
+	for rows.Next() {
+		var (
+			orderID       int64
+			userIDDB      int64
+			orderCreated  time.Time
+			orderModified time.Time
+
+			itemID       int64
+			productID    int64
+			quantity     int
+			itemCreated  time.Time
+			itemModified time.Time
+
+			pID          int64
+			productName  sql.NullString
+			productDesc  sql.NullString
+			productPrice float64
+			productStock int
+			photosStr    sql.NullString
+		)
+
+		if err = rows.Scan(
+			&orderID,
+			&userIDDB,
+			&orderCreated,
+			&orderModified,
+
+			&itemID,
+			&productID,
+			&quantity,
+			&itemCreated,
+			&itemModified,
+
+			&pID,
+			&productName,
+			&productDesc,
+			&productPrice,
+			&productStock,
+			&photosStr,
+		); err != nil {
+			return nil, errors.Join(fmt.Errorf("failed to scan orders rows"), err)
+		}
+
+		// cria o pedido se ainda não existir
+		if _, ok := ordersMap[orderID]; !ok {
+			ordersMap[orderID] = &entities.Order{
+				ID:          orderID,
+				UserID:      userIDDB,
+				Status:      "completed", // ajuste se tiver campo real
+				TotalAmount: 0,
+				CreatedAt:   orderCreated,
+				ModifiedAt:  orderModified,
+				Items:       []entities.OrderItem{},
+			}
+		}
+
+		// monta fotos e produto
+		photos := []string{}
+		if photosStr.Valid && photosStr.String != "" {
+			// GROUP_CONCAT usa ',' por padrão
+			photos = strings.Split(photosStr.String, ",")
+		}
+
+		prod := &entities.Product{
+			ID:          pID,
+			Name:        "",
+			Description: "",
+			Photos:      photos,
+			Price:       float32(productPrice),
+			Stock:       productStock,
+		}
+		if productName.Valid {
+			prod.Name = productName.String
+		}
+		if productDesc.Valid {
+			prod.Description = productDesc.String
+		}
+
+		item := entities.OrderItem{
+			ID:         itemID,
+			OrderID:    orderID,
+			ProductID:  productID,
+			Product:    prod,
+			Quantity:   quantity,
+			Price:      productPrice,
+			CreatedAt:  itemCreated,
+			ModifiedAt: itemModified,
+		}
+
+		o := ordersMap[orderID]
+		o.Items = append(o.Items, item)
+		o.TotalAmount += float64(item.Quantity) * productPrice
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, errors.Join(fmt.Errorf("rows iteration error"), err)
+	}
+
+	// transforma map em slice ordenado (já estava ordenado pela query, mas map perde ordem)
+	result := make([]*entities.Order, 0, len(ordersMap))
+	for _, o := range ordersMap {
+		result = append(result, o)
+	}
+
+	// opcional: ordenar por CreatedAt desc (caso queira garantir ordem)
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].CreatedAt.After(result[j].CreatedAt)
+	})
+
+	return result, nil
 }
