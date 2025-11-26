@@ -43,7 +43,7 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 	products := make([]entities.Product, 0)
 
 	/// Products
-	const query = "SELECT id, name, description, price, stock FROM products ORDER BY id LIMIT ? OFFSET ?"
+	const query = "SELECT id, name, description, price, stock FROM products ORDER BY id LIMIT ? OFFSET ? WHERE status_code != 1"
 	rows, err := r.DB.Query(query, limit, offset)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -91,7 +91,7 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 }
 
 func (r *MySQLProductRepository) GetProduct(id int64) (*entities.Product, error) {
-	const query = "SELECT id, name, description, price, stock FROM products WHERE id = ?"
+	const query = "SELECT id, name, description, price, stock FROM products WHERE id = ? and status_code != 1"
 	row := r.DB.QueryRow(query, id)
 
 	var product entities.Product

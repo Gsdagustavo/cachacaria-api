@@ -81,13 +81,7 @@ func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64)
 		var product entities.Product
 		var photosStr sql.NullString
 
-		err := rows.Scan(
-			&item.ID, &item.UserID, &item.ProductID, &item.Quantity,
-			&item.CreatedAt, &item.ModifiedAt,
-			&product.ID, &product.Name, &product.Description,
-			&product.Price, &product.Stock,
-			&photosStr,
-		)
+		err := rows.Scan(&item.ID, &item.UserID, &item.ProductID, &item.Quantity, &item.CreatedAt, &item.ModifiedAt, &product.ID, &product.Name, &product.Description, &product.Price, &product.Stock, &photosStr)
 
 		if err != nil {
 			return nil, errors.Join(fmt.Errorf("failed to scan cart"), err)
@@ -132,10 +126,59 @@ func (repo *MySQLCartRepository) DeleteCartItem(ctx context.Context, userID, pro
 }
 
 func (repo *MySQLCartRepository) ClearCart(ctx context.Context, userID int64) error {
-	_, err := repo.DB.ExecContext(ctx, `DELETE FROM carts_products WHERE user_id = ?;`, userID)
+	tx, err := repo.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Join(fmt.Errorf("failed to execute clear cart query"), err)
+		return errors.Join(fmt.Errorf("failed to begin transaction"), err)
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, `
+        SELECT product_id, quantity
+        FROM carts_products
+        WHERE user_id = ?;
+    `, userID)
+	if err != nil {
+		return errors.Join(fmt.Errorf("failed to query cart before checkout"), err)
+	}
+	defer rows.Close()
+
+	items := []struct {
+		ProductID int64
+		Quantity  int
+	}{}
+
+	for rows.Next() {
+		var item struct {
+			ProductID int64
+			Quantity  int
+		}
+		if err = rows.Scan(&item.ProductID, &item.Quantity); err != nil {
+			return errors.Join(fmt.Errorf("failed to scan cart item"), err)
+		}
+		items = append(items, item)
 	}
 
-	return nil
+	if rows.Err() != nil {
+		return rows.Err()
+	}
+
+	for _, it := range items {
+		_, err = tx.ExecContext(ctx, `
+            INSERT INTO orders (user_id, product_id, quantity, created_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP);
+        `, userID, it.ProductID, it.Quantity)
+		if err != nil {
+			return errors.Join(fmt.Errorf("failed to insert order item"), err)
+		}
+	}
+
+	_, err = tx.ExecContext(ctx, `
+        DELETE FROM carts_products
+        WHERE user_id = ?;
+    `, userID)
+	if err != nil {
+		return errors.Join(fmt.Errorf("failed to clear cart"), err)
+	}
+
+	return tx.Commit()
 }
