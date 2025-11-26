@@ -132,27 +132,11 @@ func (r *MySQLProductRepository) GetProduct(id int64) (*entities.Product, error)
 }
 
 func (r *MySQLProductRepository) DeleteProduct(id int64) error {
-	const query = "DELETE FROM products WHERE id = ?"
+	const query = `UPDATE products SET status_code = 1 WHERE id = ?`
 
-	txn, err := r.DB.Begin()
+	_, err := r.DB.Exec(query, id)
 	if err != nil {
-		return errors.Join(fmt.Errorf("failed to begin transaction"), err)
-	}
-
-	res, err := txn.Exec(query, id)
-	if err != nil {
-		txn.Rollback()
-		return errors.Join(fmt.Errorf("failed to delete product"), err)
-	}
-
-	if rows, err := res.RowsAffected(); err != nil || rows != 1 {
-		txn.Rollback()
-		return errors.Join(fmt.Errorf("failed to delete product"), err)
-	}
-
-	if err = txn.Commit(); err != nil {
-		txn.Rollback()
-		return errors.Join(fmt.Errorf("failed to commit transaction"), err)
+		return errors.Join(fmt.Errorf("failed to update product"), err)
 	}
 
 	return nil
