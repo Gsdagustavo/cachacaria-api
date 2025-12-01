@@ -54,6 +54,7 @@ func Init() {
 	userModule := modules.NewUserModule(userUseCases, authUseCases)
 	productModule := modules.NewProductModule(productUseCases, authManager)
 	cartModule := modules.NewCartModule(cartUseCases, authManager)
+	orderModule := modules.NewOrderModule(cartUseCases, authManager)
 
 	// Assign a router to the server
 	router := mux.NewRouter()
@@ -66,7 +67,7 @@ func Init() {
 	cfg.Server.RegisterModules(server.Router, healthModule)
 
 	// Register modules
-	cfg.Server.RegisterModules(apiSubrouter, authModule, userModule, productModule, cartModule)
+	cfg.Server.RegisterModules(apiSubrouter, authModule, userModule, productModule, cartModule, orderModule)
 
 	slog.Info(fmt.Sprintf("server running on port %d", cfg.Server.Port))
 

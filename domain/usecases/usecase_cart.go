@@ -156,11 +156,34 @@ func (uc *CartUseCases) GetOrders(ctx context.Context, userID int64) ([]entities
 	}
 
 	if user == nil {
-		return nil, errors.Join(fmt.Errorf("failed to find user"), errors.New("user not found"))
+		return nil, errors.New("user not found")
 	}
 
-	items, err := uc.cartRepository.GetCartItems(ctx, userID)
+	orders, err := uc.orderRepository.GetOrders(ctx, userID)
 	if err != nil {
-		return nil, errors.Join(fmt.Errorf("failed to find cart"), err)
+		return nil, errors.Join(fmt.Errorf("failed to fetch orders"), err)
 	}
+
+	for i := range orders {
+		for j := range orders[i].Items {
+			item := &orders[i].Items[j]
+
+			product, err := uc.productRepository.GetProduct(item.ProductID)
+			if err != nil {
+				return nil, err
+			}
+
+			item.Product = product
+
+			if product != nil && len(product.Photos) > 0 {
+				photos := make([]string, len(product.Photos))
+				for k, filename := range product.Photos {
+					photos[k] = util.GetProductImageURL(filename, uc.baseURL)
+				}
+				item.Product.Photos = photos
+			}
+		}
+	}
+
+	return orders, nil
 }
