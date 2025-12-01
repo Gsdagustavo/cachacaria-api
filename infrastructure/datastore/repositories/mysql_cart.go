@@ -83,7 +83,7 @@ func (repo *MySQLCartRepository) GetCartItems(ctx context.Context, userID int64)
 		var product entities.Product
 		var photosStr sql.NullString
 
-		err := rows.Scan(&item.ID, &item.UserID, &item.ProductID, &item.Quantity, &item.CreatedAt, &item.ModifiedAt, &product.ID, &product.Name, &product.Description, &product.Price, &product.Stock, &photosStr)
+		err = rows.Scan(&item.ID, &item.UserID, &item.ProductID, &item.Quantity, &item.CreatedAt, &item.ModifiedAt, &product.ID, &product.Name, &product.Description, &product.Price, &product.Stock, &photosStr)
 
 		if err != nil {
 			return nil, errors.Join(fmt.Errorf("failed to scan cart"), err)
@@ -179,9 +179,10 @@ func (repo *MySQLCartRepository) ClearCart(ctx context.Context, userID int64) er
 
 	for _, it := range items {
 		_, err = tx.ExecContext(ctx, `
-			INSERT INTO order_items (order_id, product_id, quantity)
-			VALUES (?, ?, ?);
-		`, orderID, it.ProductID, it.Quantity)
+		INSERT INTO order_items (order_id, product_id, quantity, price)
+		VALUES (?, ?, ?, (SELECT price FROM products WHERE id = ?));
+		`, orderID, it.ProductID, it.Quantity, it.ProductID)
+
 		if err != nil {
 			return errors.Join(fmt.Errorf("failed to insert order item"), err)
 		}
@@ -333,13 +334,11 @@ func (repo *MySQLCartRepository) GetOrdersByUserID(ctx context.Context, userID i
 		return nil, errors.Join(fmt.Errorf("rows iteration error"), err)
 	}
 
-	// transforma map em slice ordenado (já estava ordenado pela query, mas map perde ordem)
 	result := make([]*entities.Order, 0, len(ordersMap))
 	for _, o := range ordersMap {
 		result = append(result, o)
 	}
 
-	// opcional: ordenar por CreatedAt desc (caso queira garantir ordem)
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].CreatedAt.After(result[j].CreatedAt)
 	})
