@@ -12,6 +12,7 @@ CREATE TABLE users
     password    VARCHAR(255) NOT NULL,
     phone       VARCHAR(20),
     is_adm      BOOLEAN      NOT NULL DEFAULT FALSE,
+    status_code TINYINT(1)   NOT NULL DEFAULT 0,
     created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -23,8 +24,9 @@ CREATE TABLE products
     description TEXT,
     price       DECIMAL(10, 2) NOT NULL,
     stock       INT            NOT NULL,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    status_code TINYINT(1)     NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP               DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMP               DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE products_photos
