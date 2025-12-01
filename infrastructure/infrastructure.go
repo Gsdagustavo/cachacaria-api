@@ -40,12 +40,13 @@ func Init() {
 	userRepository := repositories.NewMySQLUserRepository(conn)
 	productRepository := repositories.NewMySQLProductRepository(conn)
 	cartRepository := repositories.NewMySQLCartRepository(conn)
+	orderRepository := repositories.NewMYSQLOrderRepository(conn)
 
 	// Use Cases
 	authUseCases := usecases.NewAuthUseCases(authRepository, userRepository, authManager, cfg.Email)
 	userUseCases := usecases.NewUserUseCases(userRepository, authRepository, authManager)
 	productUseCases := usecases.NewProductUseCases(productRepository, cfg.Server.BaseURL)
-	cartUseCases := usecases.NewCartUseCases(cartRepository, userRepository, productRepository, cfg.Server.BaseURL)
+	cartUseCases := usecases.NewCartUseCases(cartRepository, userRepository, productRepository, orderRepository, cfg.Server.BaseURL)
 
 	// Modules
 	healthModule := modules.NewHealthModule()

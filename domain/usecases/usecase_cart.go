@@ -14,11 +14,24 @@ type CartUseCases struct {
 	cartRepository    repositories.CartRepository
 	userRepository    repositories.UserRepository
 	productRepository repositories.ProductRepository
+	orderRepository   repositories.OrderRepository
 	baseURL           string
 }
 
-func NewCartUseCases(repo repositories.CartRepository, userRepository repositories.UserRepository, productRepository repositories.ProductRepository, baseURL string) CartUseCases {
-	return CartUseCases{cartRepository: repo, productRepository: productRepository, userRepository: userRepository, baseURL: baseURL}
+func NewCartUseCases(
+	repo repositories.CartRepository,
+	userRepository repositories.UserRepository,
+	productRepository repositories.ProductRepository,
+	orderRepository repositories.OrderRepository,
+	baseURL string,
+) CartUseCases {
+	return CartUseCases{
+		cartRepository:    repo,
+		productRepository: productRepository,
+		userRepository:    userRepository,
+		orderRepository:   orderRepository,
+		baseURL:           baseURL,
+	}
 }
 
 func (uc *CartUseCases) AddToCart(ctx context.Context, userID, productID int64, quantity int) (status_codes.AddProductItemStatus, error) {
@@ -109,6 +122,18 @@ func (uc *CartUseCases) BuyItems(ctx context.Context, userID int64) (status_code
 				product.Name,
 			)
 		}
+	}
+
+	orderID, err := uc.orderRepository.CreateOrder(ctx, userID)
+	if err != nil {
+		return status_codes.BuyProductsStatusError, err
+	}
+
+	for _, item := range items {
+		err = uc.orderRepository.AddOrderItem(ctx, orderID, item.ProductID, item.Quantity)
+		if err != nil {
+			return status_codes.BuyProductsStatusError, err
+		}
 
 		err = uc.productRepository.DecrementStock(item.ProductID, item.Quantity)
 		if err != nil {
@@ -122,4 +147,20 @@ func (uc *CartUseCases) BuyItems(ctx context.Context, userID int64) (status_code
 	}
 
 	return status_codes.BuyProductsStatusSuccess, nil
+}
+
+func (uc *CartUseCases) GetOrders(ctx context.Context, userID int64) ([]entities.Order, error) {
+	user, err := uc.userRepository.FindById(userID)
+	if err != nil {
+		return nil, errors.Join(fmt.Errorf("failed to find user"), err)
+	}
+
+	if user == nil {
+		return nil, errors.Join(fmt.Errorf("failed to find user"), errors.New("user not found"))
+	}
+
+	items, err := uc.cartRepository.GetCartItems(ctx, userID)
+	if err != nil {
+		return nil, errors.Join(fmt.Errorf("failed to find cart"), err)
+	}
 }

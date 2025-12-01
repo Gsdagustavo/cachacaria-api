@@ -46,6 +46,7 @@ type CartRepository interface {
 }
 
 type OrderRepository interface {
-	AddOrder(ctx context.Context, order entities.Order) error
+	CreateOrder(ctx context.Context, userID int64) (int64, error)
+	AddOrderItem(ctx context.Context, orderID, productID int64, quantity int) error
 	GetOrders(ctx context.Context, userID int64) ([]entities.Order, error)
 }
