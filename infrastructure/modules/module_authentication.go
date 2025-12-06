@@ -74,6 +74,8 @@ func (a AuthModule) RegisterRoutes(router *mux.Router) {
 }
 
 func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var credentials entities.UserCredentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
@@ -81,9 +83,9 @@ func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, statusCode, err := a.authUseCases.AttemptLogin(r.Context(), credentials)
+	token, statusCode, err := a.authUseCases.AttemptLogin(ctx, credentials)
 	if err != nil {
-		slog.Error("failed to login", "cause", err)
+		slog.ErrorContext(ctx, "failed to login", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -98,10 +100,12 @@ func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a AuthModule) changePassword(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	token := util.GetAuthTokenFromRequest(r)
 	user, err := a.authUseCases.GetUserByAuthToken(token)
 	if err != nil {
-		slog.Error("failed to get user by auth token", "cause", err)
+		slog.ErrorContext(ctx, "failed to get user by auth token", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -120,9 +124,9 @@ func (a AuthModule) changePassword(w http.ResponseWriter, r *http.Request) {
 
 	request.UserID = int64(user.ID)
 
-	status, err := a.authUseCases.ChangePassword(r.Context(), request)
+	status, err := a.authUseCases.ChangePassword(ctx, request)
 	if err != nil {
-		slog.Error("failed to change user password", "cause", err)
+		slog.ErrorContext(ctx, "failed to change user password", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -137,6 +141,8 @@ func (a AuthModule) changePassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var credentials entities.UserCredentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
@@ -144,9 +150,9 @@ func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, status, err := a.authUseCases.RegisterUser(r.Context(), credentials)
+	token, status, err := a.authUseCases.RegisterUser(ctx, credentials)
 	if err != nil {
-		slog.Error("failed to register user", "cause", err)
+		slog.ErrorContext(ctx, "failed to register user", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -161,11 +167,13 @@ func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a AuthModule) getData(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	token := util.GetAuthTokenFromRequest(r)
 
 	user, err := a.authUseCases.GetUserByAuthToken(token)
 	if err != nil {
-		slog.Error("failed to get user by auth token", "cause", err)
+		slog.ErrorContext(ctx, "failed to get user by auth token", "cause", err)
 		util.WriteResponse(w, util.ServerResponse{
 			Status:  http.StatusUnauthorized,
 			Message: "Token inválido ou expirado",

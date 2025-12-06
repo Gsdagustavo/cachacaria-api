@@ -80,7 +80,8 @@ func (m CartModule) RegisterRoutes(router *mux.Router) {
 }
 
 func (m CartModule) addToCart(w http.ResponseWriter, r *http.Request) {
-	user, ok := util.GetUserFromContext(r.Context())
+	ctx := r.Context()
+	user, ok := util.GetUserFromContext(ctx)
 	if !ok {
 		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
 		return
@@ -99,9 +100,9 @@ func (m CartModule) addToCart(w http.ResponseWriter, r *http.Request) {
 		req.Quantity = 1
 	}
 
-	status, err := m.cartUseCases.AddToCart(r.Context(), int64(user.UserID), req.ProductID, req.Quantity)
+	status, err := m.cartUseCases.AddToCart(ctx, int64(user.UserID), req.ProductID, req.Quantity)
 	if err != nil {
-		slog.Error("failed to add products to cart", "cause", err)
+		slog.ErrorContext(ctx, "failed to add products to cart", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -113,15 +114,16 @@ func (m CartModule) addToCart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m CartModule) getCart(w http.ResponseWriter, r *http.Request) {
-	user, ok := util.GetUserFromContext(r.Context())
+	ctx := r.Context()
+	user, ok := util.GetUserFromContext(ctx)
 	if !ok {
 		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
 		return
 	}
 
-	items, err := m.cartUseCases.GetCartItems(r.Context(), int64(user.UserID))
+	items, err := m.cartUseCases.GetCartItems(ctx, int64(user.UserID))
 	if err != nil {
-		slog.Error("failed to get cart items", "cause", err)
+		slog.ErrorContext(ctx, "failed to get cart items", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -131,7 +133,8 @@ func (m CartModule) getCart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m CartModule) updateCartItem(w http.ResponseWriter, r *http.Request) {
-	user, ok := util.GetUserFromContext(r.Context())
+	ctx := r.Context()
+	user, ok := util.GetUserFromContext(ctx)
 	if !ok {
 		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
 		return
@@ -152,9 +155,9 @@ func (m CartModule) updateCartItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.cartUseCases.UpdateCartItem(r.Context(), int64(user.UserID), productID, req.Quantity)
+	err = m.cartUseCases.UpdateCartItem(ctx, int64(user.UserID), productID, req.Quantity)
 	if err != nil {
-		slog.Error("failed to update cart item", "cause", err)
+		slog.ErrorContext(ctx, "failed to update cart item", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -163,7 +166,8 @@ func (m CartModule) updateCartItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m CartModule) deleteCartItem(w http.ResponseWriter, r *http.Request) {
-	user, ok := util.GetUserFromContext(r.Context())
+	ctx := r.Context()
+	user, ok := util.GetUserFromContext(ctx)
 	if !ok {
 		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
 		return
@@ -176,9 +180,9 @@ func (m CartModule) deleteCartItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.cartUseCases.DeleteCartItem(r.Context(), int64(user.UserID), productID)
+	err = m.cartUseCases.DeleteCartItem(ctx, int64(user.UserID), productID)
 	if err != nil {
-		slog.Error("failed to delete cart item", "cause", err)
+		slog.ErrorContext(ctx, "failed to delete cart item", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -187,15 +191,17 @@ func (m CartModule) deleteCartItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m CartModule) buy(w http.ResponseWriter, r *http.Request) {
-	user, ok := util.GetUserFromContext(r.Context())
+	ctx := r.Context()
+
+	user, ok := util.GetUserFromContext(ctx)
 	if !ok {
 		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
 		return
 	}
 
-	status, err := m.cartUseCases.BuyItems(r.Context(), int64(user.UserID))
+	status, err := m.cartUseCases.BuyItems(ctx, int64(user.UserID))
 	if err != nil {
-		slog.Error("failed to clear cart", "cause", err)
+		slog.ErrorContext(ctx, "failed to clear cart", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -207,15 +213,17 @@ func (m CartModule) buy(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m CartModule) clearCart(w http.ResponseWriter, r *http.Request) {
-	user, ok := util.GetUserFromContext(r.Context())
+	ctx := r.Context()
+
+	user, ok := util.GetUserFromContext(ctx)
 	if !ok {
 		util.Write(w, util.ServerResponse{Status: http.StatusUnauthorized, Message: "Usuário não autenticado"})
 		return
 	}
 
-	err := m.cartUseCases.ClearCart(r.Context(), int64(user.UserID))
+	err := m.cartUseCases.ClearCart(ctx, int64(user.UserID))
 	if err != nil {
-		slog.Error("failed to clear cart", "cause", err)
+		slog.ErrorContext(ctx, "failed to clear cart", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}

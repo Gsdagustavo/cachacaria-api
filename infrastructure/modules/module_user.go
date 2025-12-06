@@ -62,11 +62,13 @@ func (m moduleUser) RegisterRoutes(router *mux.Router) {
 	}
 }
 
-func (m moduleUser) GetAll(w http.ResponseWriter, _ *http.Request) {
+func (m moduleUser) GetAll(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	users, err := m.userUseCases.GetAll()
 
 	if err != nil {
-		slog.Error("failed to get all users", "cause", err)
+		slog.ErrorContext(ctx, "failed to get all users", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -75,6 +77,8 @@ func (m moduleUser) GetAll(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (m moduleUser) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -91,7 +95,7 @@ func (m moduleUser) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	err = m.userUseCases.Delete(id)
 	if err != nil {
-		slog.Error("failed to delete user", "cause", err)
+		slog.ErrorContext(ctx, "failed to delete user", "cause", err)
 		util.WriteInternalError(w)
 	}
 
@@ -99,11 +103,13 @@ func (m moduleUser) DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m moduleUser) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	token := util.GetAuthTokenFromRequest(r)
 
 	user, err := m.authUseCases.GetUserByAuthToken(token)
 	if err != nil {
-		slog.Error("failed to get user by auth token", "cause", err)
+		slog.ErrorContext(ctx, "failed to get user by auth token", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -124,7 +130,7 @@ func (m moduleUser) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	status, err := m.userUseCases.Update(req)
 	if err != nil {
-		slog.Error("failed to update user", "cause", err)
+		slog.ErrorContext(ctx, "failed to update user", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}

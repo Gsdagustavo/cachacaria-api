@@ -85,6 +85,8 @@ func (m productModule) RegisterRoutes(router *mux.Router) {
 }
 
 func (m productModule) add(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	if err := r.ParseMultipartForm(maxImagesMemory); err != nil {
 		res := entities.ServerResponse{
 			Code:    http.StatusBadRequest,
@@ -110,7 +112,7 @@ func (m productModule) add(w http.ResponseWriter, r *http.Request) {
 
 	status, err := m.productUseCases.AddProduct(request)
 	if err != nil {
-		slog.Error("failed to add product", "cause", err)
+		slog.ErrorContext(ctx, "failed to add product", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}
@@ -124,6 +126,8 @@ func (m productModule) add(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m productModule) getAll(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var limit, page int
 
 	query := r.URL.Query()
@@ -162,7 +166,7 @@ func (m productModule) getAll(w http.ResponseWriter, r *http.Request) {
 
 	products, err := m.productUseCases.GetAll(limit, page)
 	if err != nil {
-		slog.Error("failed to get all products", slog.String("err", err.Error()))
+		slog.ErrorContext(ctx, "failed to get all products", slog.String("err", err.Error()))
 		util.WriteInternalError(w)
 		return
 	}
@@ -262,6 +266,8 @@ func (m productModule) delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m productModule) update(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -310,7 +316,7 @@ func (m productModule) update(w http.ResponseWriter, r *http.Request) {
 
 	status, err := m.productUseCases.UpdateProduct(id, request)
 	if err != nil {
-		slog.Error("failed to update product", "cause", err)
+		slog.ErrorContext(ctx, "failed to update product", "cause", err)
 		util.WriteInternalError(w)
 		return
 	}

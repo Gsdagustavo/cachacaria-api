@@ -19,7 +19,7 @@ func Init() {
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		slog.Error("failed to load config", "error", err)
+		slog.ErrorContext(ctx, "failed to load config", "error", err)
 	}
 
 	slog.Info("config loaded")
@@ -27,7 +27,7 @@ func Init() {
 	// Config database
 	err = config.Connect(cfg)
 	if err != nil {
-		slog.Error("failed to connect to database", "error", err)
+		slog.ErrorContext(ctx, "failed to connect to database", "error", err)
 	}
 
 	// Config utils
