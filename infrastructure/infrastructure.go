@@ -40,12 +40,13 @@ func Init() {
 	userRepository := repositories.NewMySQLUserRepository(conn)
 	productRepository := repositories.NewMySQLProductRepository(conn)
 	cartRepository := repositories.NewMySQLCartRepository(conn)
+	orderRepository := repositories.NewMYSQLOrderRepository(conn)
 
 	// Use Cases
 	authUseCases := usecases.NewAuthUseCases(authRepository, userRepository, authManager, cfg.Email)
 	userUseCases := usecases.NewUserUseCases(userRepository, authRepository, authManager)
 	productUseCases := usecases.NewProductUseCases(productRepository, cfg.Server.BaseURL)
-	cartUseCases := usecases.NewCartUseCases(cartRepository, userRepository, productRepository, cfg.Server.BaseURL)
+	cartUseCases := usecases.NewCartUseCases(cartRepository, userRepository, productRepository, orderRepository, cfg.Server.BaseURL)
 
 	// Modules
 	healthModule := modules.NewHealthModule()
@@ -53,6 +54,7 @@ func Init() {
 	userModule := modules.NewUserModule(userUseCases, authUseCases)
 	productModule := modules.NewProductModule(productUseCases, authManager)
 	cartModule := modules.NewCartModule(cartUseCases, authManager)
+	orderModule := modules.NewOrderModule(cartUseCases, authManager)
 
 	// Assign a router to the server
 	router := mux.NewRouter()
@@ -65,7 +67,7 @@ func Init() {
 	cfg.Server.RegisterModules(server.Router, healthModule)
 
 	// Register modules
-	cfg.Server.RegisterModules(apiSubrouter, authModule, userModule, productModule, cartModule)
+	cfg.Server.RegisterModules(apiSubrouter, authModule, userModule, productModule, cartModule, orderModule)
 
 	slog.Info(fmt.Sprintf("server running on port %d", cfg.Server.Port))
 

@@ -12,6 +12,7 @@ CREATE TABLE users
     password    VARCHAR(255) NOT NULL,
     phone       VARCHAR(20),
     is_adm      BOOLEAN      NOT NULL DEFAULT FALSE,
+    status_code TINYINT(1)   NOT NULL DEFAULT 0,
     created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -23,8 +24,9 @@ CREATE TABLE products
     description TEXT,
     price       DECIMAL(10, 2) NOT NULL,
     stock       INT            NOT NULL,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    status_code TINYINT(1)     NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP               DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMP               DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE products_photos
@@ -69,29 +71,27 @@ CREATE TABLE order_items
     CONSTRAINT fk_order_item_product FOREIGN KEY (product_id) REFERENCES products (id)
 );
 
-
-
-SELECT o.id                         AS order_id,
-       o.user_id,
-       o.created_at                 AS order_created_at,
-       o.modified_at                AS order_modified_at,
-
-       oi.id                        AS order_item_id,
-       oi.product_id,
-       oi.quantity,
-       oi.created_at                AS item_created_at,
-       oi.modified_at               AS item_modified_at,
-
-       p.id                         AS product_id,
-       p.name                       AS product_name,
-       p.description                AS product_description,
-       p.price                      AS product_price,
-       p.stock                      AS product_stock,
-       (SELECT GROUP_CONCAT(pp.filename)
-        FROM products_photos pp
-        WHERE pp.product_id = p.id) AS photos
-FROM orders o
-         JOIN order_items oi ON oi.order_id = o.id
-         JOIN products p ON p.id = oi.product_id
-WHERE o.user_id = ?
-ORDER BY o.created_at DESC, oi.id;
+-- SELECT o.id                         AS order_id,
+--        o.user_id,
+--        o.created_at                 AS order_created_at,
+--        o.modified_at                AS order_modified_at,
+--
+--        oi.id                        AS order_item_id,
+--        oi.product_id,
+--        oi.quantity,
+--        oi.created_at                AS item_created_at,
+--        oi.modified_at               AS item_modified_at,
+--
+--        p.id                         AS product_id,
+--        p.name                       AS product_name,
+--        p.description                AS product_description,
+--        p.price                      AS product_price,
+--        p.stock                      AS product_stock,
+--        (SELECT GROUP_CONCAT(pp.filename)
+--         FROM products_photos pp
+--         WHERE pp.product_id = p.id) AS photos
+-- FROM orders o
+--          JOIN order_items oi ON oi.order_id = o.id
+--          JOIN products p ON p.id = oi.product_id
+-- WHERE o.user_id = ?
+-- ORDER BY o.created_at DESC, oi.id;
