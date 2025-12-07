@@ -179,13 +179,29 @@ func (repo *MySQLCartRepository) ClearCart(ctx context.Context, userID int64) er
 
 	for _, it := range items {
 		_, err = tx.ExecContext(ctx, `
-		INSERT INTO order_items (order_id, product_id, quantity, price)
-		VALUES (?, ?, ?, (SELECT price FROM products WHERE id = ?));
-		`, orderID, it.ProductID, it.Quantity, it.ProductID)
+		INSERT INTO order_items (order_id, product_id, quantity)
+		VALUES (?, ?, ?);
+		`, orderID, it.ProductID, it.Quantity)
 
 		if err != nil {
 			return errors.Join(fmt.Errorf("failed to insert order item"), err)
 		}
+
+		res, err = tx.ExecContext(ctx, `
+			UPDATE products
+			SET stock = stock - ?
+			WHERE id = ? AND stock >= ?;
+		`, it.Quantity, it.ProductID, it.Quantity)
+
+		if err != nil {
+			return errors.Join(fmt.Errorf("failed to update stock"), err)
+		}
+
+		rowsAffected, _ := res.RowsAffected()
+		if rowsAffected == 0 {
+			return fmt.Errorf("insufficient stock for product_id=%d", it.ProductID)
+		}
+
 	}
 
 	_, err = tx.ExecContext(ctx, `

@@ -137,7 +137,9 @@ func (u *ProductUseCases) DeleteProduct(id int64) (status_codes.DeleteProductSta
 		filePath := filepath.Join("/app/images", filename)
 
 		if err = os.Remove(filePath); err != nil {
-			return status_codes.DeleteProductStatusError, entities.ErrNotFound
+			if !errors.Is(err, os.ErrNotExist) {
+				return status_codes.DeleteProductStatusError, errors.Join(fmt.Errorf("failed to delete product image"), err)
+			}
 		}
 	}
 

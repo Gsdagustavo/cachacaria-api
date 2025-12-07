@@ -182,6 +182,8 @@ func (m productModule) get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m productModule) delete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
@@ -207,18 +209,8 @@ func (m productModule) delete(w http.ResponseWriter, r *http.Request) {
 
 	delRes, err := m.productUseCases.DeleteProduct(id)
 	if err != nil {
-		if errors.Is(err, entities.ErrNotFound) {
-			res = entities.ServerResponse{
-				Code:    http.StatusNotFound,
-				Message: "Produto não encontrado",
-			}
-		} else {
-			res = entities.ServerResponse{
-				Code:    http.StatusInternalServerError,
-				Message: "Erro interno no servidor",
-			}
-		}
-		res.WriteHTTP(w)
+		slog.ErrorContext(ctx, "failed to delete product", slog.String("err", err.Error()))
+		util.WriteInternalError(w)
 		return
 	}
 

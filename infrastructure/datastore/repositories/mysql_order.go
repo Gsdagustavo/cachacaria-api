@@ -38,8 +38,8 @@ func (r *MYSQLOrderRepository) CreateOrder(ctx context.Context, userID int64) (i
 
 func (r *MYSQLOrderRepository) AddOrderItem(ctx context.Context, orderID, productID int64, quantity int) error {
 	const query = `
-        INSERT INTO order_items (order_id, product_id, quantity, price)
-        SELECT ?, id, ?, price
+        INSERT INTO order_items (order_id, product_id, quantity)
+        SELECT ?, id, ?
         FROM products
         WHERE id = ?
     `
@@ -56,8 +56,7 @@ func (r *MYSQLOrderRepository) GetOrders(ctx context.Context, userID int64) ([]e
 			o.modified_at,
 			oi.id AS item_id,
 			oi.product_id,
-			oi.quantity,
-			oi.price
+			oi.quantity
 		FROM orders o
 		LEFT JOIN order_items oi ON o.id = oi.order_id
 		WHERE o.user_id = ?

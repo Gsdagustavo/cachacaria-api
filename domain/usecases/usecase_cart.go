@@ -117,27 +117,7 @@ func (uc *CartUseCases) BuyItems(ctx context.Context, userID int64) (status_code
 		}
 
 		if product.Stock < item.Quantity {
-			return status_codes.BuyProductsStatusOutOfStock, fmt.Errorf(
-				"produto %s sem estoque suficiente",
-				product.Name,
-			)
-		}
-	}
-
-	orderID, err := uc.orderRepository.CreateOrder(ctx, userID)
-	if err != nil {
-		return status_codes.BuyProductsStatusError, err
-	}
-
-	for _, item := range items {
-		err = uc.orderRepository.AddOrderItem(ctx, orderID, item.ProductID, item.Quantity)
-		if err != nil {
-			return status_codes.BuyProductsStatusError, err
-		}
-
-		err = uc.productRepository.DecrementStock(item.ProductID, item.Quantity)
-		if err != nil {
-			return status_codes.BuyProductsStatusError, err
+			return status_codes.BuyProductsStatusOutOfStock, nil
 		}
 	}
 
