@@ -16,9 +16,6 @@ import (
 
 const maxImagesMemory = 20 << 20
 
-const defaultPagePagination = 1
-const defaultLimitPagination = 20
-
 type productModule struct {
 	productUseCases usecases.ProductUseCases
 	authManager     util.AuthManager
@@ -128,43 +125,7 @@ func (m productModule) add(w http.ResponseWriter, r *http.Request) {
 func (m productModule) getAll(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var limit, page int
-
-	query := r.URL.Query()
-	limitStr := query.Get("limit")
-	pageStr := query.Get("page")
-
-	if limitStr == "" {
-		limit = defaultLimitPagination
-	} else {
-		parsed, err := strconv.ParseInt(limitStr, 10, 32)
-		if err != nil {
-			res := entities.ServerResponse{
-				Code:    http.StatusBadRequest,
-				Message: "Limite inválido",
-			}
-			res.WriteHTTP(w)
-			return
-		}
-		limit = int(parsed)
-	}
-
-	if pageStr == "" {
-		page = defaultPagePagination
-	} else {
-		parsed, err := strconv.ParseInt(pageStr, 10, 32)
-		if err != nil {
-			res := entities.ServerResponse{
-				Code:    http.StatusBadRequest,
-				Message: "Página inválida",
-			}
-			res.WriteHTTP(w)
-			return
-		}
-		page = int(parsed)
-	}
-
-	products, err := m.productUseCases.GetAll(limit, page)
+	products, err := m.productUseCases.GetAll()
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get all products", slog.String("err", err.Error()))
 		util.WriteInternalError(w)

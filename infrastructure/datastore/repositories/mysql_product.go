@@ -39,12 +39,11 @@ func (r *MySQLProductRepository) AddProductPhotos(productID int64, filenames []s
 	return nil
 }
 
-func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, error) {
+func (r *MySQLProductRepository) GetAll() ([]entities.Product, error) {
 	products := make([]entities.Product, 0)
 
-	/// Products
-	const query = "SELECT id, name, description, price, stock FROM products WHERE status_code != 1 ORDER BY id LIMIT ? OFFSET ?"
-	rows, err := r.DB.Query(query, limit, offset)
+	const query = "SELECT id, name, description, price, stock FROM products WHERE status_code != 1 ORDER BY id"
+	rows, err := r.DB.Query(query)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return products, nil
@@ -61,7 +60,6 @@ func (r *MySQLProductRepository) GetAll(limit, offset int) ([]entities.Product, 
 			return nil, errors.Join(fmt.Errorf("failed to scan product"), err)
 		}
 
-		// Photos
 		var photos []string
 		const query = "SELECT id, filename FROM products_photos WHERE product_id = ?"
 		photoRows, err := r.DB.Query(query, product.ID)

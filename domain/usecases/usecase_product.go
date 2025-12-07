@@ -70,7 +70,7 @@ func (u *ProductUseCases) AddProduct(
 			time.Now().UnixNano(),
 			filepath.Ext(fileHeader.Filename),
 		)
-		filePath := filepath.Join("/app/images", filename)
+		filePath := filepath.Join("C:/Users/Gsdagustavo/Documents/imagesCacahcaria", filename)
 
 		dst, err := os.Create(filePath)
 		if err != nil {
@@ -95,14 +95,8 @@ func (u *ProductUseCases) AddProduct(
 	return status_codes.AddProductStatusSuccess, nil
 }
 
-func (u *ProductUseCases) GetAll(limit, page int) ([]entities.Product, error) {
-	if page < 1 {
-		page = 1
-	}
-
-	offset := (page - 1) * limit
-
-	products, err := u.productRepository.GetAll(limit, offset)
+func (u *ProductUseCases) GetAll() ([]entities.Product, error) {
+	products, err := u.productRepository.GetAll()
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("failed to get products"), err)
 	}

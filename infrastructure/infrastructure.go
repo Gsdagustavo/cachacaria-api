@@ -70,7 +70,7 @@ func Init() {
 	cfg.Server.RegisterModules(apiSubrouter, authModule, userModule, productModule, cartModule, orderModule)
 
 	slog.Info(fmt.Sprintf("server running on port %d", cfg.Server.Port))
-
+	
 	err = cfg.Server.Run(*cfg)
 
 	if err != nil {
