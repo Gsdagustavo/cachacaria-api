@@ -9,8 +9,8 @@ base_url = "http://192.168.0.120:8080"
 port = 3306
 driver = "mysql"
 host = "mysql"
-user = "appuser"
-password = "apppass"
+user = "root"
+password = "root"
 name = "cachacadb"
 
 [EmailConfig]

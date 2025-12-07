@@ -6,7 +6,7 @@ address = "0.0.0.0"
 base_url = "http://localhost:8080"
 
 [Database]
-port = 3306
+port = 3307
 driver = "mysql"
 host = "localhost"
 user = "root"
