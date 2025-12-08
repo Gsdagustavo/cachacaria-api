@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/google/uuid"
 )
@@ -118,7 +119,10 @@ func (a AuthUseCases) RegisterUser(
 		return "", status_codes.RegisterFailure, errors.Join(fmt.Errorf("failed to generate auth token"), err)
 	}
 
-	util2.SendAccountCreatedEmail(a.emailConfig, []string{user.Email}, *user)
+	err = util2.SendAccountCreatedEmail(a.emailConfig, []string{user.Email}, *user)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to send account created email", "cause", err)
+	}
 
 	return token, status_codes.RegisterSuccess, nil
 }
@@ -178,7 +182,10 @@ func (a AuthUseCases) ChangePassword(ctx context.Context, request entities.Chang
 		return status_codes.ChangePasswordError, errors.Join(fmt.Errorf("failed to update password"), err)
 	}
 
-	util2.SendPasswordChangedEmail(a.emailConfig, []string{user.Email}, *user)
+	err = util2.SendPasswordChangedEmail(a.emailConfig, []string{user.Email}, *user)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to send password changed email", "cause", err)
+	}
 
 	return status_codes.ChangePasswordSuccess, nil
 }

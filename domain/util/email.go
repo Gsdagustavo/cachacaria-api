@@ -5,6 +5,8 @@ import (
 	"cachacariaapi/domain/entities"
 	"html/template"
 	"net/smtp"
+	"path/filepath"
+	"runtime"
 	"time"
 )
 
@@ -51,7 +53,9 @@ func SendEmail(cfg EmailConfig, to []string, subject, body string) error {
 	)
 }
 
-func RenderTemplate(path string, data any) (string, error) {
+func RenderTemplate(name string, data any) (string, error) {
+	path := templateFile(name)
+
 	t, err := template.ParseFiles(path)
 	if err != nil {
 		return "", err
@@ -65,12 +69,19 @@ func RenderTemplate(path string, data any) (string, error) {
 	return buf.String(), nil
 }
 
+func templateFile(name string) string {
+	_, b, _, _ := runtime.Caller(0)
+	baseDir := filepath.Dir(b)
+	return filepath.Join(baseDir, "templates", name)
+}
+
 func SendAccountCreatedEmail(cfg EmailConfig, to []string, user entities.User) error {
-	html, err := RenderTemplate("templates/account_created.gohtml", map[string]any{
+	html, err := RenderTemplate("account_created.gohtml", map[string]any{
 		"Name":  user.Email,
 		"Email": user.Email,
 		"Year":  time.Now().Year(),
 	})
+
 	if err != nil {
 		return err
 	}
@@ -79,11 +90,12 @@ func SendAccountCreatedEmail(cfg EmailConfig, to []string, user entities.User) e
 }
 
 func SendPasswordChangedEmail(cfg EmailConfig, to []string, user entities.User) error {
-	html, err := RenderTemplate("templates/password_changed.gohtml", map[string]any{
+	html, err := RenderTemplate("password_changed.gohtml", map[string]any{
 		"Name":  user.Email,
 		"Email": user.Email,
 		"Year":  time.Now().Year(),
 	})
+
 	if err != nil {
 		return err
 	}
